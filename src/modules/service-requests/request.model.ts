@@ -3,19 +3,26 @@ import { Schema, model, Document, Types } from "mongoose";
 export interface IServiceRequest extends Document {
   organizationId: Types.ObjectId;
   facilityId: Types.ObjectId;
-  assetId?: Types.ObjectId;
+  locationId: Types.ObjectId;
+  assetId: Types.ObjectId;
   requestedBy: Types.ObjectId;
   title: string;
   description: string;
   priority: "low" | "medium" | "high" | "critical";
   serviceCategory: string;
   status: "pending" | "approved" | "rejected";
+  approvalDecision?: "approved" | "rejected";
   approvedBy?: Types.ObjectId;
   approvedAt?: Date;
   rejectedBy?: Types.ObjectId;
   rejectedAt?: Date;
   rejectionReason?: string;
   workOrderId?: Types.ObjectId;
+  sourceWorkOrderId?: Types.ObjectId;
+  rating?: number;
+  feedback?: string;
+  ratedAt?: Date;
+  attachmentUploadIds?: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,9 +39,11 @@ const serviceRequestSchema = new Schema<IServiceRequest>(
       ref: "Facility",
       required: true,
     },
+    locationId: { type: Schema.Types.ObjectId, ref: "Location", required: true, index: true },
     assetId: {
       type: Schema.Types.ObjectId,
       ref: "Asset",
+      required: true,
     },
     requestedBy: {
       type: Schema.Types.ObjectId,
@@ -66,6 +75,7 @@ const serviceRequestSchema = new Schema<IServiceRequest>(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+    approvalDecision: { type: String, enum: ["approved", "rejected"] },
     approvedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -81,11 +91,20 @@ const serviceRequestSchema = new Schema<IServiceRequest>(
       type: Schema.Types.ObjectId,
       ref: "WorkOrder",
     },
+    sourceWorkOrderId: {
+      type: Schema.Types.ObjectId,
+      ref: "WorkOrder",
+      index: true,
+    },
+    rating: { type: Number, min: 1, max: 5 }, feedback: { type: String, maxlength: 2000 }, ratedAt: Date,
+    attachmentUploadIds: [{ type: Schema.Types.ObjectId, ref: "Upload" }],
   },
   {
     timestamps: true,
   },
 );
+
+serviceRequestSchema.index({ organizationId: 1, createdAt: -1, status: 1 });
 
 export const ServiceRequest = model<IServiceRequest>(
   "ServiceRequest",

@@ -151,6 +151,8 @@ workOrderSchema.index({
 workOrderSchema.index({ organizationId: 1, createdAt: -1 });
 workOrderSchema.index({ organizationId: 1, status: 1, createdAt: -1 });
 workOrderSchema.index({ assignedVendorId: 1, createdAt: -1 });
+workOrderSchema.index({ organizationId: 1, createdAt: -1, status: 1, priority: 1 });
+workOrderSchema.index({ organizationId: 1, dueDate: 1, status: 1 });
 // A service request can be approved concurrently by two requests, but it may
 // only ever produce one work order. Sparse semantics preserve standalone work
 // orders that do not originate from a service request.
