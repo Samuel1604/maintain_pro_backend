@@ -26,6 +26,11 @@ import {
 import type { SubscriptionResponse } from "./dto/billing.dto.js";
 import type { PaymentProvider } from "./enums/payment-provider.enum.js";
 import type { Actor } from "@/shared/types/request.js";
+import { env } from "@/config/env.js";
+import { randomUUID } from "node:crypto";
+import mongoose from "mongoose";
+import { OutboxEventRepository } from "@/infrastructure/events/outbox/outbox-event.repository.js";
+import { serializeDomainEvent } from "@/infrastructure/events/bus/serialized-domain-event.js";
 import type {
   CreateSubscriptionInput,
   ChangePlanInput,
@@ -38,6 +43,7 @@ export class BillingService {
   private readonly organizationService: OrganizationService;
   private readonly vendorService: VendorService;
   private readonly eventPublisher: EventPublisher;
+  private readonly outbox = new OutboxEventRepository();
 
   constructor(
     repository?: BillingRepository,
@@ -116,7 +122,7 @@ export class BillingService {
       plan: input.plan,
       billingCycle: input.billingCycle || "monthly",
       status: "trial",
-      provider: input.provider || BILLING_CONFIG.DEFAULT_PROVIDER,
+      provider: input.provider || env.BILLING_DEFAULT_PROVIDER,
       startsAt: now,
       trialEndsAt,
     });
@@ -199,6 +205,7 @@ export class BillingService {
   async initiateCheckout(
     subscriptionId: string,
     providerName?: PaymentProvider,
+    idempotencyKey?: string,
   ) {
     const subscription = await this.findSubscriptionDocument(subscriptionId);
 
@@ -216,7 +223,7 @@ export class BillingService {
 
     const provider =
       providerName || (subscription.provider as PaymentProvider) || "mock";
-    const idempotencyKey = `checkout_${subscriptionId}_${Date.now()}`;
+    const operationKey = idempotencyKey?.trim() || randomUUID();
 
     // Calculate checkout amount in cents based on plan, ownerType, and billingCycle (with 20% annual discount)
     const ownerType = subscription.ownerType || "organization";
@@ -240,13 +247,13 @@ export class BillingService {
       subscriptionStatusAtCheckout: subscription.status,
       provider,
       status: "pending",
-      idempotencyKey,
+      idempotencyKey: operationKey,
     });
 
     const gateway = createPaymentProvider(provider);
     const checkoutResult = await gateway.initiateCheckout({
       paymentId: payment._id.toString(),
-      idempotencyKey,
+      idempotencyKey: operationKey,
       plan: subscription.plan,
       amount: amountCents,
       currency: "usd",
@@ -295,27 +302,50 @@ export class BillingService {
     }
 
     // Atomic pending claim to guarantee idempotency across concurrent deliveries
-    const claimed = await this.paymentRepository.claimPending(
-      payment._id.toString(),
-      {
-        status: event.outcome === "succeeded" ? "succeeded" : "failed",
-        providerReference: event.providerReference,
-        failureReason: event.failureReason,
-      },
-    );
+    let updatedSubscription: ISubscription | null = null;
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const claimed = await this.paymentRepository.claimPending(
+          payment._id.toString(),
+          {
+            status: event.outcome === "succeeded" ? "succeeded" : "failed",
+            providerReference: event.providerReference,
+            failureReason: event.failureReason,
+          },
+          session,
+        );
 
-    if (!claimed) {
-      // Already claimed/processed in a previous webhook delivery
-      return { success: true };
-    }
+        if (!claimed) return;
 
-    if (event.outcome === "succeeded") {
-      await this.activateSubscription(payment.subscriptionId.toString());
-    } else {
-      await this.repository.update(payment.subscriptionId.toString(), {
-        status: "past_due",
+        const subscription = await this.repository.findById(payment.subscriptionId.toString(), session);
+        if (!subscription) throw new NotFoundException("Subscription not found.");
+        if (event.outcome === "succeeded") {
+          BillingPolicy.canActivate(subscription);
+          updatedSubscription = await this.repository.update(subscription._id.toString(), { status: "active" }, session);
+          if (updatedSubscription) {
+            const activatedEvent = new SubscriptionActivatedEvent({
+              subscriptionId: updatedSubscription._id.toString(),
+              ownerId: updatedSubscription.ownerId.toString(),
+              ownerType: updatedSubscription.ownerType,
+              plan: updatedSubscription.plan,
+              billingCycle: updatedSubscription.billingCycle,
+              startsAt: (updatedSubscription.startsAt ?? new Date()).toISOString(),
+            });
+            await this.outbox.append({ eventId: activatedEvent.eventId, eventType: activatedEvent.name, aggregateId: activatedEvent.aggregateId ?? updatedSubscription._id.toString(), aggregateType: activatedEvent.aggregateType ?? "subscription", payload: serializeDomainEvent(activatedEvent) as unknown as Record<string, unknown> }, session);
+          }
+        } else {
+          updatedSubscription = await this.repository.update(subscription._id.toString(), { status: "past_due" }, session);
+        }
       });
+    } finally {
+      await session.endSession();
     }
+
+    if (!updatedSubscription) return { success: true };
+
+    // Successful webhook state changes already have a durable event in the
+    // same Mongo transaction. The outbox worker owns delivery after commit.
 
     return { success: true };
   }
