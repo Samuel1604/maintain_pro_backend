@@ -138,6 +138,7 @@ const workOrderSchema = new Schema<IWorkOrder>(
   },
   {
     timestamps: true,
+    optimisticConcurrency: true,
   },
 );
 
