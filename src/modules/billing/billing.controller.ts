@@ -170,6 +170,8 @@ export const activateSubscription = requestHandler<
     subId = subDto.id;
   }
 
+  await service.assertSubscriptionOwnership(subId, req.user);
+
   const subscriptionDto = await service.activateSubscription(subId);
   return res.ok(subscriptionDto);
 });
@@ -186,6 +188,8 @@ export const cancelSubscription = requestHandler<
     subId = subDto.id;
   }
 
+  await service.assertSubscriptionOwnership(subId, req.user);
+
   const subscriptionDto = await service.cancelSubscription(subId);
   return res.ok(subscriptionDto);
 });
@@ -201,6 +205,8 @@ export const upgradePlan = requestHandler<
     const subDto = await service.findSubscriptionByOwner(tenant.ownerId, tenant.ownerType);
     subId = subDto.id;
   }
+
+  await service.assertSubscriptionOwnership(subId, req.user);
 
   const cycleParam = (req.query.billingCycle || req.query.cycle || req.body?.billingCycle || req.body?.cycle) as string | undefined;
   const bodyWithCycle = {
@@ -226,6 +232,8 @@ export const downgradePlan = requestHandler<
     subId = subDto.id;
   }
 
+  await service.assertSubscriptionOwnership(subId, req.user);
+
   const cycleParam = (req.query.billingCycle || req.query.cycle || req.body?.billingCycle || req.body?.cycle) as string | undefined;
   const bodyWithCycle = {
     ...req.body,
@@ -249,6 +257,8 @@ export const expireTrial = requestHandler<
     const subDto = await service.findSubscriptionByOwner(tenant.ownerId, tenant.ownerType);
     subId = subDto.id;
   }
+
+  await service.assertSubscriptionOwnership(subId, req.user);
 
   const subscriptionDto = await service.expireTrial(subId);
   return res.ok(subscriptionDto);

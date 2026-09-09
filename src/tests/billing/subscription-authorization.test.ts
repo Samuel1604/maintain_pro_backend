@@ -43,4 +43,18 @@ describe("subscription ownership reads", () => {
       "vendor",
     );
   });
+
+  it("rejects mutation ownership checks for a different organization", async () => {
+    const findByIdForOwner = vi.fn().mockResolvedValue(null);
+    const repository = { findByIdForOwner } as unknown as BillingRepository;
+    const service = new BillingService(repository);
+
+    await expect(
+      service.assertSubscriptionOwnership("subscription-1", {
+        userId: "user-2",
+        role: "admin",
+        organizationId: "org-2",
+      }),
+    ).rejects.toThrow("Subscription not found.");
+  });
 });

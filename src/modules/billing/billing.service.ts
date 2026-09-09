@@ -171,6 +171,11 @@ export class BillingService {
     return subscription ? billingMapper.toSubscriptionResponse(subscription) : null;
   }
 
+  /** Verifies that a subscription belongs to the authenticated billing owner. */
+  async assertSubscriptionOwnership(subscriptionId: string, actor: Actor): Promise<void> {
+    await this.findSubscriptionDocumentForActor(subscriptionId, actor);
+  }
+
   /**
    * Updates the subscription billing cycle (monthly or annual).
    */
