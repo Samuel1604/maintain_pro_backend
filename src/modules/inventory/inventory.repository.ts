@@ -102,7 +102,7 @@ export class InventoryRepository {
         const updated = await this.reserveBalance(balance._id.toString(), data.quantity, session);
         if (!updated) throw new Error("INSUFFICIENT_STOCK");
         const reservation = await this.createReservation({ organizationId: data.organizationId, itemId: data.itemId, stockLocationId: data.stockLocationId, quantity: data.quantity, workOrderId: data.workOrderId, status: "reserved", requestedBy: data.requestedBy }, session);
-        const transaction = await this.createTransaction({ ...data, type: "reservation", reservationId: reservation._id }, session);
+        const transaction = await this.createTransaction({ ...data, performedBy: data.requestedBy, type: "reservation", reservationId: reservation._id }, session);
         result = { reservation, transaction };
       });
       if (!result) throw new Error("RESERVATION_TRANSACTION_FAILED");

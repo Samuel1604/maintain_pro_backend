@@ -1,6 +1,8 @@
 import path from "node:path";
 import { config as loadEnv } from "dotenv";
 
+process.env.NODE_ENV = "test";
+
 // Must run before any other import in this file resolves any module that
 // transitively imports "@/config/env.js" — Vitest fully executes each
 // setupFile before importing the test file itself, so this is the last

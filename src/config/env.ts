@@ -2,7 +2,10 @@ import { config } from "dotenv";
 import { z } from "zod";
 import type { StringValue } from "ms";
 
-config();
+// The test bootstrap loads .env.test before application modules are imported.
+// Do not load a developer's .env afterward and overwrite disposable test
+// service settings.
+if (process.env.NODE_ENV !== "test") config();
 
 
 const durationSchema =
