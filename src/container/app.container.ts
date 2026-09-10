@@ -106,6 +106,10 @@ import { RealtimePublisher } from "@/infrastructure/realtime/realtime.publisher.
 import { SocketGateway } from "@/infrastructure/realtime/socket.gateway.js";
 import { env } from "@/config/env.js";
 
+const redisDisabled = ["true", "1", "yes"].includes(
+  process.env.REDIS_DISABLE_CONNECTION?.trim().toLowerCase() ?? "",
+);
+
 export class AppContainer {
   private queueWorkersConfigured = false;
   private eventSubscribersConfigured = false;
@@ -140,7 +144,7 @@ export class AppContainer {
 
   public readonly workerRegistry = new QueueWorkerRegistry(this.loggerService);
 
-  public readonly queueProducer: QueueProducer = env.QUEUE_DRIVER === "in-memory" || process.env.REDIS_DISABLE_CONNECTION
+  public readonly queueProducer: QueueProducer = env.QUEUE_DRIVER === "in-memory" || redisDisabled
     ? new InMemoryQueueService(this.loggerService, this.workerRegistry)
     : new BullMqProducer(this.queueFactory, this.loggerService);
 
@@ -154,7 +158,7 @@ export class AppContainer {
 
   public readonly eventPublisher = new DefaultEventPublisher(this.eventBus);
 
-  public readonly queueService: QueueService = env.QUEUE_DRIVER === "in-memory" || process.env.REDIS_DISABLE_CONNECTION
+  public readonly queueService: QueueService = env.QUEUE_DRIVER === "in-memory" || redisDisabled
     ? (this.queueProducer as InMemoryQueueService)
     : new BullMqQueueService(this.queueProducer as BullMqProducer, this.workerRegistry);
 
@@ -759,7 +763,7 @@ export class AppContainer {
   }
 
   public async startWorkers(): Promise<void> {
-    if (env.QUEUE_DRIVER === "in-memory" || process.env.REDIS_DISABLE_CONNECTION) {
+    if (env.QUEUE_DRIVER === "in-memory" || redisDisabled) {
       this.loggerService.info("Queue workers disabled; using the in-memory queue driver.");
       return;
     }
