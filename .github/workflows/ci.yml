@@ -44,7 +44,7 @@ jobs:
           done
       - run: npm test
         env:
-          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/maintainpro_test
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/maintainpro_test?replicaSet=rs0
           REDIS_DISABLE_CONNECTION: "false"
           TEST_USE_REDIS: "true"
           REDIS_HOST: 127.0.0.1
