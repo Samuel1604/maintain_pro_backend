@@ -99,27 +99,45 @@ export class ReportService {
 
   async slaCompliance(query: ReportQuery, actor: ReportActor): Promise<SlaComplianceReportDto> {
     const organizationId = this.organization(actor);
-    const agreements = await SlaAgreement.find({ organizationId, createdAt: { $gte: query.startDate, $lte: query.endDate }, ...(query.vendorId ? { vendorId: query.vendorId } : {}) }).lean();
-    const workOrderIds = agreements.map((agreement) => agreement.workOrderId);
-    const workOrders = await WorkOrder.find({ organizationId, _id: { $in: workOrderIds } }).lean();
-    const byWorkOrder = new Map(workOrders.map((workOrder) => [workOrder._id.toString(), workOrder]));
-    const vendorIds = [...new Set(agreements.map((agreement) => agreement.vendorId.toString()))];
-    const vendors = await Vendor.find({ _id: { $in: vendorIds } }).lean();
-    const names = new Map(vendors.map((vendor) => [vendor._id.toString(), vendor.name]));
-    const groups = new Map<string, { agreements: number; completed: number; compliant: number; breaches: number }>();
-    for (const agreement of agreements) {
-      const vendorId = agreement.vendorId.toString(); const group = groups.get(vendorId) ?? { agreements: 0, completed: 0, compliant: 0, breaches: 0 }; group.agreements += 1;
-      const workOrder = byWorkOrder.get(agreement.workOrderId.toString());
-      if (workOrder?.status === "completed" && workOrder.completedAt) {
-        group.completed += 1;
-        const deadline = new Date(workOrder.createdAt).getTime() + agreement.resolutionTimeHours * 3_600_000;
-        if (workOrder.completedAt.getTime() <= deadline) group.compliant += 1; else group.breaches += 1;
-      }
-      groups.set(vendorId, group);
-    }
-    const rows = [...groups.entries()].map(([vendorId, group]) => ({ vendorId, vendorName: names.get(vendorId) ?? "Unknown vendor", ...group, complianceRate: group.completed ? Number(((group.compliant / group.completed) * 100).toFixed(2)) : 0 }));
-    const completedWorkOrders = rows.reduce((total, row) => total + row.completed, 0); const compliantWorkOrders = rows.reduce((total, row) => total + row.compliant, 0); const breaches = rows.reduce((total, row) => total + row.breaches, 0);
-    return { totalAgreements: agreements.length, activeAgreements: agreements.filter((agreement) => ["accepted", "active"].includes(agreement.status)).length, completedWorkOrders, compliantWorkOrders, breaches, complianceRate: completedWorkOrders ? Number(((compliantWorkOrders / completedWorkOrders) * 100).toFixed(2)) : 0, vendors: rows.sort((a, b) => b.complianceRate - a.complianceRate) };
+    const rows = await SlaAgreement.aggregate<{
+      _id: unknown;
+      agreements: number;
+      activeAgreements: number;
+      completed: number;
+      compliant: number;
+      breaches: number;
+      vendor?: { name?: string };
+    }>([
+      { $match: { organizationId, createdAt: { $gte: query.startDate, $lte: query.endDate }, ...(query.vendorId ? { vendorId: query.vendorId } : {}) } },
+      {
+        $lookup: {
+          from: WorkOrder.collection.name,
+          let: { workOrderId: "$workOrderId", organizationId: "$organizationId" },
+          pipeline: [{ $match: { $expr: { $and: [{ $eq: ["$_id", "$$workOrderId"] }, { $eq: ["$organizationId", "$$organizationId"] }] } } }, { $project: { status: 1, createdAt: 1, completedAt: 1 } }],
+          as: "workOrder",
+        },
+      },
+      { $unwind: { path: "$workOrder", preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: "$vendorId",
+          agreements: { $sum: 1 },
+          activeAgreements: { $sum: { $cond: [{ $in: ["$status", ["accepted", "active"]] }, 1, 0] } },
+          completed: { $sum: { $cond: [{ $eq: ["$workOrder.status", "completed"] }, 1, 0] } },
+          compliant: { $sum: { $cond: [{ $and: [{ $eq: ["$workOrder.status", "completed"] }, { $lte: ["$workOrder.completedAt", { $dateAdd: { startDate: "$workOrder.createdAt", unit: "hour", amount: "$resolutionTimeHours" } }] }] }, 1, 0] } },
+          breaches: { $sum: { $cond: [{ $and: [{ $eq: ["$workOrder.status", "completed"] }, { $gt: ["$workOrder.completedAt", { $dateAdd: { startDate: "$workOrder.createdAt", unit: "hour", amount: "$resolutionTimeHours" } }] }] }, 1, 0] } },
+        },
+      },
+      { $lookup: { from: Vendor.collection.name, localField: "_id", foreignField: "_id", as: "vendor" } },
+      { $unwind: { path: "$vendor", preserveNullAndEmptyArrays: true } },
+    ]);
+    const reportRows = rows.map((row) => ({ vendorId: String(row._id), vendorName: row.vendor?.name ?? "Unknown vendor", agreements: row.agreements, completed: row.completed, compliant: row.compliant, breaches: row.breaches, complianceRate: row.completed ? Number(((row.compliant / row.completed) * 100).toFixed(2)) : 0 }));
+    const totalAgreements = reportRows.reduce((total, row) => total + row.agreements, 0);
+    const activeAgreements = rows.reduce((total, row) => total + row.activeAgreements, 0);
+    const completedWorkOrders = reportRows.reduce((total, row) => total + row.completed, 0);
+    const compliantWorkOrders = reportRows.reduce((total, row) => total + row.compliant, 0);
+    const breaches = reportRows.reduce((total, row) => total + row.breaches, 0);
+    return { totalAgreements, activeAgreements, completedWorkOrders, compliantWorkOrders, breaches, complianceRate: completedWorkOrders ? Number(((compliantWorkOrders / completedWorkOrders) * 100).toFixed(2)) : 0, vendors: reportRows.sort((a, b) => b.complianceRate - a.complianceRate) };
   }
 
   async vendorPerformance(query: ReportQuery, actor: ReportActor): Promise<VendorPerformanceReportDto> {

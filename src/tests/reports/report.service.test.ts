@@ -2,6 +2,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { WorkOrder } from "@/modules/work-orders/work-order.model.js";
 import { ServiceRequest } from "@/modules/service-requests/request.model.js";
 import { ReportService } from "@/modules/reports/report.service.js";
+import { SlaAgreement } from "@/modules/sla-agreements/sla-agreement.model.js";
 
 describe("ReportService dashboard scoping", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -109,6 +110,47 @@ describe("ReportService dashboard scoping", () => {
       completionRate: 75,
       onTimeRate: 66.67,
     });
+    expect(aggregate).toHaveBeenCalledOnce();
+    expect(aggregate.mock.calls[0]?.[0]).toEqual(expect.arrayContaining([
+      expect.objectContaining({ $group: expect.any(Object) }),
+      expect.objectContaining({ $lookup: expect.any(Object) }),
+    ]));
+  });
+
+  it("aggregates SLA compliance in MongoDB instead of loading agreements into Node", async () => {
+    const aggregate = vi.spyOn(SlaAgreement, "aggregate").mockResolvedValue([
+      {
+        _id: "vendor-1",
+        agreements: 2,
+        activeAgreements: 1,
+        completed: 2,
+        compliant: 1,
+        breaches: 1,
+        vendor: { name: "Acme Facilities" },
+      },
+    ] as never);
+
+    const result = await new ReportService().slaCompliance(
+      {
+        startDate: new Date("2026-01-01"),
+        endDate: new Date("2026-01-31"),
+        page: 1,
+        pageSize: 25,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as never,
+      { userId: "admin-1", role: "admin", organizationId: "org-1" },
+    );
+
+    expect(result).toMatchObject({
+      totalAgreements: 2,
+      activeAgreements: 1,
+      completedWorkOrders: 2,
+      compliantWorkOrders: 1,
+      breaches: 1,
+      complianceRate: 50,
+    });
+    expect(result.vendors[0]).toMatchObject({ vendorId: "vendor-1", complianceRate: 50 });
     expect(aggregate).toHaveBeenCalledOnce();
     expect(aggregate.mock.calls[0]?.[0]).toEqual(expect.arrayContaining([
       expect.objectContaining({ $group: expect.any(Object) }),
