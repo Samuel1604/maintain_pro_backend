@@ -39,6 +39,17 @@ production.
 Rotate any credential that has ever appeared outside a secret manager before
 deploying it.
 
+## Index migration prerequisite
+
+Do not rely on background Mongoose auto-index creation for production writes.
+Before enabling traffic for a release that adds a unique index, run the
+corresponding migration against a staging snapshot first, inspect duplicate
+records, remediate them explicitly, create the index, and verify it with
+`listIndexes`. In particular, verify the sparse unique
+`workorders.serviceRequestId` index before enabling concurrent service-request
+approval. The work-order race test intentionally calls `createIndexes()`
+before writes to model this release prerequisite.
+
 ## Build and deploy
 
 ```bash
