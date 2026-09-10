@@ -15,8 +15,8 @@ import { BILLING_CONFIG } from "./billing.config.js";
 
 export const getPlanCatalog = requestHandler(async (req, res) => {
   const audience = req.query.audience === "vendor" ? "vendor" : "organization";
-  const prices = BILLING_CONFIG.PLAN_PRICES_USD_MONTHLY[audience];
-  const trialPeriods = BILLING_CONFIG.PLAN_TRIAL_PERIOD_DAYS[audience];
+  const prices = BILLING_CONFIG.PLAN_PRICES_USD_MONTHLY[audience] ?? {};
+  const trialPeriods = BILLING_CONFIG.PLAN_TRIAL_PERIOD_DAYS[audience] ?? {};
   const plans = Object.entries(prices)
     .filter(([plan]) => audience === "organization" || plan !== "enterprise")
     .map(([plan, monthlyPrice]) => ({
