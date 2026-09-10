@@ -1,0 +1,31 @@
+services:
+  api:
+    build:
+      context: .
+    image: maintainpro-backend:${IMAGE_TAG:-latest}
+    command: ["node", "dist/server.js"]
+    env_file:
+      - ${DEPLOY_ENV_FILE:-.env.production}
+    environment:
+      NODE_ENV: production
+      PORT: 8000
+    ports:
+      - "${API_PORT:-8000}:8000"
+    restart: unless-stopped
+    init: true
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:8000/api/v1/health/live', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  worker:
+    image: maintainpro-backend:${IMAGE_TAG:-latest}
+    command: ["node", "dist/worker.js"]
+    env_file:
+      - ${DEPLOY_ENV_FILE:-.env.production}
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped
+    init: true
