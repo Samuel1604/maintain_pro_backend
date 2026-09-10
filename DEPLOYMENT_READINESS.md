@@ -58,7 +58,7 @@ npm ci
 npm run type-check
 npm run lint
 npm run build
-docker compose -f docker-compose.production.yml --env-file .env.production up -d --build
+DEPLOY_ENV_FILE=.env.production docker compose -f docker-compose.production.yml --env-file .env.production up -d --build
 ```
 
 For a managed host, use the same built image for both services and override
@@ -110,13 +110,15 @@ The current implementation has been verified locally with:
   against disposable MongoDB replica-set and Redis services. This includes
   concurrent billing webhook delivery, inventory race/idempotency checks, and
   work-order concurrency coverage.
-- Frontend: type-check, production build, lint, and route audit passing.
+- Frontend: tests, type-check, production build, lint, and 25-entry route
+  audit passing; frontend `npm audit` reports zero vulnerabilities.
 - Backend type-check and production build passed. Lint completed with zero
   errors and three existing warnings in the logger and user reader.
 - Security: `npm audit --omit=dev --audit-level=high` reports zero vulnerabilities.
 - Container: production image build, compiled import verification, dependency
   pruning, API live health (`200`), and API/worker SIGTERM exit code `0`.
-- Compose: production topology validates against `.env.production.example`.
+- Compose: production topology validates against `.env.production.example`
+  when invoked with `DEPLOY_ENV_FILE=.env.production.example`.
 
 These checks prove the repository implementation and runtime topology. They do
 not supply deployment-owned values. Before release, the owner must provide
