@@ -154,35 +154,73 @@ export class InventoryService {
     const { balance: updated, transaction } = result;
     await this.events.auditEvent(type === "consumption" ? "inventory.stock_consumed" : "inventory.stock_issued", actor.userId, organizationId, transaction._id.toString(), { itemId: data.itemId, quantity: data.quantity }); const response = this.balanceResponse(updated); if (response.availableQuantity <= item.reorderLevel) await this.events.lowStock(organizationId, actor.userId, item._id.toString(), item.name, response.availableQuantity); return response;
   }
-  async adjust(data: { itemId: string; stockLocationId: string; quantity: number; reason: string }, actor: InventoryActor) {
+  async adjust(data: { itemId: string; stockLocationId: string; quantity: number; reason: string; idempotencyKey?: string }, actor: InventoryActor) {
     const { organizationId, item } = await this.context(data.itemId, data.stockLocationId, actor);
+    if (data.idempotencyKey) {
+      const existing = await this.repository.findTransactionByIdempotencyKey(data.idempotencyKey, organizationId);
+      if (existing) {
+        const balance = (await this.repository.findBalances(organizationId, data.itemId, data.stockLocationId))[0];
+        if (balance) return this.balanceResponse(balance);
+      }
+    }
     try {
-      const { balance: updated, transaction } = await this.repository.adjustAtomic({ organizationId, itemId: data.itemId, stockLocationId: data.stockLocationId, quantity: data.quantity, unitOfMeasure: item.unitOfMeasure, reason: data.reason, performedBy: actor.userId });
+      const { balance: updated, transaction } = await this.repository.adjustAtomic({ organizationId, itemId: data.itemId, stockLocationId: data.stockLocationId, quantity: data.quantity, unitOfMeasure: item.unitOfMeasure, reason: data.reason, idempotencyKey: data.idempotencyKey, performedBy: actor.userId });
       await this.events.auditEvent("inventory.stock_adjusted", actor.userId, organizationId, transaction._id.toString());
       return this.balanceResponse(updated);
     } catch (error) {
       if (error instanceof Error && error.message === "INSUFFICIENT_STOCK") throw new ConflictException("Adjustment would create negative available stock");
+      if (data.idempotencyKey && error instanceof Error && (error as Error & { code?: number }).code === 11000) {
+        const balance = (await this.repository.findBalances(organizationId, data.itemId, data.stockLocationId))[0];
+        if (balance) return this.balanceResponse(balance);
+      }
       throw error;
     }
   }
-  async transfer(data: { itemId: string; sourceLocationId: string; destinationLocationId: string; quantity: number; reference?: string; notes?: string }, actor: InventoryActor) {
+  async transfer(data: { itemId: string; sourceLocationId: string; destinationLocationId: string; quantity: number; reference?: string; notes?: string; idempotencyKey?: string }, actor: InventoryActor) {
     const organizationId = this.requireRole(actor, stockRoles);
     if (data.sourceLocationId === data.destinationLocationId) throw new BusinessException("Transfer locations must differ");
     const { item } = await this.context(data.itemId, data.sourceLocationId, actor);
     await this.context(data.itemId, data.destinationLocationId, actor);
-    const transaction = await this.repository.transferAtomic({ organizationId, itemId: data.itemId, sourceLocationId: data.sourceLocationId, destinationLocationId: data.destinationLocationId, quantity: data.quantity, unitOfMeasure: item.unitOfMeasure, reference: data.reference, reason: data.notes, performedBy: actor.userId });
+    if (data.idempotencyKey) {
+      const existing = await this.repository.findTransactionByIdempotencyKey(data.idempotencyKey, organizationId);
+      if (existing) return existing;
+    }
+    let transaction;
+    try {
+      transaction = await this.repository.transferAtomic({ organizationId, itemId: data.itemId, sourceLocationId: data.sourceLocationId, destinationLocationId: data.destinationLocationId, quantity: data.quantity, unitOfMeasure: item.unitOfMeasure, reference: data.reference, reason: data.notes, idempotencyKey: data.idempotencyKey, performedBy: actor.userId });
+    } catch (error) {
+      if (data.idempotencyKey && error instanceof Error && (error as Error & { code?: number }).code === 11000) {
+        const existing = await this.repository.findTransactionByIdempotencyKey(data.idempotencyKey, organizationId);
+        if (existing) return existing;
+      }
+      throw error;
+    }
     if (!transaction) throw new ConflictException("Transfer could not be completed");
     await this.events.auditEvent("inventory.stock_transferred", actor.userId, organizationId, transaction._id.toString(), { sourceLocationId: data.sourceLocationId, destinationLocationId: data.destinationLocationId }); return transaction;
   }
-  async returnStock(data: { originalTransactionId: string; quantity: number; reason?: string }, actor: InventoryActor) {
+  async returnStock(data: { originalTransactionId: string; quantity: number; reason?: string; idempotencyKey?: string }, actor: InventoryActor) {
     const organizationId = this.organization(actor);
     try {
-      const { balance: updated, transaction } = await this.repository.returnAtomic({ organizationId, originalTransactionId: data.originalTransactionId, quantity: data.quantity, reason: data.reason, performedBy: actor.userId });
+      if (data.idempotencyKey) {
+        const existing = await this.repository.findTransactionByIdempotencyKey(data.idempotencyKey, organizationId);
+        if (existing) {
+          const balance = (await this.repository.findBalances(organizationId, existing.itemId.toString(), existing.stockLocationId.toString()))[0];
+          if (balance) return this.balanceResponse(balance);
+        }
+      }
+      const { balance: updated, transaction } = await this.repository.returnAtomic({ organizationId, originalTransactionId: data.originalTransactionId, quantity: data.quantity, reason: data.reason, idempotencyKey: data.idempotencyKey, performedBy: actor.userId });
       await this.events.auditEvent("inventory.stock_returned", actor.userId, organizationId, transaction._id.toString(), { originalTransactionId: data.originalTransactionId });
       return this.balanceResponse(updated);
     } catch (error) {
       if (error instanceof Error && error.message === "SOURCE_TRANSACTION_NOT_FOUND") throw new NotFoundException("Issue transaction not found");
       if (error instanceof Error && error.message === "RETURN_EXCEEDS_SOURCE") throw new ConflictException("Return exceeds issued quantity");
+      if (data.idempotencyKey && error instanceof Error && (error as Error & { code?: number }).code === 11000) {
+        const existing = await this.repository.findTransactionByIdempotencyKey(data.idempotencyKey, organizationId);
+        if (existing) {
+          const balance = (await this.repository.findBalances(organizationId, existing.itemId.toString(), existing.stockLocationId.toString()))[0];
+          if (balance) return this.balanceResponse(balance);
+        }
+      }
       throw error;
     }
   }

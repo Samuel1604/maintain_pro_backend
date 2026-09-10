@@ -12,20 +12,20 @@ import type { ClientSession } from "mongoose";
 export class InventoryRepository {
   listItems(organizationId: string, search?: string) {
     const filter = { organizationId, ...(search ? { $or: [{ name: { $regex: search, $options: "i" } }, { sku: { $regex: search, $options: "i" } }] } : {}) };
-    return InventoryItem.find(filter).sort({ name: 1 });
+    return InventoryItem.find(filter).sort({ name: 1 }).limit(100);
   }
   findItem(id: string, organizationId: string) { return InventoryItem.findOne({ _id: id, organizationId }); }
   createItem(data: Record<string, unknown>) { return InventoryItem.create(data); }
   updateItem(id: string, organizationId: string, data: Record<string, unknown>) { return InventoryItem.findOneAndUpdate({ _id: id, organizationId }, data, { new: true }); }
-  listCategories(organizationId: string) { return InventoryCategory.find({ organizationId, status: "active" }).sort({ name: 1 }); }
+  listCategories(organizationId: string) { return InventoryCategory.find({ organizationId, status: "active" }).sort({ name: 1 }).limit(100); }
   createCategory(data: Record<string, unknown>) { return InventoryCategory.create(data); }
   findCategory(id: string, organizationId: string) { return InventoryCategory.findOne({ _id: id, organizationId }); }
-  listLocations(organizationId: string) { return StockLocation.find({ organizationId }).sort({ name: 1 }); }
+  listLocations(organizationId: string) { return StockLocation.find({ organizationId }).sort({ name: 1 }).limit(100); }
   findLocation(id: string, organizationId: string) { return StockLocation.findOne({ _id: id, organizationId }); }
   createLocation(data: Record<string, unknown>) { return StockLocation.create(data); }
   updateLocation(id: string, organizationId: string, data: Record<string, unknown>) { return StockLocation.findOneAndUpdate({ _id: id, organizationId }, data, { new: true }); }
   ensureBalance(organizationId: string, itemId: string, stockLocationId: string, session?: ClientSession) { return StockBalance.findOneAndUpdate({ organizationId, itemId, stockLocationId }, { $setOnInsert: { quantity: 0, reservedQuantity: 0 } }, { upsert: true, new: true, ...(session ? { session } : {}) }); }
-  findBalances(organizationId: string, itemId?: string, stockLocationId?: string) { return StockBalance.find({ organizationId, ...(itemId ? { itemId } : {}), ...(stockLocationId ? { stockLocationId } : {}) }); }
+  findBalances(organizationId: string, itemId?: string, stockLocationId?: string) { return StockBalance.find({ organizationId, ...(itemId ? { itemId } : {}), ...(stockLocationId ? { stockLocationId } : {}) }).limit(1000); }
 
   async reconcile(organizationId: string) {
     const ledger = await InventoryTransaction.aggregate<{ _id: { itemId: unknown; stockLocationId: unknown }; quantity: number }>([
@@ -169,7 +169,7 @@ export class InventoryRepository {
     }
   }
 
-  async adjustAtomic(data: { organizationId: string; itemId: string; stockLocationId: string; quantity: number; unitOfMeasure: string; reason: string; performedBy: string }) {
+  async adjustAtomic(data: { organizationId: string; itemId: string; stockLocationId: string; quantity: number; unitOfMeasure: string; reason: string; idempotencyKey?: string; performedBy: string }) {
     const session = await mongoose.startSession();
     try {
       let result: { balance: IStockBalance; transaction: IInventoryTransaction } | undefined;
@@ -211,7 +211,7 @@ export class InventoryRepository {
     }
   }
 
-  async returnAtomic(data: { organizationId: string; originalTransactionId: string; quantity: number; reason?: string; performedBy: string }) {
+  async returnAtomic(data: { organizationId: string; originalTransactionId: string; quantity: number; reason?: string; idempotencyKey?: string; performedBy: string }) {
     const session = await mongoose.startSession();
     try {
       let result: { balance: IStockBalance; transaction: IInventoryTransaction } | undefined;
@@ -223,7 +223,7 @@ export class InventoryRepository {
         const balance = await this.ensureBalance(data.organizationId, original.itemId.toString(), original.stockLocationId.toString(), session);
         const updated = await this.increaseBalance(balance._id.toString(), data.quantity, session);
         if (!updated) throw new Error("RETURN_BALANCE_UPDATE_FAILED");
-        const transaction = await this.createTransaction({ organizationId: data.organizationId, itemId: original.itemId, stockLocationId: original.stockLocationId, type: "return", quantity: data.quantity, unitOfMeasure: original.unitOfMeasure, workOrderId: original.workOrderId, relatedTransactionId: original._id, reason: data.reason, performedBy: data.performedBy }, session);
+        const transaction = await this.createTransaction({ ...data, itemId: original.itemId, stockLocationId: original.stockLocationId, type: "return", quantity: data.quantity, unitOfMeasure: original.unitOfMeasure, workOrderId: original.workOrderId, relatedTransactionId: original._id }, session);
         result = { balance: updated, transaction };
       });
       if (!result) throw new Error("RETURN_TRANSACTION_FAILED");
@@ -232,7 +232,7 @@ export class InventoryRepository {
       await session.endSession();
     }
   }
-  async transferAtomic(data: { organizationId: string; itemId: string; sourceLocationId: string; destinationLocationId: string; quantity: number; unitOfMeasure: string; reference?: string; reason?: string; performedBy: string }) {
+  async transferAtomic(data: { organizationId: string; itemId: string; sourceLocationId: string; destinationLocationId: string; quantity: number; unitOfMeasure: string; reference?: string; reason?: string; idempotencyKey?: string; performedBy: string }) {
     const session = await mongoose.startSession();
     try {
       let transaction: IInventoryTransaction | undefined;
