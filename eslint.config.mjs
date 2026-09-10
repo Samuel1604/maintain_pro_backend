@@ -55,7 +55,7 @@ export default [
             "no-console": [
                 "warn",
                 {
-                    allow: ["warn", "error"],
+                    allow: ["info", "debug", "warn", "error"],
                 },
             ],
         },

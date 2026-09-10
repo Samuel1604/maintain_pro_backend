@@ -30,6 +30,7 @@ export const errorHandler = (
     loggerService.warn(`Handled validation error: ${err.message}`, {
       path: req.path,
       method: req.method,
+      requestId: req.requestId,
     });
 
     const payload = ResponseBuilder.buildError(
@@ -49,6 +50,7 @@ export const errorHandler = (
       method: req.method,
       statusCode: err.statusCode,
       code: err.code,
+      requestId: req.requestId,
     });
 
     const payload = ResponseBuilder.buildError(
@@ -72,6 +74,7 @@ export const errorHandler = (
     method: req.method,
     statusCode,
     stack: err.stack,
+    requestId: req.requestId,
   });
 
   // Never echo an unrecognized error's message back to the client in
