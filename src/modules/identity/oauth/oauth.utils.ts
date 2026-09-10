@@ -24,8 +24,5 @@ export async function saveOAuthState(nonce: string, state: string): Promise<void
 
 export async function consumeOAuthState(nonce: string, state: string): Promise<boolean> {
   const key = `oauth:state:${nonce}`;
-  const stored = await stateStore.get(key);
-  if (!stored || stored !== state) return false;
-  await stateStore.delete(key);
-  return true;
+  return stateStore.deleteIfValue(key, state);
 }

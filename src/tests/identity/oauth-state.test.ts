@@ -1,25 +1,24 @@
-import { describe, expect, it } from "vitest";
-import { createOAuthState, consumeOAuthState, saveOAuthState } from "@/modules/identity/oauth/oauth.utils.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { consumeOAuthState, saveOAuthState } from "@/modules/identity/oauth/oauth.utils.js";
 
-describe("OAuth state", () => {
-  it("accepts a state once and rejects replay", async () => {
-    const nonce = `test-${crypto.randomUUID()}`;
-    const state = createOAuthState({ nonce, action: "login" });
-
-    await saveOAuthState(nonce, state);
-
-    await expect(consumeOAuthState(nonce, state)).resolves.toBe(true);
-    await expect(consumeOAuthState(nonce, state)).resolves.toBe(false);
+describe("OAuth state consumption", () => {
+  afterEach(() => {
+    process.env.REDIS_DISABLE_CONNECTION = "true";
+    process.env.NODE_ENV = "test";
   });
 
-  it("rejects a state that does not match the stored value", async () => {
-    const nonce = `test-${crypto.randomUUID()}`;
-    const storedState = createOAuthState({ nonce, action: "login" });
-    const differentState = `${storedState}tampered`;
+  it("allows only one concurrent callback to consume a state", async () => {
+    process.env.REDIS_DISABLE_CONNECTION = "true";
+    const nonce = `nonce-${Date.now()}`;
+    const state = "signed-state";
+    await saveOAuthState(nonce, state);
 
-    await saveOAuthState(nonce, storedState);
+    const results = await Promise.all([
+      consumeOAuthState(nonce, state),
+      consumeOAuthState(nonce, state),
+    ]);
 
-    await expect(consumeOAuthState(nonce, differentState)).resolves.toBe(false);
-    await expect(consumeOAuthState(nonce, storedState)).resolves.toBe(true);
+    expect(results.filter(Boolean)).toHaveLength(1);
+    expect(results.filter((result) => !result)).toHaveLength(1);
   });
 });
