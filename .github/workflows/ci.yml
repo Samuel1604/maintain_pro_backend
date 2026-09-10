@@ -51,3 +51,14 @@ jobs:
           REDIS_PORT: "6379"
       - name: Build production container
         run: docker build -t maintainpro-backend:ci .
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-ci-diagnostics
+          if-no-files-found: ignore
+          path: |
+            npm-debug.log
+            **/npm-debug.log
+            coverage/
+            dist/
