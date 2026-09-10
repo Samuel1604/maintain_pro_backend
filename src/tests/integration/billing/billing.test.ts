@@ -334,6 +334,41 @@ describe("idempotency", () => {
     expect(res.body.data.status).toBe("active");
     expect(res.body.data.plan).toBe("starter");
   });
+
+  it("handles concurrent deliveries of the same webhook idempotently", async () => {
+    const app = await createTestApp();
+    const { accessToken } = await loginAsOrganizationAdmin();
+
+    await request(app)
+      .post("/api/v1/billing/subscription")
+      .set("Cookie", [`accessToken=${accessToken}`])
+      .send({ plan: "starter" });
+
+    const checkout = await request(app)
+      .post("/api/v1/billing/subscription/checkout")
+      .set("Cookie", [`accessToken=${accessToken}`])
+      .send({ provider: "mock" });
+
+    const provider = new MockPaymentProvider();
+    const payload = Buffer.from(JSON.stringify({
+      providerCheckoutId: `mock_checkout_${checkout.body.data.paymentId}`,
+      outcome: "succeeded",
+    }));
+    const signature = provider.sign(payload);
+    const deliveries = await Promise.all(
+      Array.from({ length: 5 }, () => request(app)
+        .post("/api/v1/billing/webhooks/mock")
+        .set("x-mock-signature", signature)
+        .set("Content-Type", "application/json")
+        .send(payload)),
+    );
+
+    expect(deliveries.every((delivery) => delivery.status === 200)).toBe(true);
+    const subscription = await request(app)
+      .get("/api/v1/billing/subscription")
+      .set("Cookie", [`accessToken=${accessToken}`]);
+    expect(subscription.body.data.status).toBe("active");
+  });
 });
 
 describe("cancellation and plan changes", () => {
