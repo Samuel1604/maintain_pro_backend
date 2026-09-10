@@ -11,6 +11,28 @@ import {
 } from "./billing.schema.js";
 import { PaymentMethodService } from "./payments/payment-method.service.js";
 import { paymentMethodSchema } from "./payments/payment-method.schema.js";
+import { BILLING_CONFIG } from "./billing.config.js";
+
+export const getPlanCatalog = requestHandler(async (req, res) => {
+  const audience = req.query.audience === "vendor" ? "vendor" : "organization";
+  const prices = BILLING_CONFIG.PLAN_PRICES_USD_MONTHLY[audience];
+  const trialPeriods = BILLING_CONFIG.PLAN_TRIAL_PERIOD_DAYS[audience];
+  const plans = Object.entries(prices)
+    .filter(([plan]) => audience === "organization" || plan !== "enterprise")
+    .map(([plan, monthlyPrice]) => ({
+      id: plan,
+      monthlyPrice,
+      annualPrice: Math.round(monthlyPrice * (1 - BILLING_CONFIG.ANNUAL_DISCOUNT_PERCENT / 100)),
+      trialDays: trialPeriods[plan] ?? BILLING_CONFIG.TRIAL_PERIOD_DAYS,
+    }));
+
+  return res.ok({
+    audience,
+    currency: "USD",
+    annualDiscountPercent: BILLING_CONFIG.ANNUAL_DISCOUNT_PERCENT,
+    plans,
+  }, "Billing plan catalog retrieved");
+});
 
 const service = new BillingService();
 const paymentMethodService = new PaymentMethodService();
@@ -126,7 +148,7 @@ export const initiateCheckout = requestHandler<AuthRequest>(
     }
 
     const provider = req.body?.provider || req.query?.provider;
-    const result = await service.initiateCheckout(subDto.id, provider);
+    const result = await service.initiateCheckout(subDto.id, provider, req.get("Idempotency-Key") ?? undefined);
 
     return res.ok(result);
   },
