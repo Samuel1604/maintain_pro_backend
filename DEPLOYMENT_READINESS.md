@@ -126,3 +126,25 @@ managed MongoDB and Redis endpoints, HTTPS domains, mail and storage
 credentials, provider webhook secrets, rotated JWT/OAuth secrets, and a clean
 reviewed Git status. Provider dashboards must also confirm signed Paystack,
 Stripe, and Flutterwave callbacks against the deployed HTTPS URL.
+
+## Owner release checklist
+
+The release owner must attach evidence for each item below before promoting
+the image:
+
+- [ ] Managed MongoDB URI supplied, TLS enabled, backups/restore procedure
+      tested, and the sparse `workorders.serviceRequestId` index verified
+      after duplicate-data review.
+- [ ] Managed Redis URI supplied, TLS/authentication verified, and queue
+      persistence/eviction policy reviewed.
+- [ ] `CLIENT_URL`, `FRONTEND_URL`, cookie domain, and CORS origins point to
+      the deployed HTTPS domains.
+- [ ] JWT access/refresh secrets, OAuth state secret, mail credentials,
+      storage credentials, and provider secrets supplied through the platform
+      secret manager and rotated from any development values.
+- [ ] Paystack, Stripe, and Flutterwave signatures tested against the public
+      webhook URLs; duplicate delivery responses remain idempotent.
+- [ ] API and worker services deployed from the same image tag; API readiness
+      is healthy and the worker successfully consumes a representative job.
+- [ ] Rollback image tag, database backup, secret-rotation owner, and incident
+      contact recorded before traffic is enabled.
