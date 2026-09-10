@@ -111,7 +111,7 @@ export class InventoryRepository {
       await session.endSession();
     }
   }
-  findTransactions(organizationId: string, filter: Record<string, unknown>) { return InventoryTransaction.find({ organizationId, ...filter }).sort({ createdAt: -1 }); }
+  findTransactions(organizationId: string, filter: Record<string, unknown>) { return InventoryTransaction.find({ organizationId, ...filter }).sort({ createdAt: -1 }).limit(1000); }
   findTransaction(id: string, organizationId: string) { return InventoryTransaction.findOne({ _id: id, organizationId }); }
   findTransactionByIdempotencyKey(idempotencyKey: string, organizationId: string) { return InventoryTransaction.findOne({ idempotencyKey, organizationId }); }
   findTransactionsBySource(sourceTransactionId: string, organizationId: string, type?: string, session?: ClientSession) { return InventoryTransaction.find({ sourceTransactionId, organizationId, ...(type ? { type: type as IInventoryTransaction["type"] } : {}) } as Record<string, unknown>, undefined, session ? { session } : undefined); }
