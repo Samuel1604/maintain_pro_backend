@@ -144,6 +144,9 @@ the image:
 - [ ] JWT access/refresh secrets, OAuth state secret, mail credentials,
       storage credentials, and provider secrets supplied through the platform
       secret manager and rotated from any development values.
+- [ ] The selected `BILLING_DEFAULT_PROVIDER` has its required credentials:
+      provider secret for Paystack; provider and webhook secrets for Stripe;
+      provider secret and webhook secret hash for Flutterwave.
 - [ ] Paystack, Stripe, and Flutterwave signatures tested against the public
       webhook URLs; duplicate delivery responses remain idempotent.
 - [ ] API and worker services deployed from the same image tag; API readiness
