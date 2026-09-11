@@ -9,6 +9,7 @@
     "worker:dev": "tsx watch src/worker.ts",
     "worker:start": "node dist/worker.js",
     "build": "tsc && tsc-alias && node scripts/verify-build.mjs",
+    "release:verify": "node scripts/verify-release.mjs",
     "start": "node dist/server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
