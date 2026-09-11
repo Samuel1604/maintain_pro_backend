@@ -1,15 +1,9 @@
-// src/config/logger.js
-// TODO: Implement logger configuration (e.g., Winston or Pino)
+/**
+ * Backward-compatible logger export for older imports.
+ * New code should depend on the logger service/container directly.
+ */
+import { ConsoleLogger } from "@/infrastructure/logging/console.logger.js";
 
-const logger = {
-  info: (message: string, ...args: unknown[]) =>
-    console.log(`[INFO] ${message}`, ...args),
-  warn: (message: string, ...args: unknown[]) =>
-    console.warn(`[WARN] ${message}`, ...args),
-  error: (message: string, ...args: unknown[]) =>
-    console.error(`[ERROR] ${message}`, ...args),
-  debug: (message: string, ...args: unknown[]) =>
-    console.debug(`[DEBUG] ${message}`, ...args),
-};
+const logger = new ConsoleLogger();
 
 export default logger;
