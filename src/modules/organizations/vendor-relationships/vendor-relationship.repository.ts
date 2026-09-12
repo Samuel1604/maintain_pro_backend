@@ -46,12 +46,14 @@ export class VendorRelationshipRepository {
   facilityVendors(organizationId: string, facilityId: string) {
     return FacilityVendor.find({ organizationId, facilityId })
       .populate("vendorId")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(100);
   }
   vendorFacilities(organizationId: string, vendorId: string) {
     return FacilityVendor.find({ organizationId, vendorId })
       .populate("facilityId")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(100);
   }
   associate(data: Record<string, unknown>) {
     return FacilityVendor.create(data);
