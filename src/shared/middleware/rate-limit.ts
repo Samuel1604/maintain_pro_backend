@@ -1,4 +1,4 @@
-import rateLimit, { type Store } from "express-rate-limit";
+import rateLimit, { ipKeyGenerator, type Store } from "express-rate-limit";
 import type { Request } from "express";
 import { RedisService } from "@/shared/services/redis.service.js";
 
@@ -120,7 +120,8 @@ export const securityMutationLimiter = rateLimit({
   // cancel, and plan validation exhaust the budget across unrelated routes.
   keyGenerator: (req) => {
     const request = req as Request & { user?: { userId?: string } };
-    return `${request.user?.userId ?? request.ip ?? "unknown"}:${request.baseUrl}:${request.path}`;
+    const identity = request.user?.userId ?? ipKeyGenerator(request.ip ?? "unknown");
+    return `${identity}:${request.baseUrl}:${request.path}`;
   },
   message: "Too many security changes. Please try again later.",
 });
