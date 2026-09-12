@@ -27,6 +27,7 @@ import {
 import { hashPassword, comparePassword } from "@/shared/utils/bcrypt.js";
 
 import { toObjectId } from "@/shared/validators/index.js";
+import { isDuplicateKeyError } from "@/shared/utils/mongo-errors.js";
 
 import { RedisService } from "@/shared/services/redis.service.js";
 import { RateLimitService } from "@/shared/services/rate-limit.service.js";
@@ -440,7 +441,15 @@ export class UserService {
       return user;
     }
 
-    return this.repository.update(user._id, updates);
+    try {
+      return await this.repository.update(user._id, updates);
+    } catch (error) {
+      // A concurrent OAuth callback may win the provider unique index between
+      // the lookup above and this update. Treat that race as a failed link,
+      // never as a successful login to the wrong account.
+      if (isDuplicateKeyError(error)) return null;
+      throw error;
+    }
   }
 
   async markEmailVerified(userId: string): Promise<void> {

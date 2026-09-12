@@ -115,10 +115,24 @@ const userSchema = new Schema<IUser>(
     googleId: String,
     appleId: String,
     linkedinId: String,
+
+    // Set only for temp-invitation users — auto-cleaned after 15 min TTL
+    tempPasswordExpiresAt: {
+      type: Date,
+      index: true,
+    },
   },
   {
     timestamps: true,
   },
 );
+
+// A provider identity is globally unique. Sparse indexes preserve support
+// for local users and users who have not linked a given provider yet, while
+// preventing concurrent OAuth callbacks from linking one provider account to
+// multiple MaintainPro users.
+userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
+userSchema.index({ linkedinId: 1 }, { unique: true, sparse: true });
+userSchema.index({ appleId: 1 }, { unique: true, sparse: true });
 
 export const User = model<IUser>("User", userSchema);
