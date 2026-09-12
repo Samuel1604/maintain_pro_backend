@@ -21,4 +21,17 @@ describe("OAuth state consumption", () => {
     expect(results.filter(Boolean)).toHaveLength(1);
     expect(results.filter((result) => !result)).toHaveLength(1);
   });
+
+  it("rejects a callback carrying a different signed state for the same nonce", async () => {
+    process.env.REDIS_DISABLE_CONNECTION = "true";
+    const nonce = `nonce-${Date.now()}-mismatch`;
+    await saveOAuthState(nonce, "state-from-browser-a");
+
+    await expect(
+      consumeOAuthState(nonce, "state-from-browser-b"),
+    ).resolves.toBe(false);
+    await expect(
+      consumeOAuthState(nonce, "state-from-browser-a"),
+    ).resolves.toBe(true);
+  });
 });
