@@ -1,0 +1,74 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Start disposable MongoDB and Redis
+        run: docker compose -f docker-compose.infrastructure.yml up -d mongodb redis
+
+      - name: Initialize MongoDB replica set
+        shell: bash
+        run: |
+          for attempt in {1..30}; do
+            if docker compose -f docker-compose.infrastructure.yml exec -T mongodb mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1; then
+              break
+            fi
+            sleep 2
+          done
+          docker compose -f docker-compose.infrastructure.yml exec -T mongodb mongosh --quiet --eval \
+            'try { rs.status() } catch (error) { rs.initiate({_id:"rs0", members:[{_id:0, host:"localhost:27017"}]}) }'
+
+      - name: Run database-backed tests
+        env:
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/maintainpro_test?replicaSet=rs0
+          REDIS_DISABLE_CONNECTION: "false"
+          TEST_USE_REDIS: "true"
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+        run: npm test -- --reporter=verbose
+
+      - name: Upload diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-ci-diagnostics
+          path: |
+            npm-debug.log*
+            test-results/**
+          if-no-files-found: ignore
+
+      - name: Tear down disposable services
+        if: always()
+        run: docker compose -f docker-compose.infrastructure.yml down
