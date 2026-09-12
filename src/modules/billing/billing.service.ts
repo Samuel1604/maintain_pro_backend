@@ -251,13 +251,25 @@ export class BillingService {
     });
 
     const gateway = createPaymentProvider(provider);
-    const checkoutResult = await gateway.initiateCheckout({
-      paymentId: payment._id.toString(),
-      idempotencyKey: operationKey,
-      plan: subscription.plan,
-      amount: amountCents,
-      currency: "usd",
-    });
+    let checkoutResult;
+    try {
+      checkoutResult = await gateway.initiateCheckout({
+        paymentId: payment._id.toString(),
+        idempotencyKey: operationKey,
+        plan: subscription.plan,
+        amount: amountCents,
+        currency: "usd",
+      });
+    } catch (error) {
+      // Do not leave an unusable pending payment that future requests would
+      // incorrectly reuse. The failed attempt remains auditable and a retry
+      // can create a fresh provider checkout.
+      await this.paymentRepository.update(payment._id.toString(), {
+        status: "failed",
+        failureReason: error instanceof Error ? error.message : "Checkout initialization failed",
+      });
+      throw error;
+    }
 
     await this.paymentRepository.update(payment._id.toString(), {
       providerCheckoutId: checkoutResult.providerCheckoutId,
