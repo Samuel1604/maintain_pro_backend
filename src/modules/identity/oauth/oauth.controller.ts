@@ -144,8 +144,6 @@ export class OAuthController {
       throw new ValidationException("Authorization code missing");
     }
 
-    const profile = await this.service.verify(provider, code);
-
     const payload = verifyOAuthState(state);
     if (!payload.nonce || payload.nonce !== req.cookies?.oauthStateNonce) {
       throw new ValidationException("OAuth state does not match the initiating browser session");
@@ -153,6 +151,11 @@ export class OAuthController {
     const consumed = await consumeOAuthState(payload.nonce, state);
     if (!consumed) throw new ValidationException("OAuth state is invalid or has already been used");
     res.clearCookie("oauthStateNonce", { path: "/api/v1/auth/oauth" });
+
+    // Reject forged, replayed, or cross-browser callbacks before exchanging
+    // the provider code. This avoids unnecessary provider calls and ensures
+    // the callback is bound to the browser session that initiated it.
+    const profile = await this.service.verify(provider, code);
 
     const session = await buildSessionMetadata(req);
 
