@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import {
   AuthorizationException,
   NotFoundException,
@@ -34,11 +34,12 @@ import { WorkOrder } from "./work-order.model.js";
 import type { IWorkOrder } from "./work-order.model.js";
 
 import { isSameObjectId, toObjectId } from "@/shared/validators/index.js";
-import { eventPublisher } from "@/container/index.js";
 import { BusinessFactEvent } from "@/infrastructure/events/business-fact.event.js";
 import { RedisCache } from "@/infrastructure/cache/redis.cache.js";
 import { cacheKeys, cacheTtlSeconds } from "@/infrastructure/cache/cache-keys.js";
 import { cacheHash } from "@/shared/utils/cache-hash.js";
+import { OutboxEventRepository } from "@/infrastructure/events/outbox/outbox-event.repository.js";
+import { serializeDomainEvent } from "@/infrastructure/events/bus/serialized-domain-event.js";
 
 type Actor = {
   userId: string;
@@ -56,6 +57,7 @@ const vendorApplicantRoles: string[] = [
 export class WorkOrderService {
   private repository = new WorkOrderRepository();
   private cache = new RedisCache();
+  private outbox = new OutboxEventRepository();
 
   private async invalidateDerivedCaches(organizationId?: string) {
     if (!organizationId) return;
@@ -159,10 +161,9 @@ export class WorkOrderService {
     this.assertManager(actor);
     const workOrder = await this.get(id, actor);
     Object.assign(workOrder, input);
-    const saved = await workOrder.save();
+    const saved = await this.saveWithOutbox(workOrder, "WorkOrderStatusChanged", actor.userId);
     if (actor.organizationId) await this.cache.delete(cacheKeys.workOrder(actor.organizationId, id));
     if (actor.organizationId) await this.cache.deleteByPattern(`${cacheKeys.tenantPrefix(actor.organizationId)}work-orders:list:*`);
-    await this.publish("WorkOrderStatusChanged", saved, actor.userId);
     return saved;
   }
 
@@ -176,10 +177,9 @@ export class WorkOrderService {
       throw new BusinessException("Active work orders cannot be archived");
       }
     workOrder.status = WORK_ORDER_STATUS.CANCELLED;
-    const saved = await workOrder.save();
+    const saved = await this.saveWithOutbox(workOrder, "WorkOrderStatusChanged", actor.userId);
     if (actor.organizationId) await this.cache.delete(cacheKeys.workOrder(actor.organizationId, id));
     if (actor.organizationId) await this.cache.deleteByPattern(`${cacheKeys.tenantPrefix(actor.organizationId)}work-orders:list:*`);
-    await this.publish("WorkOrderStatusChanged", saved, actor.userId);
     return saved;
   }
 
@@ -225,13 +225,11 @@ export class WorkOrderService {
     if (data.serviceRequestId) optionalRefs.serviceRequestId = toObjectId(data.serviceRequestId);
 
     if (data.fulfillmentType === FULFILLMENT_TYPE.MARKETPLACE) {
-      const workOrder = await this.repository.create({
+      const workOrder = await this.createWithOutbox({
         ...base,
         ...optionalRefs,
         status: WORK_ORDER_STATUS.OPEN,
-      });
-
-      await this.publish("WorkOrderCreated", workOrder, actor.userId);
+      }, actor.userId);
       await this.invalidateDerivedCaches(actor.organizationId);
       return {
         success: true,
@@ -248,14 +246,12 @@ export class WorkOrderService {
 
     await this.assertInternalTechnician(technicianId, data.organizationId);
 
-    const workOrder = await this.repository.create({
+    const workOrder = await this.createWithOutbox({
       ...base,
       ...optionalRefs,
       status: WORK_ORDER_STATUS.ASSIGNED,
       assignedTechnicianId: toObjectId(technicianId),
-    });
-
-    await this.publish("WorkOrderCreated", workOrder, actor.userId);
+    }, actor.userId);
     await this.invalidateDerivedCaches(actor.organizationId);
     return {
       success: true,
@@ -321,7 +317,7 @@ export class WorkOrderService {
     const relationships = await OrganizationVendorRelationship.find({
       vendorId: user.vendorId,
       status: "active",
-    });
+    }).limit(100);
     if (!relationships.length)
       throw new AuthorizationException(
         "Vendor has no active marketplace relationship",
@@ -351,7 +347,7 @@ export class WorkOrderService {
     const policies = await MarketplaceGeographicPolicy.find({
       organizationId: { $in: organizationIds },
       enabled: true,
-    });
+    }).limit(100);
     const policyMap = new Map(
       policies.map((policy) => [
         `${policy.organizationId.toString()}:${policy.priority}`,
@@ -494,9 +490,8 @@ export class WorkOrderService {
     }
 
     workOrder.status = data.status;
-    const saved = await workOrder.save();
+    const saved = await this.saveWithOutbox(workOrder, "WorkOrderStatusChanged", actor.userId);
     await this.invalidateDerivedCaches(actor.organizationId ?? workOrder.organizationId?.toString());
-    await this.publish("WorkOrderStatusChanged", saved, actor.userId);
 
     return {
       success: true,
@@ -535,9 +530,8 @@ export class WorkOrderService {
       changedBy: toObjectId(actor.userId),
       reason,
     });
-    const saved = await workOrder.save();
+    const saved = await this.saveWithOutbox(workOrder, "WorkOrderStatusChanged", actor.userId);
     await this.invalidateDerivedCaches(actor.organizationId ?? workOrder.organizationId?.toString());
-    await this.publish("WorkOrderStatusChanged", saved, actor.userId);
     return {
       success: true,
       message: "Work order status updated successfully",
@@ -568,8 +562,7 @@ export class WorkOrderService {
     workOrder.assignedVendorId = undefined;
     workOrder.assignedVendorTechnicianId = undefined;
     workOrder.status = WORK_ORDER_STATUS.ASSIGNED;
-    const saved = await workOrder.save();
-    await this.publish("WorkOrderAssigned", saved, actor.userId);
+    const saved = await this.saveWithOutbox(workOrder, "WorkOrderAssigned", actor.userId);
     return {
       success: true,
       message: "Work order assigned successfully",
@@ -586,7 +579,8 @@ export class WorkOrderService {
       status: "active",
     })
       .select("_id firstName lastName email")
-      .sort({ firstName: 1, lastName: 1 });
+      .sort({ firstName: 1, lastName: 1 })
+      .limit(100);
     return {
       data: users.map((user) => ({
         id: user._id.toString(),
@@ -623,8 +617,7 @@ export class WorkOrderService {
     workOrder.approvedAt = now;
     workOrder.completedAt = now;
 
-    const saved = await workOrder.save();
-    await this.publish("WorkOrderStatusChanged", saved, actor.userId);
+    const saved = await this.saveWithOutbox(workOrder, "WorkOrderStatusChanged", actor.userId);
 
     return {
       success: true,
@@ -660,8 +653,7 @@ export class WorkOrderService {
     workOrder.reviewedBy = toObjectId(actor.userId);
     workOrder.reviewedAt = new Date();
 
-    const saved = await workOrder.save();
-    await this.publish("WorkOrderStatusChanged", saved, actor.userId);
+    const saved = await this.saveWithOutbox(workOrder, "WorkOrderStatusChanged", actor.userId);
 
     return {
       success: true,
@@ -679,8 +671,7 @@ export class WorkOrderService {
     workOrder.approvalNotes = data.note;
     workOrder.reviewedBy = toObjectId(actor.userId);
     workOrder.reviewedAt = new Date();
-    const saved = await workOrder.save();
-    await this.publish("WorkOrderStatusChanged", saved, actor.userId);
+    const saved = await this.saveWithOutbox(workOrder, "WorkOrderStatusChanged", actor.userId);
     return { success: true, message: "Additional information requested", data: saved };
   }
 
@@ -700,34 +691,94 @@ export class WorkOrderService {
     }
   }
 
-  private async publish(
-    name: "WorkOrderCreated" | "WorkOrderAssigned" | "WorkOrderStatusChanged",
-    workOrder: IWorkOrder,
+  private async createWithOutbox(
+    data: Partial<IWorkOrder>,
     actorId: string,
-  ): Promise<void> {
-    await eventPublisher.publish(
-      new BusinessFactEvent(
-        name,
-        {
-          workOrderId: workOrder._id.toString(),
-          facilityId: workOrder.facilityId.toString(),
-          ...(workOrder.assignedVendorId
-            ? { assignedVendorId: workOrder.assignedVendorId.toString() }
-            : {}),
-          ...(workOrder.assignedTechnicianId
-            ? {
-                assignedTechnicianId: workOrder.assignedTechnicianId.toString(),
-              }
-            : {}),
-        },
-        {
-          organizationId: workOrder.organizationId.toString(),
-          actorId,
-          aggregateType: "work_order",
-          aggregateId: workOrder._id.toString(),
-        },
-      ),
-    );
+  ): Promise<IWorkOrder> {
+    const session = await mongoose.startSession();
+    try {
+      let created!: IWorkOrder;
+      await session.withTransaction(async () => {
+        created = await this.repository.create(data, session);
+        const event = new BusinessFactEvent(
+          "WorkOrderCreated",
+          {
+            workOrderId: created._id.toString(),
+            facilityId: created.facilityId.toString(),
+            ...(created.assignedVendorId
+              ? { assignedVendorId: created.assignedVendorId.toString() }
+              : {}),
+            ...(created.assignedTechnicianId
+              ? { assignedTechnicianId: created.assignedTechnicianId.toString() }
+              : {}),
+          },
+          {
+            organizationId: created.organizationId.toString(),
+            actorId,
+            aggregateType: "work_order",
+            aggregateId: created._id.toString(),
+          },
+        );
+        await this.outbox.append(
+          {
+            eventId: event.eventId,
+            eventType: event.name,
+            aggregateId: event.aggregateId,
+            aggregateType: event.aggregateType,
+            payload: serializeDomainEvent(event) as unknown as Record<string, unknown>,
+          },
+          session,
+        );
+      });
+      return created;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  private async saveWithOutbox(
+    workOrder: IWorkOrder,
+    eventName: "WorkOrderAssigned" | "WorkOrderStatusChanged",
+    actorId: string,
+  ): Promise<IWorkOrder> {
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        await workOrder.save({ session });
+        const event = new BusinessFactEvent(
+          eventName,
+          {
+            workOrderId: workOrder._id.toString(),
+            facilityId: workOrder.facilityId.toString(),
+            ...(workOrder.assignedVendorId
+              ? { assignedVendorId: workOrder.assignedVendorId.toString() }
+              : {}),
+            ...(workOrder.assignedTechnicianId
+              ? { assignedTechnicianId: workOrder.assignedTechnicianId.toString() }
+              : {}),
+          },
+          {
+            organizationId: workOrder.organizationId.toString(),
+            actorId,
+            aggregateType: "work_order",
+            aggregateId: workOrder._id.toString(),
+          },
+        );
+        await this.outbox.append(
+          {
+            eventId: event.eventId,
+            eventType: event.name,
+            aggregateId: event.aggregateId,
+            aggregateType: event.aggregateType,
+            payload: serializeDomainEvent(event) as unknown as Record<string, unknown>,
+          },
+          session,
+        );
+      });
+      return workOrder;
+    } finally {
+      await session.endSession();
+    }
   }
 
   private assertVendorApplicant(actor: Actor) {
