@@ -64,8 +64,8 @@ router.post(
 
 router.post("/login", authLimiter, validate(loginSchema), authController.login);
 router.post("/refresh", refreshLimiter, sessionController.refresh);
-router.post("/logout", authMiddleware, sessionController.logout);
-router.post("/logout-all", authMiddleware, sessionController.logoutAll);
+router.post("/logout", authMiddleware, securityMutationLimiter, sessionController.logout);
+router.post("/logout-all", authMiddleware, securityMutationLimiter, sessionController.logoutAll);
 router.post(
   "/verify-otp",
   otpVerifyLimiter,
@@ -116,6 +116,7 @@ router.post(
   "/change-email",
   otpRateLimit,
   authMiddleware,
+  securityMutationLimiter,
   validate(changeEmailSchema),
   authController.changeEmail,
 );
@@ -131,6 +132,7 @@ router.get("/sessions", authMiddleware, sessionController.getSession);
 router.delete(
   "/sessions/:id",
   authMiddleware,
+  securityMutationLimiter,
   validate(revokeSessionParamsSchema),
   sessionController.revokeSession,
 );
