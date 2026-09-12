@@ -1,55 +1,78 @@
-import { AppError } from "@/shared/errors/AppError.js";
-import { ROLES } from "@/shared/constants/roles.js";
-import { User } from "./user.model.js";
-import type { IUser } from "./user.types.js";
+import { Types } from "mongoose";
+
 import { UserRepository } from "./user.repository.js";
+import type { IUser } from "./user.types.js";
+
+import { ROLES } from "@/shared/constants/roles.js";
+
 import type { AuthProvider } from "@/shared/constants/auth-providers.js";
+
 import type {
   RegisterOrgDto,
   RegisterVendorDto,
-} from "../auth/dto/auth.dto.js";
-import { Types } from "mongoose";
-import { hashPassword } from "@/shared/utils/bcrypt.js";
+} from "../identity/auth.schema.js";
+
 import type { IInvitation } from "@/modules/invitations/invitation.types.js";
-import type { AcceptInvitationDto } from "../auth/dto/invitation.dto.js";
-import type { OAuthProfile } from "../auth/oauth/oauth.types.js";
-import { toObjectId } from "@/shared/validators/objectId.js";
-import { comparePassword } from "@/shared/utils/bcrypt.js";
+import type { AcceptInvitationDto } from "../identity/dto/invitation.dto.js";
+
+import type { OAuthProfile } from "../identity/oauth/oauth.types.js";
+
+import {
+  BusinessException,
+  ConflictException,
+  NotFoundException,
+  ValidationException,
+} from "@/shared/errors/index.js";
+
+import { hashPassword, comparePassword } from "@/shared/utils/bcrypt.js";
+
+import { toObjectId } from "@/shared/validators/index.js";
+
 import { RedisService } from "@/shared/services/redis.service.js";
-import { SecurityAlertService } from "../security/security.service.js";
-import { SecurityAlertType } from "../security/security.types.js";
-import { SessionService } from "../auth/session/session.service.js";
-import { OtpService } from "@/modules/auth/otp/otp.service.js";
-import { EmailService } from "@/shared/services/email/email.service.js";
-import { OtpPurpose } from "@/modules/auth/otp/otp.types.js";
 import { RateLimitService } from "@/shared/services/rate-limit.service.js";
-import { AuditLogService } from "../audit/audit.service.js";
-import { AUDIT_ACTIONS } from "../audit/audit.types.js";
 
-type Actor = {
-  userId: string;
-  role: string;
-};
+import type { EventBus } from "@/infrastructure/events/bus/event-bus.interface.js";
+import {
+  UserRegisteredEvent,
+  OtpRequestedEvent,
+  PasswordResetRequestedEvent,
+  PasswordResetCompletedEvent,
+  PasswordChangedEvent,
+  EmailChangedEvent,
+} from "@/modules/identity/events/index.js";
 
-const organizationReaderRoles: string[] = [
-  ROLES.ADMIN,
-  ROLES.FACILITY_MANAGER,
-  ROLES.FINANCE,
-];
+import { OtpPurpose } from "@/modules/identity/otp/otp.types.js";
 
-const vendorReaderRoles: string[] = [ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER];
+import { OtpService } from "@/modules/identity/otp/otp.service.js";
 
+/**
+ * UserService is a publisher, not a side-effect executor.
+ *
+ * It owns user persistence and publishes the identity events that describe
+ * what happened (UserRegisteredEvent, PasswordChangedEvent, EmailChangedEvent,
+ * etc.) through the Universal Event Bus. It does NOT call SecurityService or
+ * AuditLogService directly — security-alert creation and audit logging for
+ * those events are handled by SecurityListener / AuditLogListener, which are
+ * subscribed to these events in the container. This keeps one publish site
+ * per action instead of every caller (and every side effect) re-implementing
+ * "what happens when a password changes".
+ */
 export class UserService {
   constructor(
     private readonly repository: UserRepository,
+
     private readonly redisService: RedisService,
-    private readonly securityAlertService: SecurityAlertService,
-    private readonly sessionService: SessionService,
+
     private readonly otpService: OtpService,
-    private readonly emailService: EmailService,
+
     private readonly rateLimitService: RateLimitService,
-    private readonly auditLogService: AuditLogService,
+
+    private readonly eventBus: EventBus,
   ) {}
+
+  async updateProfile(userId: string, updates: { firstName?: string; lastName?: string; phone?: string; avatar?: string }) {
+    return this.repository.update(userId, { $set: updates });
+  }
 
   private buildInvitationMembership(invitation: IInvitation) {
     return {
@@ -76,12 +99,15 @@ export class UserService {
   private buildOAuthUserData(profile: OAuthProfile, provider: AuthProvider) {
     return {
       firstName: profile.firstName,
+
       lastName: profile.lastName,
-      email: profile.email,
+
+      email: profile.email.toLowerCase(),
 
       ...(profile.avatar && {
         avatar: profile.avatar,
       }),
+
       provider,
 
       providers: {
@@ -102,31 +128,329 @@ export class UserService {
     };
   }
 
-  private async updatePassword(userId: string, hashedPassword: string) {
+  private async updatePassword(
+    userId: string,
+    hashedPassword: string,
+  ): Promise<void> {
     await this.repository.update(userId, {
       password: hashedPassword,
+
       lastPasswordChangeAt: new Date(),
     });
   }
 
-  async findById(userId: string) {
-    return this.repository.findById(userId);
+  /**
+   * Publishes the single generic "user created" event for every account
+   * creation path below. Centralized here (rather than left to each
+   * caller) so no registration flow can forget it.
+   */
+  private async publishUserRegistered(user: IUser): Promise<void> {
+    await this.eventBus.publish(
+      new UserRegisteredEvent({
+        userId: user._id.toString(),
+        email: user.email,
+        role: user.role,
+        provider: user.provider,
+        ...(user.organizationId && {
+          organizationId: user.organizationId.toString(),
+        }),
+        ...(user.vendorId && {
+          vendorId: user.vendorId.toString(),
+        }),
+      }),
+    );
   }
 
-  async findByEmail(email: string) {
-    return this.repository.findByEmail(email);
-  }
-
-  async existsByEmail(email: string) {
-    return this.repository.existsByEmail(email);
-  }
-
-  async create(data: Partial<IUser>) {
+  async create(data: Partial<IUser>): Promise<IUser> {
     return this.repository.create(data);
   }
 
-  async markEmailVerified(userId: string) {
-    return this.repository.markEmailVerified(userId);
+  async createOrganizationAdmin(
+    organizationId: Types.ObjectId,
+
+    data: RegisterOrgDto,
+  ): Promise<IUser> {
+    const hashedPassword = await hashPassword(data.password);
+
+    const user = await this.repository.create({
+      firstName: data.firstName,
+
+      lastName: data.lastName,
+
+      email: data.email.toLowerCase(),
+
+      password: hashedPassword,
+
+      role: ROLES.ADMIN,
+
+      provider: "local",
+
+      organizationId,
+
+      isVerified: false,
+
+      phoneVerified: false,
+
+      status: "pending_verification",
+    });
+
+    await this.publishUserRegistered(user);
+
+    return user;
+  }
+
+  async assignFacility(userId: string, facilityId: Types.ObjectId): Promise<IUser | null> {
+    return this.repository.update(userId, { facilityId });
+  }
+
+  async createVendorLead(
+    vendorId: Types.ObjectId,
+
+    data: RegisterVendorDto,
+  ): Promise<IUser> {
+    const hashedPassword = await hashPassword(data.password);
+
+    const user = await this.repository.create({
+      firstName: data.firstName,
+
+      lastName: data.lastName,
+
+      email: data.email.toLowerCase(),
+
+      password: hashedPassword,
+
+      role: ROLES.VENDOR_LEAD,
+
+      provider: "local",
+
+      vendorId,
+
+      isVerified: false,
+
+      phoneVerified: false,
+
+      status: "pending_verification",
+    });
+
+    await this.publishUserRegistered(user);
+
+    return user;
+  }
+
+  async createInvitedUser(
+    invitation: IInvitation,
+    dto: AcceptInvitationDto,
+  ): Promise<IUser> {
+    const passwordHash = await hashPassword(dto.password);
+
+    const user = await this.repository.create({
+      firstName: dto.firstName,
+
+      lastName: dto.lastName,
+
+      email: invitation.email.toLowerCase(),
+
+      password: passwordHash,
+
+      provider: "local",
+
+      ...this.buildInvitationMembership(invitation),
+    });
+
+    await this.publishUserRegistered(user);
+
+    return user;
+  }
+
+  /**
+   * Creates a temporary invited user with a system-generated password.
+   * The account expires after 15 minutes if the user does not login.
+   * Used by the temp-invitation flow (admin/vendor lead sends invite with no
+   * password input from inviter — credentials shown once in portal UI).
+   */
+  async createTempInvitedUser(
+    invitation: IInvitation,
+    tempPassword: string,
+  ): Promise<IUser> {
+    const passwordHash = await hashPassword(tempPassword);
+    const TEMP_TTL_MS = 15 * 60 * 1000;
+
+    const membership = this.buildInvitationMembership(invitation);
+
+    const user = await this.repository.create({
+      firstName: invitation.firstName!,
+      lastName: invitation.lastName!,
+      email: invitation.email.toLowerCase(),
+      password: passwordHash,
+      provider: "local",
+      phoneVerified: false,
+      tempPasswordExpiresAt: new Date(Date.now() + TEMP_TTL_MS),
+      role: membership.role,
+      ...(membership.organizationId && { organizationId: membership.organizationId }),
+      ...(membership.vendorId && { vendorId: membership.vendorId }),
+      ...(membership.facilityId && { facilityId: membership.facilityId }),
+      status: "pending_invitation" as const,
+      isVerified: true,
+    });
+
+    await this.publishUserRegistered(user);
+
+    return user;
+  }
+
+  /**
+   * Upsert for the re-invite flow.
+   * If a pending_invitation temp user already exists for this email (created
+   * during the original invite), refreshes their password hash and TTL.
+   * If no temp user exists yet (e.g. first resend after session restart),
+   * creates one via createTempInvitedUser.
+   */
+  async refreshTempInvitedUser(
+    invitation: IInvitation,
+    tempPassword: string,
+  ): Promise<IUser> {
+    const TEMP_TTL_MS = 15 * 60 * 1000;
+    const existing = await this.repository.findOne({
+      email: invitation.email.toLowerCase(),
+      status: "pending_invitation",
+    });
+
+    if (existing) {
+      const passwordHash = await hashPassword(tempPassword);
+      const updated = await this.repository.update(existing._id, {
+        password: passwordHash,
+        tempPasswordExpiresAt: new Date(Date.now() + TEMP_TTL_MS),
+      });
+      return updated!;
+    }
+
+    // No temp user found — create fresh
+    return this.createTempInvitedUser(invitation, tempPassword);
+  }
+
+  /**
+   * Hard-deletes a user by ID.
+   * Used during temp-invitation expiry cleanup.
+   */
+  async deleteById(userId: string): Promise<void> {
+    await this.repository.delete(userId);
+  }
+
+  async createOAuthUser(
+    profile: OAuthProfile,
+
+    provider: AuthProvider,
+  ): Promise<IUser> {
+    const user = await this.repository.create(
+      this.buildOAuthUserData(profile, provider),
+    );
+
+    await this.publishUserRegistered(user);
+
+    return user;
+  }
+
+  async createOAuthInvitedUser(
+    invitation: IInvitation,
+
+    profile: OAuthProfile,
+
+    provider: AuthProvider,
+  ): Promise<IUser> {
+    const user = await this.repository.create({
+      ...this.buildOAuthUserData(profile, provider),
+
+      ...this.buildInvitationMembership(invitation),
+    });
+
+    await this.publishUserRegistered(user);
+
+    return user;
+  }
+
+  async createOAuthOrganizationAdmin(
+    organizationId: string,
+
+    profile: OAuthProfile,
+
+    provider: AuthProvider,
+  ): Promise<IUser> {
+    const user = await this.repository.create({
+      ...this.buildOAuthUserData(profile, provider),
+
+      role: ROLES.ADMIN,
+
+      organizationId: toObjectId(organizationId),
+    });
+
+    await this.publishUserRegistered(user);
+
+    return user;
+  }
+
+  async createOAuthVendorLead(
+    vendorId: string,
+
+    profile: OAuthProfile,
+
+    provider: AuthProvider,
+  ): Promise<IUser> {
+    const user = await this.repository.create({
+      ...this.buildOAuthUserData(profile, provider),
+
+      role: ROLES.VENDOR_LEAD,
+
+      vendorId: toObjectId(vendorId),
+    });
+
+    await this.publishUserRegistered(user);
+
+    return user;
+  }
+
+  async findAndLinkProvider(
+    email: string,
+    provider: AuthProvider,
+    providerId: string,
+  ): Promise<IUser | null> {
+    if (provider === "local") {
+      return null;
+    }
+
+    const user = await this.repository.findByEmail(email);
+
+    if (!user) {
+      return null;
+    }
+
+    const providerUser = await this.repository.findByProviderId(provider, providerId);
+    if (providerUser && providerUser._id.toString() !== user._id.toString()) {
+      return null;
+    }
+
+    const updates: Record<string, string> = {};
+
+    const linkedProviderId = provider === "google" ? user.googleId : provider === "linkedin" ? user.linkedinId : user.appleId;
+    if (linkedProviderId && linkedProviderId !== providerId) return null;
+    if (provider === "google" && !user.googleId) updates.googleId = providerId;
+    if (provider === "linkedin" && !user.linkedinId) updates.linkedinId = providerId;
+    if (provider === "apple" && !user.appleId) updates.appleId = providerId;
+
+    if (Object.keys(updates).length === 0) {
+      return user;
+    }
+
+    return this.repository.update(user._id, updates);
+  }
+
+  async markEmailVerified(userId: string): Promise<void> {
+    await this.repository.markEmailVerified(userId);
+  }
+
+  async recordLogin(userId: string): Promise<void> {
+    await this.repository.update(userId, {
+      lastLoginAt: new Date(),
+    });
   }
 
   async lockAccount(userId: string, lockedUntil: Date) {
@@ -159,144 +483,8 @@ export class UserService {
     });
   }
 
-  async isLocked(userId: string) {
+  async isLocked(userId: string): Promise<boolean> {
     return this.repository.isLocked(userId);
-  }
-
-  async createOrganizationAdmin(
-    organizationId: Types.ObjectId,
-    data: RegisterOrgDto,
-  ) {
-    const hashedPassword = await hashPassword(data.password);
-
-    return await this.repository.create({
-      firstName: data.firstName,
-      lastName: data.lastName,
-
-      email: data.email.toLowerCase(),
-
-      password: hashedPassword,
-
-      role: ROLES.ADMIN,
-
-      provider: "local",
-
-      organizationId,
-
-      isVerified: false,
-
-      phoneVerified: false,
-
-      status: "pending_verification",
-    });
-  }
-
-  async createVendorLead(vendorId: Types.ObjectId, data: RegisterVendorDto) {
-    const hashedPassword = await hashPassword(data.password);
-
-    return await this.repository.create({
-      firstName: data.firstName,
-      lastName: data.lastName,
-
-      email: data.email.toLowerCase(),
-
-      password: hashedPassword,
-
-      role: ROLES.VENDOR_LEAD,
-
-      provider: "local",
-
-      vendorId,
-
-      isVerified: false,
-
-      phoneVerified: false,
-
-      status: "pending_verification",
-    });
-  }
-
-  // ===============================
-  // FIND AND LINK PROVIDER
-  // ===============================
-  async findAndLinkProvider(
-    email: string,
-
-    provider: AuthProvider,
-
-    providerId: string,
-  ) {
-    const user = await this.repository.findByEmail(email);
-
-    if (!user) {
-      return null;
-    }
-
-    const updates: Record<string, string> = {};
-
-    if (provider === "google" && !user.googleId) {
-      updates.googleId = providerId;
-    }
-
-    if (provider === "linkedin" && !user.linkedinId) {
-      updates.linkedinId = providerId;
-    }
-
-    if (provider === "apple" && !user.appleId) {
-      updates.appleId = providerId;
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return null;
-    }
-
-    return await this.repository.update(user._id, updates);
-  }
-
-  async recordLogin(userId: string) {
-    await this.repository.update(userId, {
-      lastLoginAt: new Date(),
-    });
-  }
-
-  async getMe(actor: Actor) {
-    const user = await this.repository.findById(actor.userId);
-
-    if (!user) {
-      throw new AppError("User not found", 404);
-    }
-
-    return user;
-  }
-
-  async listMyAccountUsers(actor: Actor) {
-    const user = await User.findById(actor.userId).select(
-      "organizationId vendorId",
-    );
-
-    if (!user) {
-      throw new AppError("User not found", 404);
-    }
-
-    if (organizationReaderRoles.includes(actor.role)) {
-      if (!user.organizationId) {
-        throw new AppError("User is not attached to an organization", 403);
-      }
-
-      return this.repository.findOrganizationUsers(
-        user.organizationId.toString(),
-      );
-    }
-
-    if (vendorReaderRoles.includes(actor.role)) {
-      if (!user.vendorId) {
-        throw new AppError("User is not attached to a vendor", 403);
-      }
-
-      return this.repository.findVendorUsers(user.vendorId.toString());
-    }
-
-    throw new AppError("This role cannot list account users", 403);
   }
 
   async suspend(userId: string) {
@@ -311,184 +499,81 @@ export class UserService {
     });
   }
 
-  async createInvitedUser(invitation: IInvitation, dto: AcceptInvitationDto) {
-    const passwordHash = await hashPassword(dto.password);
-
-    return this.repository.create({
-      firstName: dto.firstName,
-
-      lastName: dto.lastName,
-
-      email: invitation.email,
-
-      password: passwordHash,
-
-      provider: "local",
-
-      ...this.buildInvitationMembership(invitation),
-    });
-  }
-
-  async createOAuthInvitedUser(
-    invitation: IInvitation,
-    profile: OAuthProfile,
-    provider: AuthProvider,
-  ) {
-    return this.repository.create({
-      ...this.buildOAuthUserData(profile, provider),
-
-      ...this.buildInvitationMembership(invitation),
-    });
-  }
-
-  async createOAuthUser(profile: OAuthProfile, provider: AuthProvider) {
-    return this.repository.create(this.buildOAuthUserData(profile, provider));
-  }
-
-  async createOAuthOrganizationAdmin(
-    organizationId: string,
-    profile: OAuthProfile,
-    provider: AuthProvider,
-  ) {
-    return this.repository.create({
-      ...this.buildOAuthUserData(profile, provider),
-
-      role: ROLES.ADMIN,
-
-      organizationId: toObjectId(organizationId),
-    });
-  }
-
-  async createOAuthVendorLead(
-    vendorId: string,
-    profile: OAuthProfile,
-    provider: AuthProvider,
-  ) {
-    return this.repository.create({
-      ...this.buildOAuthUserData(profile, provider),
-
-      role: ROLES.VENDOR_LEAD,
-
-      vendorId: toObjectId(vendorId),
-    });
-  }
-
   async validatePasswordChange(
     user: IUser,
+
     currentPassword: string,
+
     newPassword: string,
-  ) {
+  ): Promise<void> {
     if (!user.password) {
-      throw new AppError("Password login unavailable", 400);
+      throw new BusinessException("Password login unavailable");
     }
 
-    const matches = await comparePassword(currentPassword, user.password);
+    const currentMatches = await comparePassword(
+      currentPassword,
+      user.password,
+    );
 
-    if (!matches) {
-      throw new AppError("Current password is incorrect", 400);
+    if (!currentMatches) {
+      throw new ValidationException("Current password is incorrect");
     }
 
     const samePassword = await comparePassword(newPassword, user.password);
 
     if (samePassword) {
-      throw new AppError("New password must be different", 400);
+      throw new ValidationException("New password must be different");
     }
   }
 
-  async getRequiredUser(userId: string) {
+  async changePassword(
+    userId: string,
+
+    currentPassword: string,
+
+    newPassword: string,
+  ) {
     const user = await this.repository.findById(userId);
 
     if (!user) {
-      throw new AppError("User not found", 404);
+      throw new NotFoundException("User not found");
     }
 
-    return user;
-  }
+    await this.validatePasswordChange(
+      user,
 
-  // =================================
-  // CURRENT USER
-  // =================================
+      currentPassword,
 
-  async me(userId: string) {
-    const user = await this.findById(userId);
-
-    if (!user) {
-      throw new AppError("User not found", 404);
-    }
-
-    return user;
-  }
-
-  // =================================
-  // CHANGE PASSWORD
-  // =================================
-  async changePassword(
-    userId: string,
-    currentPassword: string,
-    newPassword: string,
-  ) {
-    const user = await this.findById(userId);
-
-    if (!user) {
-      throw new AppError("User not found", 404);
-    }
-
-    if (!user.password) {
-      throw new AppError("Password login unavailable", 400);
-    }
-
-    const matches = await comparePassword(currentPassword, user.password);
-
-    if (!matches) {
-      throw new AppError("Current password is incorrect", 400);
-    }
-
-    const samePassword = await comparePassword(newPassword, user.password);
-
-    if (samePassword) {
-      throw new AppError("New password must be different", 400);
-    }
+      newPassword,
+    );
 
     const hashedPassword = await hashPassword(newPassword);
 
-    await this.updatePassword(userId, hashedPassword);
+    await this.updatePassword(
+      userId,
 
-    // Security:
-    // revoke all refresh token
-    await this.sessionService.logoutAll(userId);
-
-    await this.securityAlertService.createAlert({
-      userId: user._id,
-
-      type: SecurityAlertType.PASSWORD_CHANGED,
-
-      metadata: {
-        method: "manual",
-      },
-    });
+      hashedPassword,
+    );
 
     await this.unlockAccount(userId);
 
-    await this.auditLogService.log({
-      actorId: user._id,
-
-      targetUserId: user._id,
-
-      action: "password_changed",
-
-      entityType: "user",
-
-      entityId: user._id,
-    });
+    /**
+     * Publish only. Security-alert creation and audit logging for a
+     * password change are handled by SecurityListener / AuditLogListener,
+     * both subscribed to PASSWORD_CHANGED — see container/app.container.ts.
+     */
+    await this.eventBus.publish(
+      new PasswordChangedEvent({
+        userId: user._id.toString(),
+        email: user.email,
+      }),
+    );
 
     return {
       message: "Password changed successfully",
     };
   }
 
-  // =================================
-  // FORGOT PASSWORD
-  // =================================
   async requestResetPassword(email: string, ipAddress: string) {
     const rateLimit = await this.rateLimitService.hit(
       `forgot-password:${ipAddress}`,
@@ -503,17 +588,18 @@ export class UserService {
     );
 
     if (!rateLimit.allowed) {
-      throw new AppError(
+      throw new BusinessException(
         `Too many requests. Try again in ${rateLimit.ttl} seconds.`,
-        429,
-      );
-    } else if (!emailLimit.allowed) {
-      throw new AppError(
-        `Too many requests for this email. Try again in ${emailLimit.ttl} seconds.`,
-        429,
       );
     }
-    const user = await this.findByEmail(email);
+
+    if (!emailLimit.allowed) {
+      throw new BusinessException(
+        `Too many requests for this email. Try again in ${emailLimit.ttl} seconds.`,
+      );
+    }
+
+    const user = await this.repository.findByEmail(email);
 
     /**
      * Prevent email enumeration.
@@ -526,177 +612,201 @@ export class UserService {
 
     const otp = await this.otpService.create(
       user._id.toString(),
+
       OtpPurpose.PASSWORD_RESET,
     );
 
-    await this.emailService.sendPasswordResetOtp(user.email, otp);
+    await this.eventBus.publish(
+      new PasswordResetRequestedEvent({
+        userId: user._id.toString(),
+        email: user.email,
+        otp,
+      }),
+    );
 
     return {
       message: "If the account exists, a reset code has been sent.",
     };
   }
 
-  // =================================
-  // CHANGE EMAIL
-  // =================================
-  async requestEmailChange(userId: string, newEmail: string, ipAddress: string) {
+  async requestEmailChange(
+    userId: string,
 
+    newEmail: string,
+
+    ipAddress: string,
+  ) {
     const rateLimit = await this.rateLimitService.hit(
       `change-email:${ipAddress}`,
+
       5,
+
       60 * 15,
     );
 
     const emailLimit = await this.rateLimitService.hit(
       `change-email-mail:${newEmail}`,
+
       3,
+
       60 * 15,
     );
 
     if (!rateLimit.allowed) {
-      throw new AppError(
+      throw new BusinessException(
         `Too many requests. Try again in ${rateLimit.ttl} seconds.`,
-        429,
-      );
-    } else if (!emailLimit.allowed) {
-      throw new AppError(
-        `Too many requests for this email. Try again in ${emailLimit.ttl} seconds.`,
-        429,
       );
     }
 
-    const existingUser = await this.findByEmail(newEmail);
+    if (!emailLimit.allowed) {
+      throw new BusinessException(
+        `Too many requests for this email. Try again in ${emailLimit.ttl} seconds.`,
+      );
+    }
+
+    const existingUser = await this.repository.findByEmail(newEmail);
 
     if (existingUser) {
-      throw new AppError("Email already in use", 409);
+      throw new ConflictException("Email already in use");
     }
 
-    await this.redisService.set(`email-change:${userId}`, newEmail, 60 * 15);
+    await this.redisService.set(
+      `email-change:${userId}`,
 
-    const otp = await this.otpService.create(userId, OtpPurpose.EMAIL_CHANGE);
+      newEmail.toLowerCase(),
 
-    await this.emailService.sendEmailChangeOtp(newEmail, otp);
+      60 * 15,
+    );
+
+    const otp = await this.otpService.create(
+      userId,
+
+      OtpPurpose.EMAIL_CHANGE,
+    );
+
+    await this.eventBus.publish(
+      new OtpRequestedEvent({
+        userId,
+        email: newEmail,
+        purpose: OtpPurpose.EMAIL_CHANGE,
+        otp,
+      }),
+    );
 
     return {
       message: "Verification code sent",
     };
   }
 
-  // =================================
-  // CHANGE EMAIL
-  // =================================
-  async changeEmail(userId: string, otp: string) {
+  async changeEmail(
+    userId: string,
+
+    otp: string,
+  ) {
     const user = await this.repository.findById(userId);
 
     if (!user) {
-      throw new AppError("User not found", 404);
+      throw new NotFoundException("User not found");
     }
 
     const valid = await this.otpService.verify(
       userId,
+
       OtpPurpose.EMAIL_CHANGE,
+
       otp,
     );
 
     if (!valid) {
-      throw new AppError("Invalid or expired OTP", 400);
+      throw new ValidationException("Invalid or expired OTP");
     }
 
-    const oldEmail = user.email;
     const newEmail = await this.redisService.get(`email-change:${userId}`);
 
     if (!newEmail) {
-      throw new AppError("Invalid or expired OTP", 400);
+      throw new ValidationException("Invalid or expired OTP");
     }
 
-    await this.repository.update(userId, {
-      email: newEmail.toLowerCase(),
-      lastEmailChangeAt: new Date(),
-    });
+    const oldEmail = user.email;
+
+    await this.repository.update(
+      userId,
+
+      {
+        email: newEmail.toLowerCase(),
+
+        lastEmailChangeAt: new Date(),
+      },
+    );
 
     await this.redisService.delete(`email-change:${userId}`);
 
-    await this.securityAlertService.createAlert({
-      userId: user._id,
-
-      type: SecurityAlertType.EMAIL_CHANGED,
-
-      metadata: {
+    /**
+     * Publish only. Security-alert creation, audit logging, and the
+     * "your email was changed" notification are handled by
+     * SecurityListener / AuditLogListener / EmailListener, all subscribed
+     * to EMAIL_CHANGED — see container/app.container.ts.
+     */
+    await this.eventBus.publish(
+      new EmailChangedEvent({
+        userId: user._id.toString(),
         oldEmail,
-        newEmail,
-      },
-    });
-
-    await this.auditLogService.log({
-      actorId: user._id,
-
-      targetUserId: user._id,
-
-      action: "email_changed",
-
-      entityType: "user",
-
-      entityId: user._id,
-
-      metadata: {
-        oldEmail,
-        newEmail,
-      },
-    });
+        newEmail: newEmail.toLowerCase(),
+      }),
+    );
 
     return {
       message: "Email changed successfully",
     };
   }
 
-  // =================================
-  // RESET PASSWORD
-  // =================================
-  async resetPassword(email: string, otp: string, password: string) {
-    const user = await this.findByEmail(email);
+  async resetPassword(
+    email: string,
+
+    otp: string,
+
+    password: string,
+  ) {
+    const user = await this.repository.findByEmail(email);
 
     if (!user) {
-      throw new AppError("Invalid request", 400);
+      throw new ValidationException("Invalid request");
     }
 
     const valid = await this.otpService.verify(
       user._id.toString(),
+
       OtpPurpose.PASSWORD_RESET,
+
       otp,
     );
 
     if (!valid) {
-      throw new AppError("Invalid or expired OTP", 400);
+      throw new ValidationException("Invalid or expired OTP");
     }
 
     const hashedPassword = await hashPassword(password);
 
-    await this.updatePassword(user._id.toString(), hashedPassword);
+    await this.updatePassword(
+      user._id.toString(),
 
-    /**
-     * Kill all refresh tokens.
-     */
-    await this.sessionService.logoutAll(user._id.toString());
-
-    await this.securityAlertService.createAlert({
-      userId: user._id,
-
-      type: SecurityAlertType.PASSWORD_RESET,
-    });
+      hashedPassword,
+    );
 
     await this.unlockAccount(user._id.toString());
 
-    await this.auditLogService.log({
-      actorId: user._id,
-
-      targetUserId: user._id,
-
-      action: AUDIT_ACTIONS.PASSWORD_RESET,
-
-      entityType: "user",
-
-      entityId: user._id,
-    });
+    /**
+     * Publish only. Security-alert creation and audit logging for a
+     * completed password reset are handled by SecurityListener /
+     * AuditLogListener, both subscribed to PASSWORD_RESET_COMPLETED — see
+     * container/app.container.ts.
+     */
+    await this.eventBus.publish(
+      new PasswordResetCompletedEvent({
+        userId: user._id.toString(),
+        email: user.email,
+      }),
+    );
 
     return {
       message: "Password reset successfully",

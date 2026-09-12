@@ -1,6 +1,7 @@
 import { User } from "./user.model.js";
 import type { IUser } from "./user.types.js";
 import { Types, type UpdateQuery } from "mongoose";
+import type { AuthProvider } from "@/shared/constants/auth-providers.js";
 
 export class UserRepository {
   async exists(filter: Partial<IUser>): Promise<boolean> {
@@ -32,6 +33,14 @@ export class UserRepository {
     return User.findOne({
       email: email.toLowerCase(),
     });
+  }
+
+  async findByProviderId(
+    provider: Exclude<AuthProvider, "local">,
+    providerId: string,
+  ): Promise<IUser | null> {
+    const field = provider === "google" ? "googleId" : provider === "linkedin" ? "linkedinId" : "appleId";
+    return User.findOne({ [field]: providerId });
   }
 
   async update(
@@ -122,7 +131,7 @@ export class UserRepository {
   }
 
   async findMany(filter: Partial<IUser>): Promise<IUser[]> {
-    return User.find(filter);
+    return User.find(filter).limit(1000);
   }
 
   async count(filter: Partial<IUser>): Promise<number> {
@@ -139,12 +148,12 @@ export class UserRepository {
     return !!(user?.lockedUntil && user.lockedUntil > new Date());
   }
 
-  async increment(userId: string, field: keyof IUser, amount = 1) {
+  async increment(userId: string, field: keyof IUser) {
     return User.findByIdAndUpdate(
       userId,
       {
         $inc: {
-          [field]: amount,
+          [field]: 1,
         },
       },
       {
@@ -156,7 +165,7 @@ export class UserRepository {
   async findOrganizationUsers(organizationId: string): Promise<IUser[]> {
     return User.find({
       organizationId,
-    });
+    }).limit(1000);
   }
 
   async findByOrganizationAndRole(
@@ -166,19 +175,31 @@ export class UserRepository {
     return User.find({
       organizationId,
       role,
-    });
+    }).limit(1000);
   }
 
   async findVendorUsers(vendorId: string): Promise<IUser[]> {
     return User.find({
       vendorId,
-    });
+    }).limit(1000);
   }
 
   async findVendorTechnicians(vendorId: string): Promise<IUser[]> {
     return User.find({
       vendorId,
       role: "vendor_technician",
+    }).limit(1000);
+  }
+
+  /**
+   * Deletes all temp-invitation users whose TTL has passed.
+   * Called by the cleanup job every 5 minutes.
+   */
+  async deleteExpiredTempUsers(): Promise<number> {
+    const result = await User.deleteMany({
+      status: "pending_invitation",
+      tempPasswordExpiresAt: { $lt: new Date() },
     });
+    return result.deletedCount ?? 0;
   }
 }
