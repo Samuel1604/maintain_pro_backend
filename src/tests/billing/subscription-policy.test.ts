@@ -23,6 +23,14 @@ describe("subscription state policy", () => {
     expect(() => SubscriptionPolicy.canCancel(subscription("expired"))).toThrow("expired");
   });
 
+  it("rejects plan changes after a subscription reaches a terminal state", () => {
+    expect(() => SubscriptionPolicy.canChangePlan(subscription("trial"))).not.toThrow();
+    expect(() => SubscriptionPolicy.canChangePlan(subscription("active"))).not.toThrow();
+    expect(() => SubscriptionPolicy.canChangePlan(subscription("past_due"))).not.toThrow();
+    expect(() => SubscriptionPolicy.canChangePlan(subscription("cancelled"))).toThrow("cancelled");
+    expect(() => SubscriptionPolicy.canChangePlan(subscription("expired"))).toThrow("expired");
+  });
+
   it("enforces plan direction and trial expiration", () => {
     expect(() => SubscriptionPolicy.canUpgrade("starter", "professional")).not.toThrow();
     expect(() => SubscriptionPolicy.canUpgrade("professional", "starter")).toThrow("lower tier");

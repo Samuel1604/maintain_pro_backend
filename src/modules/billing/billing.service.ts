@@ -439,6 +439,7 @@ export class BillingService {
   ): Promise<SubscriptionResponse> {
     const subscription = await this.findSubscriptionDocument(subscriptionId);
 
+    BillingPolicy.canChangePlan(subscription);
     BillingPolicy.canUpgrade(subscription.plan, input.plan);
 
     const updatePayload: Partial<ISubscription> = {
@@ -477,6 +478,7 @@ export class BillingService {
   ): Promise<SubscriptionResponse> {
     const subscription = await this.findSubscriptionDocument(subscriptionId);
 
+    BillingPolicy.canChangePlan(subscription);
     BillingPolicy.canDowngrade(subscription.plan, input.plan);
 
     const updatePayload: Partial<ISubscription> = {

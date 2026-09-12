@@ -1,4 +1,5 @@
 import rateLimit, { type Store } from "express-rate-limit";
+import type { Request } from "express";
 import { RedisService } from "@/shared/services/redis.service.js";
 
 /**
@@ -114,5 +115,12 @@ export const securityMutationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   store: store(15 * 60 * 1000),
+  // Keep independent budgets per authenticated user and mutation endpoint.
+  // A shared IP-only bucket would make a normal sequence such as checkout,
+  // cancel, and plan validation exhaust the budget across unrelated routes.
+  keyGenerator: (req) => {
+    const request = req as Request & { user?: { userId?: string } };
+    return `${request.user?.userId ?? request.ip ?? "unknown"}:${request.baseUrl}:${request.path}`;
+  },
   message: "Too many security changes. Please try again later.",
 });
