@@ -1,8 +1,19 @@
 import { z } from "zod";
-import { objectIdSchema } from "@/shared/validators/objectId.js";
-import { serviceCategorySchema, coverageRadiusSchema, latitudeSchema, longitudeSchema, certificationSchema, addressSchema } from "@/shared/validators/common.js";
-import { phoneSchema } from "@/shared/validators/user.js";
-import { vendorNameSchema, companyRegistrationNumberSchema, vendorDescriptionSchema, vendorWebsiteSchema, vendorLogoSchema } from "@/shared/validators/vendor.js";
+import {
+  objectIdSchema,
+  serviceCategorySchema,
+  coverageRadiusSchema,
+  latitudeSchema,
+  longitudeSchema,
+  certificationSchema,
+  addressSchema,
+  phoneSchema,
+  vendorNameSchema,
+  companyRegistrationNumberSchema,
+  vendorDescriptionSchema,
+  vendorWebsiteSchema,
+  vendorLogoSchema,
+} from "@/shared/validators/index.js";
 
 
 export const updateVendorSchema = z.object({
@@ -41,6 +52,18 @@ export type ListVendorsQueryDto = z.infer<typeof listVendorsQuerySchema>;
 
 
 export const updateVendorProfileSchema = z.object({
+  vendorName: vendorNameSchema.optional(),
+
+  phone: phoneSchema.optional(),
+
+  address: addressSchema.optional(),
+
+  companyRegistrationNumber: companyRegistrationNumberSchema.optional(),
+
+  website: vendorWebsiteSchema.optional(),
+
+  logo: vendorLogoSchema.optional(),
+
   serviceCategories: z
     .array(serviceCategorySchema)
     .optional(),

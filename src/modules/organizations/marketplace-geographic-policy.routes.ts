@@ -1,0 +1,14 @@
+import { Router } from "express";
+import { authMiddleware } from "@/shared/middleware/authenticate.js";
+import { authorize } from "@/shared/middleware/authorize.js";
+import { requireVerifiedEmail } from "@/shared/middleware/require-verified-email.js";
+import { ROLES } from "@/shared/constants/roles.js";
+import { listGeographicPolicies, getGeographicPolicy, createGeographicPolicy, updateGeographicPolicy, activateGeographicPolicy, deactivateGeographicPolicy } from "./marketplace-geographic-policy.controller.js";
+const router = Router(); router.use(authMiddleware); const managers = [ROLES.ADMIN, ROLES.FACILITY_MANAGER];
+router.get("/", authorize(...managers), listGeographicPolicies);
+router.post("/", authorize(...managers), requireVerifiedEmail, createGeographicPolicy);
+router.get("/:id", authorize(...managers), getGeographicPolicy);
+router.patch("/:id", authorize(...managers), requireVerifiedEmail, updateGeographicPolicy);
+router.post("/:id/activate", authorize(...managers), requireVerifiedEmail, activateGeographicPolicy);
+router.post("/:id/deactivate", authorize(...managers), requireVerifiedEmail, deactivateGeographicPolicy);
+export default router;

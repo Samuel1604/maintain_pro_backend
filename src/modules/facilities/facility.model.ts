@@ -3,14 +3,21 @@ import { Schema, model, Document, Types } from "mongoose";
 export interface IFacility extends Document {
   organizationId: Types.ObjectId;
   name: string;
-  address: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode?: string;
+    country: string;
+  };
   coordinates: {
     type: "Point";
     coordinates: [number, number];
   };
-  city: string;
-  state: string;
-  country: string;
+  status: "active" | "inactive" | "suspended";
+  description?: string;
+  createdBy: Types.ObjectId;
+  updatedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +28,7 @@ const facilitySchema = new Schema<IFacility>(
       type: Schema.Types.ObjectId,
       ref: "Organization",
       required: true,
+      index: true,
     },
     name: {
       type: String,
@@ -28,8 +36,25 @@ const facilitySchema = new Schema<IFacility>(
       trim: true,
     },
     address: {
-      type: String,
-      required: true,
+      street: {
+        type: String,
+        required: true,
+      },
+      city: {
+        type: String,
+        required: true,
+      },
+      state: {
+        type: String,
+        required: true,
+      },
+      postalCode: {
+        type: String,
+      },
+      country: {
+        type: String,
+        required: true,
+      },
     },
     coordinates: {
       type: {
@@ -43,17 +68,24 @@ const facilitySchema = new Schema<IFacility>(
         required: true,
       },
     },
-    city: {
+    status: {
       type: String,
+      enum: ["active", "inactive", "suspended"],
+      default: "active",
+      required: true,
+      index: true,
+    },
+    description: {
+      type: String,
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
-    state: {
-      type: String,
-      required: true,
-    },
-    country: {
-      type: String,
-      required: true,
+    updatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
   },
   {
@@ -61,6 +93,8 @@ const facilitySchema = new Schema<IFacility>(
   },
 );
 
+// Indexes for common queries
 facilitySchema.index({ coordinates: "2dsphere" });
+facilitySchema.index({ organizationId: 1, status: 1 });
 
 export const Facility = model<IFacility>("Facility", facilitySchema);

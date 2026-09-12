@@ -1,22 +1,22 @@
 import { z } from "zod";
-import {ROLES} from "../constants/roles.js"
+import { ROLES } from "../constants/roles.js";
 
+export const addressSchema = z.object({
+  street: z.string().trim().max(255).optional(),
+  city: z.string().trim().max(100).optional(),
+  state: z.string().trim().max(100).optional(),
+  postalCode: z.string().trim().max(20).optional(),
+  country: z.string().trim().max(100).optional(),
+});
 
-export const emailSchema = z
-  .email("Invalid email address")
-  .trim()
-  .toLowerCase();
-
-export const passwordSchema = z
+export const slugSchema = z
   .string()
-  .min(8, "Password must be at least 8 characters")
-  .max(100);
+  .trim()
+  .min(1, "Slug is required")
+  .max(100, "Slug cannot exceed 100 characters")
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug");
 
-export const nameSchema = z.string().trim().min(2).max(50);
-
-export const phoneSchema = z.string().trim().min(7).max(20);
-
-export const addressSchema = z.string().trim().min(5).max(255);
+export const urlSchema = z.url("Invalid URL");
 
 export const latitudeSchema = z.number().min(-90).max(90);
 
@@ -28,10 +28,15 @@ export const serviceCategorySchema = z.string().trim().min(2);
 
 export const certificationSchema = z.string().trim().min(2);
 
-export const pageSchema = z.coerce.number().int().min(1).default(1);
+const roleTuple: [string, ...string[]] = [
+  ROLES.ADMIN,
+  ROLES.FACILITY_MANAGER,
+  ROLES.TECHNICIAN,
+  ROLES.VENDOR_LEAD,
+  ROLES.VENDOR_MANAGER,
+  ROLES.VENDOR_TECHNICIAN,
+  ROLES.FINANCE,
+  ROLES.STAFF,
+];
 
-export const limitSchema = z.coerce.number().int().min(1).max(100).default(20);
-
-export const searchSchema = z.string().trim().min(1).optional();
-
-export const roleSchema = z.enum(Object.values(ROLES)).optional()
+export const roleSchema = z.enum(roleTuple);

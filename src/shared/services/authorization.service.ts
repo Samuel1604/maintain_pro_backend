@@ -1,7 +1,11 @@
 import { FacilityRepository } from "@/modules/facilities/facility.repository.js";
-import { AppError } from "@/shared/errors/AppError.js";
+import {
+  AuthorizationException,
+  ValidationException,
+  NotFoundException,
+} from "@/shared/errors/index.js";
 import { ROLES } from "@/shared/constants/roles.js";
-import { sameId } from "@/shared/validators/objectId.js";
+import { isSameObjectId } from "@/shared/validators/index.js";
 import type { JwtPayload } from "@/shared/types/jwt.types.js";
 import type { IAsset } from "@/modules/assets/asset.model.js";
 
@@ -19,13 +23,13 @@ export class AccessControlService {
    */
   requireRoles(actor: JwtPayload, roles: string[]) {
     if (!roles.includes(actor.role)) {
-      throw new AppError("Access denied", 403);
+      throw new AuthorizationException("Access denied");
     }
   }
 
   requireOrganization(actor: JwtPayload) {
     if (!actor.organizationId) {
-      throw new AppError("Organization context required", 400);
+      throw new ValidationException("Organization context required");
     }
 
     return actor.organizationId;
@@ -33,7 +37,7 @@ export class AccessControlService {
 
   requireFacility(actor: JwtPayload) {
     if (!actor.facilityId) {
-      throw new AppError("Facility context required", 400);
+      throw new ValidationException("Facility context required");
     }
 
     return actor.facilityId;
@@ -41,7 +45,7 @@ export class AccessControlService {
 
   requireVendor(actor: JwtPayload) {
     if (!actor.vendorId) {
-      throw new AppError("Vendor context required", 400);
+      throw new ValidationException("Vendor context required");
     }
 
     return actor.vendorId;
@@ -51,8 +55,8 @@ export class AccessControlService {
    * Organization boundary check
    */
   verifyOrganizationAccess(actor: JwtPayload, organizationId: string) {
-    if (!sameId(actor.organizationId, organizationId)) {
-      throw new AppError("Organization access denied", 403);
+    if (!isSameObjectId(actor.organizationId, organizationId)) {
+      throw new AuthorizationException("Organization access denied");
     }
 
     return true;
@@ -60,26 +64,14 @@ export class AccessControlService {
 
   /**
    * Facility scope restriction
-   *
-   * Admin:
-   *   Can access any facility in organization
-   *
-   * Facility Manager:
-   *   Only assigned facility
-   *
-   * Technician:
-   *   Only assigned facility
-   *
-   * Staff:
-   *   Only assigned facility
    */
   verifyFacilityScope(actor: JwtPayload, facilityId: string) {
     if (
       facilityScopedRoles.includes(actor.role) &&
       actor.facilityId &&
-      !sameId(actor.facilityId, facilityId)
+      !isSameObjectId(actor.facilityId, facilityId)
     ) {
-      throw new AppError("You can only access your assigned facility", 403);
+      throw new AuthorizationException("You can only access your assigned facility");
     }
 
     return true;
@@ -94,7 +86,7 @@ export class AccessControlService {
     const facility = await this.facilityRepository.findById(facilityId);
 
     if (!facility) {
-      throw new AppError("Facility not found", 404);
+      throw new NotFoundException("Facility not found");
     }
 
     this.verifyOrganizationAccess(actor, facility.organizationId.toString());

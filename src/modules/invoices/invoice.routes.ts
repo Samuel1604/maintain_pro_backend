@@ -27,7 +27,7 @@ const review = z.object({ rejectionReason: z.string().min(3).optional(), externa
 router.get("/", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.FINANCE), requestHandler<AuthRequest>(async (req, res) => {
   const scope = req.user.organizationId!; const key = cacheKeys.invoiceList(scope, cacheHash({ scope }));
   const cached = await invoiceCache.get<unknown[]>(key); if (cached) return res.ok(cached, "Invoices retrieved");
-  const data = await Invoice.find({ organizationId: scope }).sort({ submittedAt: -1 }).lean(); await invoiceCache.set(key, data, cacheTtlSeconds.invoice); return res.ok(data, "Invoices retrieved");
+  const data = await Invoice.find({ organizationId: scope }).sort({ submittedAt: -1 }).limit(100).lean(); await invoiceCache.set(key, data, cacheTtlSeconds.invoice); return res.ok(data, "Invoices retrieved");
 }));
 router.patch("/:id/review", authorize(ROLES.ADMIN, ROLES.FINANCE), requestHandler<AuthRequest<{ id: string }>>(async (req, res) => {
   const body = review.parse(req.body); const status = body.rejectionReason ? "rejected" : "approved";

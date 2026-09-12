@@ -20,7 +20,7 @@ export class OrganizationRepository {
   }
 
   async findMany(filter: Partial<IOrganization>): Promise<IOrganization[]> {
-    return Organization.find(filter);
+    return Organization.find(filter).limit(1000);
   }
 
   async update(

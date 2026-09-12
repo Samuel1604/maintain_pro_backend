@@ -1,0 +1,32 @@
+import { Router, type Response } from "express";
+import { authMiddleware } from "@/shared/middleware/authenticate.js";
+import { authorize } from "@/shared/middleware/authorize.js";
+import { ROLES } from "@/shared/constants/roles.js";
+import { dashboard, inventory, maintenanceSummary, maintenanceTrends, preventiveMaintenance, slaCompliance, vendorPerformance, workOrders } from "./report.controller.js";
+import { requestHandler } from "@/shared/utils/request.js";
+import type { AuthRequest } from "@/shared/types/request.js";
+import { reportQuerySchema } from "./report.schema.js";
+import { ReportService } from "./report.service.js";
+import { NotFoundException } from "@/shared/errors/index.js";
+
+const router = Router();
+router.use(authMiddleware);
+const reportReaders = authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.FINANCE, ROLES.TECHNICIAN, ROLES.STAFF, ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER, ROLES.VENDOR_TECHNICIAN);
+router.get("/dashboard", reportReaders, dashboard);
+const exportService = new ReportService();
+const sendCsv = (res: Response, filename: string, result: unknown) => { const value: Record<string, unknown> = result && typeof result === "object" ? result as Record<string, unknown> : {}; const rows: Record<string, unknown>[] = Array.isArray(value.items) ? value.items as Record<string, unknown>[] : Array.isArray(value.vendors) ? value.vendors as Record<string, unknown>[] : [value]; const keys: string[] = [...new Set(rows.flatMap((row) => Object.keys(row)))]; const csv = [keys.join(","), ...rows.map((row) => keys.map((key) => JSON.stringify(row[key] ?? "")).join(","))].join("\n"); res.setHeader("Content-Type", "text/csv"); res.setHeader("Content-Disposition", `attachment; filename="${filename}.csv"`); return res.send(csv); };
+router.get("/maintenance/summary/export", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.FINANCE), requestHandler<AuthRequest>(async (req,res) => sendCsv(res, "maintenance-summary", await exportService.summary(reportQuerySchema.parse(req.query), req.user))));
+router.get("/:report/export", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.FINANCE), requestHandler<AuthRequest<{report:string}>>(async (req,res) => {
+  const query = reportQuerySchema.parse(req.query); const handlers: Record<string, (q: import("./report.schema.js").ReportQuery, a: import("./report.service.js").ReportActor) => Promise<unknown>> = { "work-orders": exportService.workOrders.bind(exportService), "maintenance/summary": exportService.summary.bind(exportService), "vendor-performance": exportService.vendorPerformance.bind(exportService), inventory: exportService.inventory.bind(exportService) };
+  const handler = handlers[req.params.report]; if (!handler) throw new NotFoundException("Report export not found");
+  const result = await handler(query, req.user); return sendCsv(res, req.params.report.replace(/\//g, "-"), result);
+}));
+router.use(authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.FINANCE));
+router.get("/maintenance/summary", maintenanceSummary);
+router.get("/maintenance/trends", maintenanceTrends);
+router.get("/work-orders", workOrders);
+router.get("/inventory", inventory);
+router.get("/preventive-maintenance", preventiveMaintenance);
+router.get("/sla-compliance", slaCompliance);
+router.get("/vendor-performance", vendorPerformance);
+export default router;

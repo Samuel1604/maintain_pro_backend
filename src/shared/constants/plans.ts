@@ -1,12 +1,12 @@
-export const ORG_PLANS = [
-  "free",
-  "starter",
-  "professional",
-  "enterprise",
-] as const;
+export enum ORG_PLANS {
+  FREE = "free",
+  STARTER = "starter",
+  PROFESSIONAL = "professional",
+  ENTERPRISE = "enterprise",
+}
 
-export const VENDOR_PLANS = [
-  "free",
-  "starter",
-  "professional",
-] as const;
+export enum VENDOR_PLANS {
+  FREE = "free",
+  STARTER = "starter",
+  PROFESSIONAL = "professional",
+}

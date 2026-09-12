@@ -42,4 +42,6 @@ export interface CreateAuditLogDto {
   source?: string;
 
   traceId?: string;
+
+  retentionUntil?: Date;
 }

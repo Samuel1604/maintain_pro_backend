@@ -18,8 +18,6 @@ export const organizationDescriptionSchema = z
   .max(1000, "Description cannot exceed 1000 characters")
   .optional();
 
-export const organizationWebsiteSchema = z
-  .url("Invalid website URL")
-  .optional();
+export const organizationWebsiteSchema = z.url("Invalid website URL").optional();
 
 export const organizationLogoSchema = z.url("Invalid logo URL").optional();

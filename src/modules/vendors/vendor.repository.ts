@@ -16,7 +16,7 @@ export class VendorRepository {
   }
 
   async findMany(filter: Partial<IVendor>): Promise<IVendor[]> {
-    return Vendor.find(filter);
+    return Vendor.find(filter).limit(1000);
   }
 
   async update(

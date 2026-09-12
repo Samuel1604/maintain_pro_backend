@@ -2,6 +2,7 @@ import { Schema, model, Document, Types } from "mongoose";
 import type { VendorApplicationStatus } from "./vendor-application.types.js";
 
 export interface IVendorApplication extends Document {
+  organizationId: Types.ObjectId;
   workOrderId: Types.ObjectId;
   vendorId: Types.ObjectId;
   appliedBy: Types.ObjectId;
@@ -13,6 +14,7 @@ export interface IVendorApplication extends Document {
 
 const vendorApplicationSchema = new Schema<IVendorApplication>(
   {
+    organizationId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
     workOrderId: {
       type: Schema.Types.ObjectId,
       ref: "WorkOrder",

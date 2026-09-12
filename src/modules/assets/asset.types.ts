@@ -1,5 +1,4 @@
-// src/modules/assets/asset.types.js
-// TODO: Define asset-related TypeScript types and interfaces
+// Shared asset enums and request shapes used by the asset module.
 export enum AssetStatus {
   ACTIVE = "active",
   INACTIVE = "inactive",
@@ -33,7 +32,8 @@ export enum AssetCondition {
   POOR = "poor",
 }
 
-export interface createAssetDto {
+export interface CreateAssetDto {
+  locationId: string;
   assetTag: string;
   name: string;
   description?: string;
@@ -44,18 +44,19 @@ export interface createAssetDto {
   purchaseDate?: Date;
   installationDate?: Date;
   warrantyExpiry?: Date;
-  status: AssetStatus;
+  status?: AssetStatus;
   criticality?: AssetCriticality;
-  condition: AssetCondition;
-  ownership: AssetOwnership;
+  condition?: AssetCondition;
+  ownership?: AssetOwnership;
   lastMaintenanceDate?: Date;
   nextMaintenanceDate?: Date;
   estimatedValue?: number;
   notes?: string;
 }
 
-export interface updateAssetDto {
-  assetTag: string;
+export interface UpdateAssetDto {
+  assetTag?: string;
+  locationId?: string;
   name?: string;
   description?: string;
   category?: AssetCategory;
@@ -74,3 +75,7 @@ export interface updateAssetDto {
   estimatedValue?: number;
   notes?: string;
 }
+
+// Backward-compatible aliases for older module imports.
+export type createAssetDto = CreateAssetDto;
+export type updateAssetDto = UpdateAssetDto;

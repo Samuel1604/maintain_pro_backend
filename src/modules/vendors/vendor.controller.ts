@@ -3,23 +3,17 @@ import type { AuthRequest } from "@/shared/types/request.js";
 import { vendorService } from "@/container/index.js";
 import { updateVendorProfileSchema } from "./vendor.schema.js";
 
-const service = vendorService;
-
 export const getVendor = requestHandler<AuthRequest>(async (req, res) => {
-  const vendor = await vendorService.getVendor(req.user);
+  const result = await vendorService.getVendor(req.user);
 
-  return res.status(200).json({
-    success: true,
-    data: vendor,
-  });
+  return res.ok(result.data, result.message);
 });
 
 export const updateVendor = requestHandler<AuthRequest>(async (req, res) => {
   const data = updateVendorProfileSchema.parse(req.body);
-  const vendor = await vendorService.updateVendor(data, req.user);
+  const result = await vendorService.updateVendor(data, req.user);
 
-  return res.status(200).json({
-    success: true,
-    data: vendor,
-  });
+  return res.ok(result.data, result.message);
 });
+
+export const getVendorPerformance = requestHandler<AuthRequest>(async (req, res) => res.ok(await vendorService.performance(req.user), "Vendor performance retrieved"));

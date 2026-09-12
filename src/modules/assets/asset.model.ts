@@ -4,6 +4,7 @@ import * as Type from "./asset.types.js";
 export interface IAsset extends Document {
   organizationId: Types.ObjectId;
   facilityId: Types.ObjectId;
+  locationId: Types.ObjectId;
 
   assetTag: string;
 
@@ -56,12 +57,13 @@ const assetSchema = new Schema<IAsset>({
   assetTag: {
     type: String,
     required: true,
-    unique: true,
+    trim: true,
   },
   name: {
     type: String,
     required: true,
   },
+  locationId: { type: Schema.Types.ObjectId, ref: "Location", required: true, index: true },
   description: {
     type: String,
   },
@@ -131,4 +133,7 @@ const assetSchema = new Schema<IAsset>({
   },
 });
 
+assetSchema.index({ organizationId: 1, facilityId: 1, assetTag: 1 }, { unique: true });
+assetSchema.index({ organizationId: 1, createdAt: -1 });
+assetSchema.index({ organizationId: 1, status: 1, createdAt: -1 });
 export const Asset = model<IAsset>("Asset", assetSchema);

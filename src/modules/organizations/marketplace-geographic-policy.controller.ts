@@ -1,0 +1,11 @@
+import { requestHandler } from "@/shared/utils/request.js";
+import type { AuthRequest } from "@/shared/types/request.js";
+import { geographicPolicySchema, geographicPolicyUpdateSchema } from "./marketplace-geographic-policy.schema.js";
+import { MarketplaceGeographicPolicyService } from "./marketplace-geographic-policy.service.js";
+const service = new MarketplaceGeographicPolicyService();
+export const listGeographicPolicies = requestHandler<AuthRequest>(async (req, res) => { const result = await service.list(req.user); return res.ok(result.data, result.message); });
+export const getGeographicPolicy = requestHandler<AuthRequest<{ id: string }>>(async (req, res) => { const result = await service.get(req.params.id, req.user); return res.ok(result.data, result.message); });
+export const createGeographicPolicy = requestHandler<AuthRequest>(async (req, res) => { const result = await service.create(geographicPolicySchema.parse(req.body), req.user); return res.created(result.data, result.message); });
+export const updateGeographicPolicy = requestHandler<AuthRequest<{ id: string }>>(async (req, res) => { const result = await service.update(req.params.id, geographicPolicyUpdateSchema.parse(req.body), req.user); return res.ok(result.data, result.message); });
+export const activateGeographicPolicy = requestHandler<AuthRequest<{ id: string }>>(async (req, res) => { const result = await service.setEnabled(req.params.id, true, req.user); return res.ok(result.data, result.message); });
+export const deactivateGeographicPolicy = requestHandler<AuthRequest<{ id: string }>>(async (req, res) => { const result = await service.setEnabled(req.params.id, false, req.user); return res.ok(result.data, result.message); });

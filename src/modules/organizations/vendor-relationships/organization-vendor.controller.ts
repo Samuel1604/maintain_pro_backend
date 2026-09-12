@@ -1,0 +1,15 @@
+import { requestHandler } from "@/shared/utils/request.js";
+import type { AuthRequest } from "@/shared/types/request.js";
+import { vendorListSchema, vendorStatusSchema, facilityVendorParamsSchema } from "./organization-vendor.schema.js";
+import { OrganizationVendorService } from "./organization-vendor.service.js";
+const service = new OrganizationVendorService();
+export const listOrganizationVendors = requestHandler<AuthRequest>(async (req, res) => { const result = await service.list(req.user, vendorListSchema.parse(req.query)); return res.ok(result.data, result.message); });
+export const discoverMarketplaceVendors = requestHandler<AuthRequest>(async (req, res) => { const result = await service.marketplace(req.user, vendorListSchema.parse(req.query)); return res.ok(result.data, result.message); });
+export const requestOrganizationVendor = requestHandler<AuthRequest<{ vendorId: string }>>(async (req, res) => { const result = await service.requestRelationship(req.params.vendorId, req.user); return res.created(result.data, result.message); });
+export const getOrganizationVendor = requestHandler<AuthRequest<{ vendorId: string }>>(async (req, res) => { const result = await service.get(req.params.vendorId, req.user); return res.ok(result.data, result.message); });
+export const changeOrganizationVendorStatus = requestHandler<AuthRequest<{ vendorId: string }>>(async (req, res) => { const result = await service.changeStatus(req.params.vendorId, vendorStatusSchema.parse(req.body), req.user); return res.ok(result.data, result.message); });
+export const respondToVendorRelationship = requestHandler<AuthRequest<{ organizationId: string }>>(async (req, res) => { const result = await service.respondToRelationship(req.params.organizationId, vendorStatusSchema.parse(req.body), req.user); return res.ok(result.data, result.message); });
+export const listFacilityVendors = requestHandler<AuthRequest<{ facilityId: string }>>(async (req, res) => { const result = await service.facilityVendors(req.params.facilityId, req.user); return res.ok(result.data, result.message); });
+export const associateFacilityVendor = requestHandler<AuthRequest<{ facilityId: string; vendorId: string }>>(async (req, res) => { const params = facilityVendorParamsSchema.parse(req.params); const result = await service.associate(params.facilityId, params.vendorId, req.user); return res.created(result.data, result.message); });
+export const removeFacilityVendor = requestHandler<AuthRequest<{ facilityId: string; vendorId: string }>>(async (req, res) => { const params = facilityVendorParamsSchema.parse(req.params); const result = await service.removeAssociation(params.facilityId, params.vendorId, req.user); return res.ok(result.data, result.message); });
+export const getOrganizationVendorPerformance = requestHandler<AuthRequest<{ vendorId: string }>>(async (req, res) => res.ok((await service.performance(req.params.vendorId, req.user)).data, "Vendor performance retrieved"));

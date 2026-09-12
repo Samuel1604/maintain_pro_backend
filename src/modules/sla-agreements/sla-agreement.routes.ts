@@ -5,6 +5,8 @@ import { ROLES } from "@/shared/constants/roles.js";
 import {
   createSlaAgreement,
   listSlaAgreementsByApplication,
+  updateSlaAgreementStatus,
+  listSlaAgreementsForVendor,
 } from "./sla-agreement.controller.js";
 
 const router = Router();
@@ -21,6 +23,7 @@ router.post(
   ),
   createSlaAgreement,
 );
+router.get("/mine", authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER), listSlaAgreementsForVendor);
 
 router.get(
   "/applications/:vendorApplicationId",
@@ -32,5 +35,7 @@ router.get(
   ),
   listSlaAgreementsByApplication,
 );
+
+router.patch("/:id/status", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER), updateSlaAgreementStatus);
 
 export default router;

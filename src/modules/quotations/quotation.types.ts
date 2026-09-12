@@ -1,1 +1,1 @@
-export type QuotationStatus = "submitted" | "revised" | "accepted" | "rejected";
+export type QuotationStatus = "draft" | "submitted" | "under_review" | "accepted" | "rejected" | "withdrawn" | "expired";

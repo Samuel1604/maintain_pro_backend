@@ -7,6 +7,7 @@ const vendorSchema = new Schema<IVendor>(
       type: String,
       required: true,
     },
+    slug: { type: String, required: true, unique: true, lowercase: true, index: true },
 
     email: {
       type: String,
@@ -20,8 +21,15 @@ const vendorSchema = new Schema<IVendor>(
     },
 
     website: String,
+    logo: String,
 
-    address: String,
+    address: {
+      street: String,
+      city: String,
+      state: String,
+      postalCode: String,
+      country: String,
+    },
     companyRegistrationNumber: String,
 
     serviceCategories: [
@@ -39,7 +47,6 @@ const vendorSchema = new Schema<IVendor>(
       type: {
         type: String,
         enum: ["Point"],
-        default: "Point",
       },
       coordinates: {
         type: [Number],

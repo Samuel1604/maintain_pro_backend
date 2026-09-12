@@ -22,6 +22,5 @@ export const bioSchema = z
   .max(500, "Bio cannot exceed 500 characters")
   .optional();
 
-
 export const firstNameSchema = nameSchema;
 export const lastNameSchema = nameSchema;

@@ -1,10 +1,10 @@
 import { SecurityAlertRepository } from "./security.repository.js";
 import type { CreateSecurityAlertDto } from "./security.dto.js";
 import { SecurityAlertStatus } from "./security.types.js";
-import { AppError } from "@/shared/errors/AppError.js";
+import { NotFoundException } from "@/shared/errors/index.js";
 import type { Types } from "mongoose";
 
-export class SecurityAlertService {
+export class SecurityService {
   constructor(private readonly repository: SecurityAlertRepository) {}
 
   async createAlert(dto: CreateSecurityAlertDto) {
@@ -35,11 +35,14 @@ export class SecurityAlertService {
     return this.repository.countUnread(userId);
   }
 
-  async markRead(alertId: Types.ObjectId) {
-    const alert = await this.repository.markRead(alertId);
+  async markRead(alertId: Types.ObjectId, userId: Types.ObjectId) {
+    const alert = await this.repository.markRead(alertId, userId);
 
     if (!alert) {
-      throw new AppError("Security alert not found", 404);
+      // Also hit when the alert exists but belongs to someone else —
+      // deliberately indistinguishable from "doesn't exist" so this
+      // endpoint can't be used to probe other users' alert IDs.
+      throw new NotFoundException("Security alert not found");
     }
 
     return alert;
@@ -53,11 +56,11 @@ export class SecurityAlertService {
     };
   }
 
-  async dismiss(alertId: string) {
-    const alert = await this.repository.dismiss(alertId);
+  async dismiss(alertId: string, userId: Types.ObjectId) {
+    const alert = await this.repository.dismiss(alertId, userId);
 
     if (!alert) {
-      throw new AppError("Security alert not found", 404);
+      throw new NotFoundException("Security alert not found");
     }
 
     return alert;

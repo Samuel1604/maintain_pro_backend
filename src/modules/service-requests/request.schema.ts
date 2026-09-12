@@ -39,14 +39,27 @@ export type RejectServiceRequestInput = z.infer<
 
 export const createServiceRequestSchema = z.object({
   organizationId: objectId,
-  facilityId: objectId,
-  assetId: objectId.optional(),
+  facilityId: objectId.optional(),
+  locationId: objectId.optional(),
+  assetId: objectId,
   title: z.string().trim().min(2),
   description: z.string().trim().min(5),
   priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
   serviceCategory: z.string().trim().min(2),
+  sourceWorkOrderId: objectId.optional(),
+  attachmentUploadIds: z.array(objectId).optional(),
 });
 
 export type CreateServiceRequestInput = z.infer<
   typeof createServiceRequestSchema
 >;
+
+export const serviceRequestListSchema = z.object({ page: z.coerce.number().int().positive().default(1), limit: z.coerce.number().int().positive().max(100).default(50), from: z.coerce.date().optional(), to: z.coerce.date().optional(), status: z.enum(["pending", "approved", "rejected"]).optional() });
+
+export const updateServiceRequestSchema = z.object({
+  title: z.string().trim().min(2).optional(),
+  description: z.string().trim().min(5).optional(),
+  priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+  serviceCategory: z.string().trim().min(2).optional(),
+}).strict();
+export type UpdateServiceRequestInput = z.infer<typeof updateServiceRequestSchema>;

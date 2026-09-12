@@ -1,0 +1,5 @@
+import { Schema, model, type Document, type Types } from "mongoose";
+export interface IEscalationRule extends Document { organizationId: Types.ObjectId; name: string; triggerHours: number; priority: "low" | "medium" | "high" | "critical"; escalateTo: string; method: string[]; level: number; isActive: boolean; createdBy: Types.ObjectId; createdAt: Date; updatedAt: Date }
+const schema = new Schema<IEscalationRule>({ organizationId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true }, name: { type: String, required: true, trim: true }, triggerHours: { type: Number, min: 1, required: true }, priority: { type: String, enum: ["low", "medium", "high", "critical"], required: true }, escalateTo: { type: String, required: true }, method: { type: [String], default: ["in_app"] }, level: { type: Number, min: 1, required: true }, isActive: { type: Boolean, default: true }, createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true } }, { timestamps: true });
+schema.index({ organizationId: 1, name: 1 }, { unique: true });
+export const EscalationRule = model<IEscalationRule>("EscalationRule", schema);

@@ -1,0 +1,3 @@
+import { z } from "zod";
+export const preferenceSchema = z.object({ channels: z.record(z.string(), z.object({ inApp: z.boolean(), email: z.boolean(), push: z.boolean(), sms: z.boolean() })).optional(), quietHours: z.object({ enabled: z.boolean(), start: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), end: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/) }).optional() });
+export const escalationRuleSchema = z.object({ name: z.string().min(1), triggerHours: z.coerce.number().int().positive(), priority: z.enum(["low", "medium", "high", "critical"]), escalateTo: z.string().min(1), method: z.array(z.enum(["in_app", "email", "push", "sms"])).min(1), level: z.coerce.number().int().positive(), isActive: z.boolean().default(true) });

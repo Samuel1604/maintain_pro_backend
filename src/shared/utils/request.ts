@@ -1,8 +1,8 @@
-import type { AppRequest } from "@/shared/types/request.js";
+import type { AuthRequest } from "@/shared/types/request.js";
 import type { NextFunction, RequestHandler, Response } from "express";
 
-export function requestHandler<TRequest extends AppRequest = AppRequest>(
-  handler: (req: TRequest, res: Response, next: NextFunction) => Promise<void>,
+export function requestHandler<TRequest extends AuthRequest = AuthRequest>(
+  handler: (req: TRequest, res: Response, next: NextFunction) => Promise<unknown>,
 ): RequestHandler {
   return async (req, res, next) => {
     try {

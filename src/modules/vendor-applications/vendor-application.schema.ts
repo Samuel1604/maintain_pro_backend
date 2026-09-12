@@ -10,3 +10,4 @@ export const createVendorApplicationSchema = z.object({
 export type CreateVendorApplicationInput = z.infer<
   typeof createVendorApplicationSchema
 >;
+export const applicationStatusSchema = z.object({ status: z.enum(["under_review", "rejected", "awarded", "withdrawn"]) });

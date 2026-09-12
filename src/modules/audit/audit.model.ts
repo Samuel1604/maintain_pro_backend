@@ -95,6 +95,12 @@ export const auditLogSchema = new Schema<IAuditLog>(
       type: String,
       index: true,
     },
+
+    retentionUntil: {
+      type: Date,
+      required: true,
+      index: { expires: 0 },
+    },
   },
   {
     timestamps: true,

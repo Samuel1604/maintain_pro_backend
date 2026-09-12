@@ -12,6 +12,10 @@ const invitationSchema = new Schema<IInvitation>(
       trim: true,
     },
 
+    // Populated only for temp-invite flow
+    firstName: { type: String, trim: true },
+    lastName: { type: String, trim: true },
+
     role: {
       type: String,
       enum: Object.values(ROLES),

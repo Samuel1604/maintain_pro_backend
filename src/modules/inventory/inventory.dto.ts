@@ -1,0 +1,2 @@
+export interface InventoryItemResponse { id: string; organizationId: string; sku: string; name: string; description?: string; categoryId?: string; unitOfMeasure: string; status: string; minimumStockLevel: number; reorderLevel: number; maximumStockLevel?: number; preferredVendorId?: string; createdAt: string; updatedAt: string }
+export interface StockBalanceResponse { id: string; itemId: string; stockLocationId: string; quantity: number; reservedQuantity: number; availableQuantity: number; updatedAt: string }

@@ -3,6 +3,7 @@ import type { Document } from "mongoose";
 export interface IOrganization extends Document {
   // Company
   name: string;
+  slug: string;
   industry: string;
 
   email: string;
@@ -11,22 +12,16 @@ export interface IOrganization extends Document {
   website?: string;
 
   // Address
-  address: string;
+  address: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  };
 
   // Branding
   logo?: string;
-
-  // Subscription
-  plan: "free" | "starter" | "professional" | "enterprise";
-
-  subscriptionStatus: "trial" | "active" | "past_due" | "cancelled";
-
-  // Limits
-  facilityLimit: number;
-
-  facilityManagerLimit: number;
-
-  vendorMarketplaceEnabled: boolean;
 
   // Verification
   isVerified: boolean;

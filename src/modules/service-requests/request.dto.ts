@@ -1,14 +1,3 @@
-export interface CreateServiceRequestDto {
-  organizationId: string;
-  facilityId: string;
-  assetId?: string;
-  title: string;
-  description: string;
-  priority?: "low" | "medium" | "high" | "critical";
-  serviceCategory: string;
-}
-
-export interface ApproveServiceRequestDto {
-  fulfillmentType: "internal" | "marketplace";
-  technicianId?: string;
-}
+import type { IServiceRequest } from "./request.model.js";
+export interface ServiceRequestResponse { id: string; organizationId: string; facilityId: string; locationId: string; assetId: string; requestedBy: string; title: string; description: string; priority: IServiceRequest["priority"]; serviceCategory: string; status: IServiceRequest["status"]; workOrderId?: string; approvalDecision?: IServiceRequest["approvalDecision"]; rejectionReason?: string; attachmentUploadIds?: string[]; createdAt: string; updatedAt: string }
+export function toServiceRequestResponse(item: IServiceRequest): ServiceRequestResponse { return { id: item._id.toString(), organizationId: item.organizationId.toString(), facilityId: item.facilityId.toString(), locationId: item.locationId.toString(), assetId: item.assetId.toString(), requestedBy: item.requestedBy.toString(), title: item.title, description: item.description, priority: item.priority, serviceCategory: item.serviceCategory, status: item.status, workOrderId: item.workOrderId?.toString(), approvalDecision: item.approvalDecision, rejectionReason: item.rejectionReason, attachmentUploadIds: item.attachmentUploadIds?.map(id => id.toString()), createdAt: item.createdAt.toISOString(), updatedAt: item.updatedAt.toISOString() }; }

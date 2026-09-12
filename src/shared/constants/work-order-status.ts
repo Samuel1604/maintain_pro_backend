@@ -1,5 +1,6 @@
 export const WORK_ORDER_STATUS = {
   OPEN: "open",
+  BIDDING_OPEN: "open",
   ASSIGNED: "assigned",
   IN_PROGRESS: "in_progress",
   PENDING_COMPLETION: "pending_completion",

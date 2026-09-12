@@ -2,25 +2,33 @@ import type { Document } from "mongoose";
 export interface IVendor extends Document {
   // Company
   name: string;
+  slug: string;
 
   email: string;
   phone: string;
 
   website?: string;
+  logo?: string;
 
-  address?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  };
 
   companyRegistrationNumber?: string;
 
   // Marketplace
   serviceCategories: string[];
 
-  certifications: string[];
+  certifications?: string[];
 
   // Coverage
   coverageRadiusKm: number;
 
-  baseCoordinates: {
+  baseCoordinates?: {
     type: "Point";
     coordinates: [number, number];
   };
@@ -62,7 +70,13 @@ export interface VendorCompanyInfo {
   name: string;
   email: string;
   phone: string;
-  address?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  };
   serviceCategories: string[];
   serviceAreas: string[];
   coverageRadiusKm?: number;

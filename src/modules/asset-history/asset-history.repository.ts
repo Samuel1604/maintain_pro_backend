@@ -1,0 +1,5 @@
+import { Types } from "mongoose";
+import { AssetHistoryEntry, type IAssetHistoryEntry } from "./asset-history.model.js";
+import type { AssetHistoryEvent } from "./asset-history.types.js";
+export interface AssetHistoryQuery { page: number; limit: number; event?: AssetHistoryEvent; from?: Date; to?: Date }
+export class AssetHistoryRepository { async append(data: Partial<IAssetHistoryEntry>) { return AssetHistoryEntry.create(data); } async findByAsset(organizationId: string, assetId: string, query: AssetHistoryQuery) { const filter: Record<string, unknown> = { organizationId: new Types.ObjectId(organizationId), assetId: new Types.ObjectId(assetId) }; if (query.event) filter.event = query.event; if (query.from || query.to) filter.occurredAt = { ...(query.from ? { $gte: query.from } : {}), ...(query.to ? { $lte: query.to } : {}) }; const [data, total] = await Promise.all([AssetHistoryEntry.find(filter).sort({ occurredAt: -1, _id: -1 }).skip((query.page - 1) * query.limit).limit(query.limit), AssetHistoryEntry.countDocuments(filter)]); return { data, total }; } }

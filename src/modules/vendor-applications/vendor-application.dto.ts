@@ -1,4 +1,1 @@
-export interface CreateVendorApplicationDto {
-  workOrderId: string;
-  note?: string;
-}
+export interface VendorApplicationResponse { id: string; organizationId: string; workOrderId: string; vendorId: string; appliedBy: string; note?: string; status: string; createdAt: string; updatedAt: string }

@@ -1,4 +1,7 @@
 import { redis } from "./redis.js";
+import { ConsoleLogger } from "@/infrastructure/logging/console.logger.js";
+
+const logger = new ConsoleLogger();
 
 /**
  * Verifies Redis availability during application startup.
@@ -13,11 +16,11 @@ export async function checkRedis() {
       throw new Error("Redis ping failed");
     }
 
-    console.log("✅ Redis health check passed");
+    logger.info("Redis health check passed");
   } catch (error) {
-    console.error("❌ Redis health check failed");
-    console.error(error);
-
-    process.exit(1);
+    logger.error("Redis health check failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
   }
 }

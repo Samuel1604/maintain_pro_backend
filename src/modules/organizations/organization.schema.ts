@@ -3,53 +3,38 @@ import { z } from "zod";
 import {
   organizationNameSchema,
   industrySchema,
-  organizationDescriptionSchema,
   organizationWebsiteSchema,
   organizationLogoSchema,
 } from "@/shared/validators/organization.js";
 
-import { objectIdSchema } from "@/shared/validators/objectId.js";
-
+import { emailSchema } from "@/shared/validators/auth.js";
+import { phoneSchema } from "@/shared/validators/user.js";
 import { addressSchema } from "@/shared/validators/common.js";
 
-import { phoneSchema } from "@/shared/validators/user.js";
+/**
+ * Fields an organization admin can update about their own organization's
+ * profile. Deliberately excludes:
+ *  - status (lifecycle transitions are a separate, internal capability —
+ *    not a self-service profile edit)
+ *  - plan/subscription (owned by Billing)
+ */
+const updateOrganizationBodySchema = z
+  .object({
+    name: organizationNameSchema,
+    industry: industrySchema,
+    email: emailSchema,
+    phone: phoneSchema,
+    address: addressSchema,
+    website: organizationWebsiteSchema,
+    logo: organizationLogoSchema,
+  })
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided",
+  });
 
 export const updateOrganizationSchema = z.object({
-  organizationName: organizationNameSchema.optional(),
-
-  industry: industrySchema.optional(),
-
-  phone: phoneSchema.optional(),
-
-  address: addressSchema.optional(),
-
-  description: organizationDescriptionSchema,
-
-  website: organizationWebsiteSchema,
-
-  logo: organizationLogoSchema,
+  body: updateOrganizationBodySchema,
 });
 
-export type UpdateOrganizationDto = z.infer<typeof updateOrganizationSchema>;
-
-export const organizationIdParamsSchema = z.object({
-  id: objectIdSchema,
-});
-
-export type OrganizationIdParamsDto = z.infer<
-  typeof organizationIdParamsSchema
->;
-
-export const listOrganizationsQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-
-  search: z.string().trim().optional(),
-
-  industry: industrySchema.optional(),
-});
-
-export type ListOrganizationsQueryDto = z.infer<
-  typeof listOrganizationsQuerySchema
->;
+export type UpdateOrganizationDto = z.infer<typeof updateOrganizationBodySchema>;

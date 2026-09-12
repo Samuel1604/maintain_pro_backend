@@ -2,14 +2,19 @@ import { Schema, model, Document, Types } from "mongoose";
 import type { SlaAgreementStatus } from "./sla-agreement.types.js";
 
 export interface ISlaAgreement extends Document {
+  organizationId: Types.ObjectId;
   vendorApplicationId: Types.ObjectId;
   workOrderId: Types.ObjectId;
   vendorId: Types.ObjectId;
   responseTimeHours: number;
+  acknowledgementTimeHours?: number;
+  arrivalTimeHours?: number;
   resolutionTimeHours: number;
   warrantyPeriodDays: number;
   penaltyTerms?: string;
   notes?: string;
+  effectiveAt?: Date;
+  expiresAt?: Date;
   status: SlaAgreementStatus;
   createdBy: Types.ObjectId;
   createdAt: Date;
@@ -18,6 +23,7 @@ export interface ISlaAgreement extends Document {
 
 const slaAgreementSchema = new Schema<ISlaAgreement>(
   {
+    organizationId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
     vendorApplicationId: {
       type: Schema.Types.ObjectId,
       ref: "VendorApplication",
@@ -38,6 +44,8 @@ const slaAgreementSchema = new Schema<ISlaAgreement>(
       required: true,
       min: 0,
     },
+    acknowledgementTimeHours: { type: Number, min: 0 },
+    arrivalTimeHours: { type: Number, min: 0 },
     resolutionTimeHours: {
       type: Number,
       required: true,
@@ -50,9 +58,11 @@ const slaAgreementSchema = new Schema<ISlaAgreement>(
     },
     penaltyTerms: String,
     notes: String,
+    effectiveAt: Date,
+    expiresAt: Date,
     status: {
       type: String,
-      enum: ["draft", "proposed", "accepted", "rejected"],
+      enum: ["draft", "proposed", "accepted", "active", "expired", "terminated", "rejected"],
       default: "proposed",
     },
     createdBy: {

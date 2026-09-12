@@ -1,26 +1,38 @@
 import { z } from "zod";
 
 import { ROLES } from "@/shared/constants/roles.js";
-import { objectIdSchema } from "@/shared/validators/objectId.js";
-import { emailSchema } from "@/shared/validators/auth.js";
-import {pageSchema, limitSchema, searchSchema, roleSchema} from "@/shared/validators/common.js"
+import {
+  objectIdSchema,
+  emailSchema,
+  pageSchema,
+  limitSchema,
+  searchSchema,
+  roleSchema,
+  invitationStatusSchema,
+  invitationTokenSchema,
+  firstNameSchema,
+  lastNameSchema,
+  passwordSchema,
+} from "@/shared/validators/index.js";
 
-import { invitationStatusSchema } from "@/shared/validators/invitation.js";
-
-export const createInvitationSchema = z.object({
+const createInvitationBodySchema = z.object({
   email: emailSchema,
-
-  role: z.enum(Object.values(ROLES)),
-  invitedBy: objectIdSchema,
-  invitationType: z.enum(["organization", "vendor", "facility"]),
+  role: z.enum(Object.values(ROLES) as [string, ...string[]]),
+  invitedBy: objectIdSchema.optional(),
+  invitationType: z.enum(["organization", "vendor", "facility"]).optional(),
   organizationId: objectIdSchema.optional(),
   facilityId: objectIdSchema.optional(),
   vendorId: objectIdSchema.optional(),
   resentFromInvitationId: objectIdSchema.optional(),
+  firstName: firstNameSchema.optional(),
+  lastName: lastNameSchema.optional(),
 });
 
-export type CreateInvitationDto =
-  z.infer<typeof createInvitationSchema>;
+export const createInvitationSchema = z.object({
+  body: createInvitationBodySchema,
+});
+
+export type CreateInvitationDto = z.infer<typeof createInvitationBodySchema>;
 
 export const listInvitationsSchema = z.object({
   page: pageSchema,
@@ -51,3 +63,31 @@ export const validateInvitationSchema = z.object({
 });
 
 export type ValidateInvitationDto = z.infer<typeof validateInvitationSchema>;
+
+const acceptInvitationBodySchema = z.object({
+  token: invitationTokenSchema,
+  firstName: firstNameSchema,
+  lastName: lastNameSchema,
+  password: passwordSchema,
+});
+
+export const acceptInvitationSchema = z.object({
+  body: acceptInvitationBodySchema,
+});
+
+export type AcceptInvitationDto = z.infer<typeof acceptInvitationBodySchema>;
+
+// ─── Temp Invitation (system-generated password) ─────────────────────────────
+
+const sendTempInviteBodySchema = z.object({
+  email: emailSchema,
+  firstName: firstNameSchema,
+  lastName: lastNameSchema,
+  role: z.enum(Object.values(ROLES) as [string, ...string[]]),
+});
+
+export const sendTempInviteSchema = z.object({
+  body: sendTempInviteBodySchema,
+});
+
+export type CreateTempInvitationDto = z.infer<typeof sendTempInviteBodySchema>;

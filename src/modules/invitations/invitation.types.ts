@@ -4,6 +4,12 @@ import type { UserRole } from "@/shared/constants/roles.js";
 export interface IInvitation extends Document {
   email: string;
 
+  /** Optional: populated for temp-invitation flow where the actor provides the invitee's name */
+  firstName?: string;
+
+  /** Optional: populated for temp-invitation flow where the actor provides the invitee's name */
+  lastName?: string;
+
   role: UserRole;
 
   invitationType: InvitationType;

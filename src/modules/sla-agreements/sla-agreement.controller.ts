@@ -8,24 +8,28 @@ const service = new SlaAgreementService();
 export const createSlaAgreement = requestHandler<AuthRequest>(
   async (req, res) => {
     const data = createSlaAgreementSchema.parse(req.body);
-    const agreement = await service.create(data, req.user);
+    const result = await service.create(data, req.user);
 
-    return res.status(201).json({
-      success: true,
-      data: agreement,
-    });
+    return res.created(result.data, result.message);
   },
 );
 
 export const listSlaAgreementsByApplication = requestHandler<
   AuthRequest<{ vendorApplicationId: string }>
 >(async (req, res) => {
-  const agreements = await service.listByApplication(
+  const result = await service.listByApplication(
     req.params.vendorApplicationId,
+    req.user,
   );
 
-  return res.status(200).json({
-    success: true,
-    data: agreements,
-  });
+  return res.ok(result.data, result.message);
+});
+export const listSlaAgreementsForVendor = requestHandler<AuthRequest>(async (req, res) => {
+  const result = await service.listForVendor(req.user);
+  return res.ok(result.data, result.message);
+});
+
+export const updateSlaAgreementStatus = requestHandler<AuthRequest<{ id: string }>>(async (req, res) => {
+  const result = await service.updateStatus(req.params.id, req.body.status, req.user);
+  return res.ok(result.data, result.message);
 });

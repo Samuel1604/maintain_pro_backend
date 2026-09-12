@@ -62,4 +62,11 @@ export interface IUser extends Document {
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
+
+  /**
+   * Set on temp-invitation users only.
+   * If now > tempPasswordExpiresAt the user record is automatically cleaned up
+   * and login is rejected. Unset on all other account types.
+   */
+  tempPasswordExpiresAt?: Date;
 }

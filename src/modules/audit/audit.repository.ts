@@ -39,4 +39,12 @@ export class AuditLogRepository {
       createdAt: -1,
     });
   }
+
+  async findRecentLoginFailures(email: string, limit = 10) {
+    return AuditLog.find({
+      action: "login_failed",
+      outcome: "failure",
+      "metadata.email": email,
+    }).sort({ createdAt: -1 }).limit(limit).lean();
+  }
 }

@@ -2,13 +2,17 @@ import { Schema, model, Document, Types } from "mongoose";
 import type { ContractAwardStatus } from "./contract-award.types.js";
 
 export interface IContractAward extends Document {
+  organizationId: Types.ObjectId;
   workOrderId: Types.ObjectId;
   vendorApplicationId: Types.ObjectId;
   vendorId: Types.ObjectId;
   quotationId?: Types.ObjectId;
+  quotationRevisionId?: Types.ObjectId;
   slaAgreementId?: Types.ObjectId;
   awardedBy: Types.ObjectId;
   awardedAt: Date;
+  effectiveAt?: Date;
+  expiresAt?: Date;
   assignedVendorTechnicianId?: Types.ObjectId;
   notes?: string;
   status: ContractAwardStatus;
@@ -18,6 +22,7 @@ export interface IContractAward extends Document {
 
 const contractAwardSchema = new Schema<IContractAward>(
   {
+    organizationId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
     workOrderId: {
       type: Schema.Types.ObjectId,
       ref: "WorkOrder",
@@ -50,6 +55,8 @@ const contractAwardSchema = new Schema<IContractAward>(
       type: Date,
       default: Date.now,
     },
+    effectiveAt: Date,
+    expiresAt: Date,
     assignedVendorTechnicianId: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -57,8 +64,8 @@ const contractAwardSchema = new Schema<IContractAward>(
     notes: String,
     status: {
       type: String,
-      enum: ["awarded", "cancelled"],
-      default: "awarded",
+      enum: ["draft", "pending_approval", "awarded", "active", "completed", "terminated", "cancelled"],
+      default: "pending_approval",
     },
   },
   {
@@ -66,7 +73,7 @@ const contractAwardSchema = new Schema<IContractAward>(
   },
 );
 
-contractAwardSchema.index({ workOrderId: 1 }, { unique: true });
+contractAwardSchema.index({ organizationId: 1, workOrderId: 1 });
 
 export const ContractAward = model<IContractAward>(
   "ContractAward",

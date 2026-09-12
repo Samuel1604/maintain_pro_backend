@@ -1,0 +1,4 @@
+import type { Types } from "mongoose";
+export const ASSET_HISTORY_EVENTS = { CREATED: "asset_created", UPDATED: "asset_updated", LOCATION_CHANGED: "location_changed", STATUS_CHANGED: "status_changed", SERVICE_REQUEST_CREATED: "service_request_created", SERVICE_REQUEST_APPROVED: "service_request_approved", SERVICE_REQUEST_REJECTED: "service_request_rejected", WORK_ORDER_CREATED: "work_order_created", WORK_ORDER_ASSIGNED: "work_order_assigned", WORK_ORDER_STARTED: "work_order_started", WORK_ORDER_COMPLETED: "work_order_completed", OTHER: "other" } as const;
+export type AssetHistoryEvent = typeof ASSET_HISTORY_EVENTS[keyof typeof ASSET_HISTORY_EVENTS];
+export interface AssetHistoryRecord { organizationId: Types.ObjectId; assetId: Types.ObjectId; event: AssetHistoryEvent; description?: string; actorId?: Types.ObjectId; sourceType?: string; sourceId?: Types.ObjectId; data?: Record<string, unknown>; occurredAt: Date }

@@ -24,14 +24,14 @@ export class SecurityAlertRepository {
     return SecurityAlert.findById(alertId);
   }
 
-  async dismiss(alertId: string) {
-    return SecurityAlert.findByIdAndUpdate(
-      alertId,
+  async dismiss(alertId: string, userId: Types.ObjectId) {
+    return SecurityAlert.findOneAndUpdate(
+      { _id: alertId, userId },
       {
         status: SecurityAlertStatus.DISMISSED,
       },
       {
-        new: true,
+        returnDocument: "after",
       },
     );
   }
@@ -44,9 +44,9 @@ export class SecurityAlertRepository {
     });
   }
 
-  async markRead(alertId: Types.ObjectId) {
-    return SecurityAlert.findByIdAndUpdate(
-      alertId,
+  async markRead(alertId: Types.ObjectId, userId: Types.ObjectId) {
+    return SecurityAlert.findOneAndUpdate(
+      { _id: alertId, userId },
 
       {
         status: SecurityAlertStatus.READ,
@@ -55,7 +55,7 @@ export class SecurityAlertRepository {
       },
 
       {
-        new: true,
+        returnDocument: "after",
       },
     );
   }

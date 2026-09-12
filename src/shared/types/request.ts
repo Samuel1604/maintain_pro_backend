@@ -1,19 +1,27 @@
 import type { Request } from "express";
 import type { JwtPayload } from "./jwt.types.js";
+import type { UserRole } from "@/shared/constants/roles.js";
 
-export interface ValidatedData<
-  Params = unknown,
-  Body = unknown,
-  Query = unknown,
-> {
-  params?: Params;
-  body?: Body;
-  query?: Query;
-}
+export type Actor = {
+  userId: string;
+  role: UserRole;
+  organizationId?: string;
+  facilityId?: string;
+  vendorId?: string;
+};
 
-export interface AppRequest<Params = unknown, Body = unknown, Query = unknown>
-  extends Request {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type AuthRequest<
+  Params = Record<string, any>,
+  Body = Record<string, any>,
+  Query = Record<string, any>,
+  Validated = {
+    body: Body;
+    params: Params;
+    query: Query;
+  },
+> = Request<Params, unknown, Body, Query> & {
   user: JwtPayload;
-
-  validated: ValidatedData<Params, Body, Query>;
-}
+  validated: Validated;
+};
+/* eslint-enable @typescript-eslint/no-explicit-any */

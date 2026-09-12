@@ -2,14 +2,15 @@ import { Subscription } from "./billing.model.js";
 import type { ISubscription } from "./billing.types.js";
 import type { SubscriptionOwnerType } from "./billing.types.js";
 import type { UpdateQuery } from "mongoose";
+import type { ClientSession } from "mongoose";
 
 export class BillingRepository {
   async create(data: Record<string, unknown>): Promise<ISubscription> {
     return Subscription.create(data);
   }
 
-  async findById(id: string): Promise<ISubscription | null> {
-    return Subscription.findById(id);
+  async findById(id: string, session?: ClientSession): Promise<ISubscription | null> {
+    return Subscription.findOne({ _id: id }, undefined, session ? { session } : undefined);
   }
 
   async findByIdForOwner(
@@ -30,9 +31,11 @@ export class BillingRepository {
   async update(
     id: string,
     updates: UpdateQuery<ISubscription>,
+    session?: ClientSession,
   ): Promise<ISubscription | null> {
     return Subscription.findByIdAndUpdate(id, updates, {
       returnDocument: "after",
+      ...(session ? { session } : {}),
     });
   }
 

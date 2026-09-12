@@ -8,7 +8,9 @@ const organizationSchema = new Schema<IOrganization>(
       type: String,
       required: true,
       trim: true,
+      index: true,
     },
+    slug: { type: String, required: true, unique: true, lowercase: true, index: true },
 
     industry: {
       type: String,
@@ -20,6 +22,8 @@ const organizationSchema = new Schema<IOrganization>(
       required: true,
       lowercase: true,
       trim: true,
+      index: true,
+      unique: true,
     },
 
     phone: {
@@ -32,45 +36,23 @@ const organizationSchema = new Schema<IOrganization>(
     },
 
     address: {
-      type: String,
-      required: true,
+      street: String,
+      city: String,
+      state: String,
+      postalCode: String,
+      country: String,
     },
 
     logo: String,
-
-    plan: {
-      type: String,
-      enum: ["free", "starter", "professional", "enterprise"],
-      default: "free",
-    },
-
-    subscriptionStatus: {
-      type: String,
-      enum: ["trial", "active", "past_due", "cancelled"],
-    },
 
     status: {
       type: String,
       enum: ["active", "inactive", "suspended"],
       default: "active",
+      index: true,
     },
 
     isVerified: {
-      type: Boolean,
-      default: false,
-    },
-
-    facilityLimit: {
-      type: Number,
-      default: 1,
-    },
-
-    facilityManagerLimit: {
-      type: Number,
-      default: 1,
-    },
-
-    vendorMarketplaceEnabled: {
       type: Boolean,
       default: false,
     },
