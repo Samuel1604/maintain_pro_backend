@@ -1,6 +1,7 @@
 import express, { Router } from "express";
 import { authMiddleware } from "@/shared/middleware/authenticate.js";
 import { requireVerifiedEmail } from "@/shared/middleware/require-verified-email.js";
+import { securityMutationLimiter } from "@/shared/middleware/rate-limit.js";
 import {
   createSubscription,
   getSubscription,
@@ -33,23 +34,23 @@ router.get("/plans", getPlanCatalog);
 router.use(authMiddleware);
 
 // ─── Tenant-Scoped Subscription Operations (/subscription) ───────────────────
-router.post("/subscription", requireVerifiedEmail, createSubscription);
+router.post("/subscription", securityMutationLimiter, requireVerifiedEmail, createSubscription);
 router.get("/subscription", getSubscription);
-router.post("/subscription/checkout", requireVerifiedEmail, initiateCheckout);
-router.post("/subscription/cancel", requireVerifiedEmail, cancelSubscription);
-router.patch("/subscription/upgrade", requireVerifiedEmail, upgradePlan);
-router.patch("/subscription/downgrade", requireVerifiedEmail, downgradePlan);
+router.post("/subscription/checkout", securityMutationLimiter, requireVerifiedEmail, initiateCheckout);
+router.post("/subscription/cancel", securityMutationLimiter, requireVerifiedEmail, cancelSubscription);
+router.patch("/subscription/upgrade", securityMutationLimiter, requireVerifiedEmail, upgradePlan);
+router.patch("/subscription/downgrade", securityMutationLimiter, requireVerifiedEmail, downgradePlan);
 router.get("/payment-methods", getPaymentMethods);
-router.put("/payment-methods", requireVerifiedEmail, savePaymentMethod);
-router.delete("/payment-methods/:id", requireVerifiedEmail, removePaymentMethod);
+router.put("/payment-methods", securityMutationLimiter, requireVerifiedEmail, savePaymentMethod);
+router.delete("/payment-methods/:id", securityMutationLimiter, requireVerifiedEmail, removePaymentMethod);
 
 // ─── Explicit Subscription Operations (/subscriptions) ──────────────────────
-router.post("/subscriptions", requireVerifiedEmail, createSubscription);
+router.post("/subscriptions", securityMutationLimiter, requireVerifiedEmail, createSubscription);
 router.get("/subscriptions/:subscriptionId", getSubscription);
-router.post("/subscriptions/:subscriptionId/activate", requireVerifiedEmail, activateSubscription);
-router.post("/subscriptions/:subscriptionId/cancel", requireVerifiedEmail, cancelSubscription);
-router.post("/subscriptions/:subscriptionId/expire-trial", requireVerifiedEmail, expireTrial);
-router.patch("/subscriptions/:subscriptionId/upgrade", requireVerifiedEmail, upgradePlan);
-router.patch("/subscriptions/:subscriptionId/downgrade", requireVerifiedEmail, downgradePlan);
+router.post("/subscriptions/:subscriptionId/activate", securityMutationLimiter, requireVerifiedEmail, activateSubscription);
+router.post("/subscriptions/:subscriptionId/cancel", securityMutationLimiter, requireVerifiedEmail, cancelSubscription);
+router.post("/subscriptions/:subscriptionId/expire-trial", securityMutationLimiter, requireVerifiedEmail, expireTrial);
+router.patch("/subscriptions/:subscriptionId/upgrade", securityMutationLimiter, requireVerifiedEmail, upgradePlan);
+router.patch("/subscriptions/:subscriptionId/downgrade", securityMutationLimiter, requireVerifiedEmail, downgradePlan);
 
 export default router;
