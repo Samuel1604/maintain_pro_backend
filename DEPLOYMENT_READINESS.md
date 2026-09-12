@@ -111,13 +111,10 @@ The current implementation has been verified locally with:
   against disposable MongoDB replica-set and Redis services. This includes
   concurrent billing webhook delivery, inventory race/idempotency checks, and
   work-order concurrency coverage.
-- Frontend: lint, tests, production build, 27-entry route audit, and
-  `npm audit --omit=dev --audit-level=high` pass. Frontend `tsc --noEmit`
-  currently exceeds the local three-minute verification window without
-  diagnostics and is not recorded as passed.
-- Backend type-check, production build, and release-contract verification
-  passed. Lint completed with zero errors and one remaining warning in the
-  unused legacy logger.
+- Frontend: type-check, lint, tests, production build, 27-entry route audit,
+  and `npm audit --omit=dev --audit-level=high` pass.
+- Backend type-check, lint, production build, and release-contract
+  verification passed.
 - Security: `npm audit --omit=dev --audit-level=high` reports zero vulnerabilities.
 - Container: production image build, compiled import verification, dependency
   pruning, API live health (`200`), and API/worker SIGTERM exit code `0`.
