@@ -1,7 +1,7 @@
-import { toObjectId } from "@/shared/validators/objectId.js";
+import { toObjectId } from "@/shared/validators/index.js";
 import { Invitation } from "./invitation.model.js";
 import { InvitationStatus, type IInvitation } from "./invitation.types.js";
-import { AppError } from "@/shared/errors/AppError.js";
+import { NotFoundException } from "@/shared/errors/index.js";
 
 export class InvitationRepository {
   async create(data: Partial<IInvitation>) {
@@ -20,7 +20,7 @@ export class InvitationRepository {
         },
       },
       {
-        new: true,
+        returnDocument: "after",
       },
     );
   }
@@ -36,7 +36,7 @@ export class InvitationRepository {
     const invitation = await this.findById(id);
 
     if (!invitation) {
-      throw new AppError("Invitation not found", 404);
+      throw new NotFoundException("Invitation not found");
     }
 
     return invitation;
@@ -160,6 +160,7 @@ export class InvitationRepository {
       .sort({
         createdAt: -1,
       })
+      .limit(1000)
       .lean();
   }
 
@@ -170,6 +171,7 @@ export class InvitationRepository {
       .sort({
         createdAt: -1,
       })
+      .limit(1000)
       .lean();
   }
 
@@ -184,7 +186,7 @@ export class InvitationRepository {
       { status },
 
       {
-        new: true,
+        returnDocument: "after",
       },
     );
   }
@@ -206,7 +208,7 @@ export class InvitationRepository {
       },
 
       {
-        new: true,
+        returnDocument: "after",
       },
     );
   }
@@ -232,7 +234,7 @@ export class InvitationRepository {
       },
 
       {
-        new: true,
+        returnDocument: "after",
       },
     );
   }
