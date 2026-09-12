@@ -35,6 +35,15 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Verify release artifacts
+        run: npm run release:verify
+
+      - name: Build production image
+        run: docker build --tag maintainpro-api:${{ github.sha }} .
+
       - name: Start disposable MongoDB and Redis
         run: docker compose -f docker-compose.infrastructure.yml up -d mongodb redis
 
