@@ -103,3 +103,16 @@ export const registrationLimiter = rateLimit({
   store: store(60 * 60 * 1000),
   message: "Too many registration attempts. Please try again later.",
 });
+
+/**
+ * Authenticated credential and identity mutations need their own budget.
+ * Keeping this separate from OTP request limits prevents a user who is
+ * legitimately requesting a code from exhausting the protection around a
+ * password or email change.
+ */
+export const securityMutationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  store: store(15 * 60 * 1000),
+  message: "Too many security changes. Please try again later.",
+});
