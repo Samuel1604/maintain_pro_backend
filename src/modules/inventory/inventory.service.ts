@@ -183,7 +183,7 @@ export class InventoryService {
     await this.context(data.itemId, data.destinationLocationId, actor);
     if (data.idempotencyKey) {
       const existing = await this.repository.findTransactionByIdempotencyKey(data.idempotencyKey, organizationId);
-      if (existing) return existing;
+      if (existing) return this.transactionResponse(existing);
     }
     let transaction;
     try {
@@ -191,12 +191,12 @@ export class InventoryService {
     } catch (error) {
       if (data.idempotencyKey && error instanceof Error && (error as Error & { code?: number }).code === 11000) {
         const existing = await this.repository.findTransactionByIdempotencyKey(data.idempotencyKey, organizationId);
-        if (existing) return existing;
+        if (existing) return this.transactionResponse(existing);
       }
       throw error;
     }
     if (!transaction) throw new ConflictException("Transfer could not be completed");
-    await this.events.auditEvent("inventory.stock_transferred", actor.userId, organizationId, transaction._id.toString(), { sourceLocationId: data.sourceLocationId, destinationLocationId: data.destinationLocationId }); return transaction;
+    await this.events.auditEvent("inventory.stock_transferred", actor.userId, organizationId, transaction._id.toString(), { sourceLocationId: data.sourceLocationId, destinationLocationId: data.destinationLocationId }); return this.transactionResponse(transaction);
   }
   async returnStock(data: { originalTransactionId: string; quantity: number; reason?: string; idempotencyKey?: string }, actor: InventoryActor) {
     const organizationId = this.organization(actor);
