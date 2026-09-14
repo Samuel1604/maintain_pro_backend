@@ -1,4 +1,4 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { Types, type ClientSession } from "mongoose";
 import {
   AuthorizationException,
   NotFoundException,
@@ -44,13 +44,20 @@ export class ServiceRequestService {
   private assets = new AssetRepository();
   private outbox = new OutboxEventRepository();
 
-  async update(id: string, data: import("./request.schema.js").UpdateServiceRequestInput, actor: Actor): Promise<ServiceRequestResponse> {
+  async update(
+    id: string,
+    data: import("./request.schema.js").UpdateServiceRequestInput,
+    actor: Actor,
+  ): Promise<ServiceRequestResponse> {
     if (!actor.organizationId) throw new AuthorizationException("Organization context required");
     const item = await this.repository.findById(id);
     if (!item) throw new NotFoundException("Service request not found");
-    if (item.organizationId.toString() !== actor.organizationId) throw new AuthorizationException("Organization access denied");
-    if (item.status !== "pending") throw new BusinessException("Only pending service requests can be edited");
-    if (actor.role === ROLES.STAFF && item.requestedBy.toString() !== actor.userId) throw new AuthorizationException("Service request access denied");
+    if (item.organizationId.toString() !== actor.organizationId)
+      throw new AuthorizationException("Organization access denied");
+    if (item.status !== "pending")
+      throw new BusinessException("Only pending service requests can be edited");
+    if (actor.role === ROLES.STAFF && item.requestedBy.toString() !== actor.userId)
+      throw new AuthorizationException("Service request access denied");
     Object.assign(item, data);
     await item.save();
     return toServiceRequestResponse(item);
@@ -60,22 +67,54 @@ export class ServiceRequestService {
     if (!actor.organizationId) throw new AuthorizationException("Organization context required");
     const item = await this.repository.findById(id);
     if (!item) throw new NotFoundException("Service request not found");
-    if (item.organizationId.toString() !== actor.organizationId) throw new AuthorizationException("Organization access denied");
-    if (actor.role === ROLES.STAFF && item.requestedBy.toString() !== actor.userId) throw new AuthorizationException("Service request access denied");
+    if (item.organizationId.toString() !== actor.organizationId)
+      throw new AuthorizationException("Organization access denied");
+    if (actor.role === ROLES.STAFF && item.requestedBy.toString() !== actor.userId)
+      throw new AuthorizationException("Service request access denied");
     return toServiceRequestResponse(item);
   }
 
-  async list(actor: Actor, input: { page: number; limit: number; from?: Date; to?: Date; status?: IServiceRequest["status"] }): Promise<{ data: ServiceRequestResponse[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
+  async list(
+    actor: Actor,
+    input: {
+      page: number;
+      limit: number;
+      from?: Date;
+      to?: Date;
+      status?: IServiceRequest["status"];
+    },
+  ): Promise<{
+    data: ServiceRequestResponse[];
+    pagination: { page: number; limit: number; total: number; pages: number };
+  }> {
     if (!actor.organizationId) throw new AuthorizationException("Organization context required");
     const filter: Record<string, unknown> = { organizationId: actor.organizationId };
     if (actor.role === ROLES.STAFF) filter.requestedBy = actor.userId;
     if (input.status) filter.status = input.status;
-    if (input.from || input.to) filter.createdAt = { ...(input.from ? { $gte: input.from } : {}), ...(input.to ? { $lte: input.to } : {}) };
-    const [items, total] = await Promise.all([this.repository.findPage(filter, (input.page - 1) * input.limit, input.limit), this.repository.count(filter)]);
-    return { data: items.map((item) => toServiceRequestResponse(item as unknown as IServiceRequest)), pagination: { page: input.page, limit: input.limit, total, pages: Math.ceil(total / input.limit) } };
+    if (input.from || input.to)
+      filter.createdAt = {
+        ...(input.from ? { $gte: input.from } : {}),
+        ...(input.to ? { $lte: input.to } : {}),
+      };
+    const [items, total] = await Promise.all([
+      this.repository.findPage(filter, (input.page - 1) * input.limit, input.limit),
+      this.repository.count(filter),
+    ]);
+    return {
+      data: items.map((item) => toServiceRequestResponse(item as unknown as IServiceRequest)),
+      pagination: {
+        page: input.page,
+        limit: input.limit,
+        total,
+        pages: Math.ceil(total / input.limit),
+      },
+    };
   }
 
-  async create(data: CreateServiceRequestInput, actor: Actor): Promise<ApplicationResult<IServiceRequest>> {
+  async create(
+    data: CreateServiceRequestInput,
+    actor: Actor,
+  ): Promise<ApplicationResult<IServiceRequest>> {
     const allowedRoles: string[] = [
       ROLES.ADMIN,
       ROLES.FACILITY_MANAGER,
@@ -88,21 +127,40 @@ export class ServiceRequestService {
       throw new AuthorizationException("This role cannot create service requests");
     }
 
-    if (data.organizationId !== actor.organizationId) throw new AuthorizationException("Organization access denied");
+    if (data.organizationId !== actor.organizationId)
+      throw new AuthorizationException("Organization access denied");
     if (data.sourceWorkOrderId) {
-      const source = await import("@/modules/work-orders/work-order.model.js").then(({ WorkOrder }) => WorkOrder.findOne({ _id: data.sourceWorkOrderId, organizationId: actor.organizationId }));
+      const source = await import("@/modules/work-orders/work-order.model.js").then(
+        ({ WorkOrder }) =>
+          WorkOrder.findOne({ _id: data.sourceWorkOrderId, organizationId: actor.organizationId }),
+      );
       if (!source) throw new NotFoundException("Source work order not found");
-      const permitted = managerRoles.includes(actor.role) || (actor.role === ROLES.TECHNICIAN && source.assignedTechnicianId?.toString() === actor.userId);
+      const permitted =
+        managerRoles.includes(actor.role) ||
+        (actor.role === ROLES.TECHNICIAN &&
+          source.assignedTechnicianId?.toString() === actor.userId);
       if (!permitted) throw new AuthorizationException("You are not assigned to this work order");
       if (!data.facilityId) data.facilityId = source.facilityId.toString();
       if (!data.locationId) data.locationId = source.locationId?.toString();
       if (!data.assetId) data.assetId = source.assetId?.toString();
     }
-    if (!data.facilityId || !data.locationId) throw new AuthorizationException("Facility and location are required");
+    if (!data.facilityId || !data.locationId)
+      throw new AuthorizationException("Facility and location are required");
     const facility = await this.facilities.findById(data.facilityId);
     const location = await this.locations.findById(data.locationId);
-    if (!facility || facility.organizationId.toString() !== actor.organizationId || !location || location.organizationId.toString() !== actor.organizationId || location.facilityId.toString() !== data.facilityId) throw new AuthorizationException("Invalid facility or location context");
-    if (data.assetId) { const asset = await this.assets.findByIdInOrganization(data.assetId, actor.organizationId!); if (!asset || asset.locationId.toString() !== data.locationId) throw new AuthorizationException("Asset does not belong to the selected location"); }
+    if (
+      !facility ||
+      facility.organizationId.toString() !== actor.organizationId ||
+      !location ||
+      location.organizationId.toString() !== actor.organizationId ||
+      location.facilityId.toString() !== data.facilityId
+    )
+      throw new AuthorizationException("Invalid facility or location context");
+    if (data.assetId) {
+      const asset = await this.assets.findByIdInOrganization(data.assetId, actor.organizationId!);
+      if (!asset || asset.locationId.toString() !== data.locationId)
+        throw new AuthorizationException("Asset does not belong to the selected location");
+    }
     if (data.attachmentUploadIds && data.attachmentUploadIds.length > 0) {
       for (const uploadId of data.attachmentUploadIds) {
         const upload = await Upload.findOne({
@@ -113,14 +171,16 @@ export class ServiceRequestService {
           ...(actor.organizationId ? { organizationId: actor.organizationId } : {}),
         });
         if (!upload) {
-          throw new NotFoundException(`Upload ${uploadId} not found or not available as a service-request-attachment`);
+          throw new NotFoundException(
+            `Upload ${uploadId} not found or not available as a service-request-attachment`,
+          );
         }
       }
     }
 
     const requestData = {
       ...data,
-      attachmentUploadIds: data.attachmentUploadIds?.map(id => new Types.ObjectId(id)),
+      attachmentUploadIds: data.attachmentUploadIds?.map((id) => new Types.ObjectId(id)),
       requestedBy: new Types.ObjectId(actor.userId),
       status: managerRoles.includes(actor.role) ? "approved" : "pending",
       approvalDecision: managerRoles.includes(actor.role) ? "approved" : undefined,
@@ -131,13 +191,26 @@ export class ServiceRequestService {
       ? await this.repository.create(requestData)
       : await this.createPendingWithOutbox(requestData, actor);
 
-    if (data.assetId) await assetHistoryService.append({ organizationId: actor.organizationId!, assetId: data.assetId, event: ASSET_HISTORY_EVENTS.SERVICE_REQUEST_CREATED, description: "Service request created for asset", actorId: actor.userId, sourceType: "service_request", sourceId: created._id.toString() });
+    if (data.assetId)
+      await assetHistoryService.append({
+        organizationId: actor.organizationId!,
+        assetId: data.assetId,
+        event: ASSET_HISTORY_EVENTS.SERVICE_REQUEST_CREATED,
+        description: "Service request created for asset",
+        actorId: actor.userId,
+        sourceType: "service_request",
+        sourceId: created._id.toString(),
+      });
 
     if (managerRoles.includes(actor.role)) {
       const workOrder = await this.createWorkOrder(created, actor, undefined);
       created.workOrderId = workOrder._id as Types.ObjectId;
       await this.saveRequestWithOutbox(created, "ServiceRequestApproved", actor.userId);
-      return { success: true, message: "Service request approved and work order created", data: created };
+      return {
+        success: true,
+        message: "Service request approved and work order created",
+        data: created,
+      };
     }
 
     // Pending requests already have their durable event in the outbox.
@@ -154,9 +227,7 @@ export class ServiceRequestService {
     actor: Actor,
   ): Promise<ApplicationResult<{ serviceRequest: IServiceRequest; workOrder: IWorkOrder }>> {
     if (!managerRoles.includes(actor.role)) {
-      throw new AuthorizationException(
-        "Only admin or facility manager can approve requests",
-      );
+      throw new AuthorizationException("Only admin or facility manager can approve requests");
     }
 
     const serviceRequest = await this.repository.findById(serviceRequestId);
@@ -189,22 +260,43 @@ export class ServiceRequestService {
       workOrderInput.technicianId = data.technicianId;
     }
 
-    const woResult = await this.workOrders.createFromServiceRequest({ ...workOrderInput, serviceRequestId }, actor);
-
-    if (!woResult.data) {
-      throw new InternalServerException("Failed to create work order");
+    let workOrder!: IWorkOrder;
+    let savedRequest!: IServiceRequest;
+    const transactionSession = await mongoose.startSession();
+    try {
+      await transactionSession.withTransaction(async () => {
+        const woResult = await this.workOrders.createFromServiceRequest(
+          { ...workOrderInput, serviceRequestId },
+          actor,
+          transactionSession,
+        );
+        if (!woResult.data) throw new InternalServerException("Failed to create work order");
+        workOrder = woResult.data;
+        serviceRequest.status = "approved";
+        serviceRequest.approvedBy = new Types.ObjectId(actor.userId);
+        serviceRequest.approvedAt = new Date();
+        serviceRequest.approvalDecision = "approved";
+        serviceRequest.workOrderId = workOrder._id as Types.ObjectId;
+        savedRequest = await this.saveRequestWithOutbox(
+          serviceRequest,
+          "ServiceRequestApproved",
+          actor.userId,
+          transactionSession,
+        );
+      });
+    } finally {
+      await transactionSession.endSession();
     }
-
-    const workOrder = woResult.data;
-
-    serviceRequest.status = "approved";
-    serviceRequest.approvedBy = new Types.ObjectId(actor.userId);
-    serviceRequest.approvedAt = new Date();
-    serviceRequest.approvalDecision = "approved";
-    serviceRequest.workOrderId = workOrder._id as Types.ObjectId;
-
-    const savedRequest = await this.saveRequestWithOutbox(serviceRequest, "ServiceRequestApproved", actor.userId);
-    if (serviceRequest.assetId) await assetHistoryService.append({ organizationId: serviceRequest.organizationId.toString(), assetId: serviceRequest.assetId.toString(), event: ASSET_HISTORY_EVENTS.SERVICE_REQUEST_APPROVED, description: "Asset service request approved", actorId: actor.userId, sourceType: "service_request", sourceId: serviceRequest._id.toString() });
+    if (serviceRequest.assetId)
+      await assetHistoryService.append({
+        organizationId: serviceRequest.organizationId.toString(),
+        assetId: serviceRequest.assetId.toString(),
+        event: ASSET_HISTORY_EVENTS.SERVICE_REQUEST_APPROVED,
+        description: "Asset service request approved",
+        actorId: actor.userId,
+        sourceType: "service_request",
+        sourceId: serviceRequest._id.toString(),
+      });
 
     return {
       success: true,
@@ -222,9 +314,7 @@ export class ServiceRequestService {
     actor: Actor,
   ): Promise<ApplicationResult<IServiceRequest>> {
     if (!managerRoles.includes(actor.role)) {
-      throw new AuthorizationException(
-        "Only admin or facility manager can reject requests",
-      );
+      throw new AuthorizationException("Only admin or facility manager can reject requests");
     }
 
     const serviceRequest = await this.repository.findById(serviceRequestId);
@@ -247,8 +337,22 @@ export class ServiceRequestService {
     serviceRequest.approvalDecision = "rejected";
     serviceRequest.rejectionReason = data.rejectionReason;
 
-    const saved = await this.saveRequestWithOutbox(serviceRequest, "ServiceRequestRejected", actor.userId);
-    if (serviceRequest.assetId) await assetHistoryService.append({ organizationId: serviceRequest.organizationId.toString(), assetId: serviceRequest.assetId.toString(), event: ASSET_HISTORY_EVENTS.SERVICE_REQUEST_REJECTED, description: "Asset service request rejected", actorId: actor.userId, sourceType: "service_request", sourceId: serviceRequest._id.toString(), data: { rejectionReason: data.rejectionReason } });
+    const saved = await this.saveRequestWithOutbox(
+      serviceRequest,
+      "ServiceRequestRejected",
+      actor.userId,
+    );
+    if (serviceRequest.assetId)
+      await assetHistoryService.append({
+        organizationId: serviceRequest.organizationId.toString(),
+        assetId: serviceRequest.assetId.toString(),
+        event: ASSET_HISTORY_EVENTS.SERVICE_REQUEST_REJECTED,
+        description: "Asset service request rejected",
+        actorId: actor.userId,
+        sourceType: "service_request",
+        sourceId: serviceRequest._id.toString(),
+        data: { rejectionReason: data.rejectionReason },
+      });
 
     return {
       success: true,
@@ -257,10 +361,37 @@ export class ServiceRequestService {
     };
   }
 
-  private async createWorkOrder(request: IServiceRequest, actor: Actor, fulfillmentType: "internal" | "marketplace" = "marketplace") {
-    const result = await this.workOrders.createFromServiceRequest({ organizationId: request.organizationId.toString(), facilityId: request.facilityId.toString(), locationId: request.locationId.toString(), assetId: request.assetId?.toString(), title: request.title, description: request.description, priority: request.priority, serviceCategory: request.serviceCategory, fulfillmentType, serviceRequestId: request._id.toString() }, actor);
+  private async createWorkOrder(
+    request: IServiceRequest,
+    actor: Actor,
+    fulfillmentType: "internal" | "marketplace" = "marketplace",
+  ) {
+    const result = await this.workOrders.createFromServiceRequest(
+      {
+        organizationId: request.organizationId.toString(),
+        facilityId: request.facilityId.toString(),
+        locationId: request.locationId.toString(),
+        assetId: request.assetId?.toString(),
+        title: request.title,
+        description: request.description,
+        priority: request.priority,
+        serviceCategory: request.serviceCategory,
+        fulfillmentType,
+        serviceRequestId: request._id.toString(),
+      },
+      actor,
+    );
     if (!result.data) throw new InternalServerException("Failed to create work order");
-    if (request.assetId) await assetHistoryService.append({ organizationId: request.organizationId.toString(), assetId: request.assetId.toString(), event: ASSET_HISTORY_EVENTS.WORK_ORDER_CREATED, description: "Work order created from asset service request", actorId: actor.userId, sourceType: "work_order", sourceId: result.data._id.toString() });
+    if (request.assetId)
+      await assetHistoryService.append({
+        organizationId: request.organizationId.toString(),
+        assetId: request.assetId.toString(),
+        event: ASSET_HISTORY_EVENTS.WORK_ORDER_CREATED,
+        description: "Work order created from asset service request",
+        actorId: actor.userId,
+        sourceType: "work_order",
+        sourceId: result.data._id.toString(),
+      });
     return result.data;
   }
 
@@ -307,7 +438,32 @@ export class ServiceRequestService {
     request: IServiceRequest,
     eventName: "ServiceRequestApproved" | "ServiceRequestRejected",
     actorId: string,
+    transactionSession?: ClientSession,
   ): Promise<IServiceRequest> {
+    if (transactionSession) {
+      await request.save({ session: transactionSession });
+      const event = new BusinessFactEvent(
+        eventName,
+        { serviceRequestId: request._id.toString(), facilityId: request.facilityId.toString() },
+        {
+          organizationId: request.organizationId.toString(),
+          actorId,
+          aggregateType: "service_request",
+          aggregateId: request._id.toString(),
+        },
+      );
+      await this.outbox.append(
+        {
+          eventId: event.eventId,
+          eventType: eventName,
+          aggregateId: event.aggregateId,
+          aggregateType: event.aggregateType,
+          payload: serializeDomainEvent(event) as unknown as Record<string, unknown>,
+        },
+        transactionSession,
+      );
+      return request;
+    }
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(async () => {

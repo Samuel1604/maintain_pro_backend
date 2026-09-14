@@ -8,7 +8,6 @@ import { SessionService } from "@/modules/identity/session/session.service.js";
 import { AuthRepository } from "@/modules/identity/auth.repository.js";
 import { AuthService } from "@/modules/identity/auth.service.js";
 
-
 import { AuditLogRepository } from "@/modules/audit/audit.repository.js";
 import { AuditLogService } from "@/modules/audit/audit.service.js";
 
@@ -81,10 +80,7 @@ import { NotificationPolicyService } from "@/modules/notifications/notification-
 
 import { CleanupTempUsersJob } from "@/infrastructure/jobs/cleanup-temp-users.job.js";
 
-import {
-  DOMAIN_EVENT_DISPATCH_JOB,
-  QueuedEventBus,
-} from "@/infrastructure/events/bus/index.js";
+import { DOMAIN_EVENT_DISPATCH_JOB, QueuedEventBus } from "@/infrastructure/events/bus/index.js";
 import { DomainEventWorker } from "@/infrastructure/events/dispatcher/domain-event.worker.js";
 import { OutboxEventWorker } from "@/infrastructure/events/outbox/outbox-event.worker.js";
 import { DefaultEventPublisher } from "@/infrastructure/events/publisher/index.js";
@@ -144,11 +140,16 @@ export class AppContainer {
 
   public readonly workerRegistry = new QueueWorkerRegistry(this.loggerService);
 
-  public readonly queueProducer: QueueProducer = env.QUEUE_DRIVER === "in-memory" || redisDisabled
-    ? new InMemoryQueueService(this.loggerService, this.workerRegistry)
-    : new BullMqProducer(this.queueFactory, this.loggerService);
+  public readonly queueProducer: QueueProducer =
+    env.QUEUE_DRIVER === "in-memory" || redisDisabled
+      ? new InMemoryQueueService(this.loggerService, this.workerRegistry)
+      : new BullMqProducer(this.queueFactory, this.loggerService);
 
-  public readonly outboxWorker = new OutboxEventWorker(this.queueProducer, undefined, this.loggerService);
+  public readonly outboxWorker = new OutboxEventWorker(
+    this.queueProducer,
+    undefined,
+    this.loggerService,
+  );
 
   public readonly eventBus = new QueuedEventBus(
     this.queueProducer,
@@ -158,14 +159,12 @@ export class AppContainer {
 
   public readonly eventPublisher = new DefaultEventPublisher(this.eventBus);
 
-  public readonly queueService: QueueService = env.QUEUE_DRIVER === "in-memory" || redisDisabled
-    ? (this.queueProducer as InMemoryQueueService)
-    : new BullMqQueueService(this.queueProducer as BullMqProducer, this.workerRegistry);
+  public readonly queueService: QueueService =
+    env.QUEUE_DRIVER === "in-memory" || redisDisabled
+      ? (this.queueProducer as InMemoryQueueService)
+      : new BullMqQueueService(this.queueProducer as BullMqProducer, this.workerRegistry);
 
-  public readonly queueDispatcher = new QueueDispatcher(
-    this.queueService,
-    this.workerRegistry,
-  );
+  public readonly queueDispatcher = new QueueDispatcher(this.queueService, this.workerRegistry);
 
   public readonly queueConsumer = new BullMqConsumer(
     this.bullMqConnection,
@@ -189,7 +188,6 @@ export class AppContainer {
   public readonly sessionRepository = new SessionRepository();
 
   public readonly authRepository = new AuthRepository();
-
 
   public readonly auditLogRepository = new AuditLogRepository();
 
@@ -217,14 +215,9 @@ export class AppContainer {
 
   public readonly oauthService = new OAuthService();
 
+  public readonly auditLogService = new AuditLogService(this.auditLogRepository);
 
-  public readonly auditLogService = new AuditLogService(
-    this.auditLogRepository,
-  );
-
-  public readonly securityService = new SecurityService(
-    this.securityAlertRepository,
-  );
+  public readonly securityService = new SecurityService(this.securityAlertRepository);
 
   // Provider is selected purely by MAIL_PROVIDER config (see
   // email-provider.factory.ts). Swapping Gmail for Brevo/Resend/SES later
@@ -232,17 +225,19 @@ export class AppContainer {
   // no business module, needs to change.
   public readonly emailProvider = createEmailProvider(this.loggerService);
 
-  public readonly emailService = new EmailService(
-    this.emailProvider,
-    this.loggerService,
-  );
+  public readonly emailService = new EmailService(this.emailProvider, this.loggerService);
 
   // --------------------------------------------------------------------------
   // Readers
   // --------------------------------------------------------------------------
 
   public readonly userReader = new UserReader(this.userRepository);
-  public readonly socketGateway = new SocketGateway(this.userReader, this.sessionRepository, this.realtimePublisher, this.loggerService);
+  public readonly socketGateway = new SocketGateway(
+    this.userReader,
+    this.sessionRepository,
+    this.realtimePublisher,
+    this.loggerService,
+  );
 
   // --------------------------------------------------------------------------
   // Domain Services
@@ -262,18 +257,11 @@ export class AppContainer {
     this.eventBus,
   );
 
-  public readonly organizationService = new OrganizationService(
-    this.organizationRepository,
-  );
+  public readonly organizationService = new OrganizationService(this.organizationRepository);
 
-  public readonly locationService = new LocationService(
-    this.locationRepository,
-  );
+  public readonly locationService = new LocationService(this.locationRepository);
 
-  public readonly uploadService = new UploadService(
-    this.uploadRepository,
-    this.storageProvider,
-  );
+  public readonly uploadService = new UploadService(this.uploadRepository, this.storageProvider);
 
   public readonly vendorService = new VendorService(this.vendorRepository);
 
@@ -292,7 +280,6 @@ export class AppContainer {
   // ------------------------------------------------------------------------
 
   public readonly billingRepository = new BillingRepository();
-
 
   public readonly billingReader = new BillingReader(this.billingRepository);
 
@@ -329,32 +316,30 @@ export class AppContainer {
     this.eventBus,
   );
 
-
   public readonly auditLogListener = new AuditLogListener(this.auditLogService);
 
   public readonly securityListener = new SecurityListener(this.securityService);
 
-  public readonly sessionSecurityListener = new SessionSecurityListener(
-    this.sessionService,
-  );
+  public readonly sessionSecurityListener = new SessionSecurityListener(this.sessionService);
 
   public readonly emailListener = new EmailListener(this.emailService);
 
-  public readonly sendVerificationOtpEmailHandler =
-    new SendVerificationOtpEmailHandler(this.emailService);
+  public readonly sendVerificationOtpEmailHandler = new SendVerificationOtpEmailHandler(
+    this.emailService,
+  );
 
-  public readonly sendPasswordResetEmailHandler =
-    new SendPasswordResetEmailHandler(this.emailService);
+  public readonly sendPasswordResetEmailHandler = new SendPasswordResetEmailHandler(
+    this.emailService,
+  );
 
-  public readonly sendEmailChangeOtpEmailHandler =
-    new SendEmailChangeOtpEmailHandler(this.emailService);
+  public readonly sendEmailChangeOtpEmailHandler = new SendEmailChangeOtpEmailHandler(
+    this.emailService,
+  );
 
   // Not currently subscribed to anything — see the NOTE in
   // configureEventBusSubscribers(). Kept constructed so it's ready to wire
   // up once a real notification worker exists to consume its jobs.
-  public readonly notificationListener = new NotificationListener(
-    this.queueDispatcher,
-  );
+  public readonly notificationListener = new NotificationListener(this.queueDispatcher);
 
   public readonly crossCuttingEventListener = new CrossCuttingEventListener(
     this.auditLogService,
@@ -400,20 +385,11 @@ export class AppContainer {
       this.loggerService,
     );
 
-    this.queueDispatcher.registerWorker(
-      SendLoginNotificationJob.NAME,
-      loginNotificationWorker,
-    );
+    this.queueDispatcher.registerWorker(SendLoginNotificationJob.NAME, loginNotificationWorker);
 
-    const emailWorker = new EmailWorker(
-      this.emailService,
-      this.loggerService,
-    );
+    const emailWorker = new EmailWorker(this.emailService, this.loggerService);
 
-    this.queueDispatcher.registerWorker(
-      SendEmailJob.NAME,
-      emailWorker,
-    );
+    this.queueDispatcher.registerWorker(SendEmailJob.NAME, emailWorker);
 
     const invitationWorker = new InvitationEmailWorker(this.emailService, this.loggerService);
     this.queueDispatcher.registerWorker(SendInvitationEmailJob.NAME, invitationWorker);
@@ -427,83 +403,80 @@ export class AppContainer {
     this.eventSubscribersConfigured = true;
 
     [
-      "ItemCreated", "ItemUpdated", "ItemDeactivated", "LocationCreated", "StockReceived", "StockReserved", "ReservationReleased", "StockIssued", "StockConsumed", "StockReturned", "StockAdjusted", "StockTransferred",
-      "ApplicationSubmitted", "QuotationSubmitted", "QuotationRevisionCreated", "ContractAwardCreated", "ContractAwardActivated", "ContractAwardTerminated", "SLAProposed",
-      "LowStockDetected", "ProcurementNotificationRequested",
+      "ItemCreated",
+      "ItemUpdated",
+      "ItemDeactivated",
+      "LocationCreated",
+      "StockReceived",
+      "StockReserved",
+      "ReservationReleased",
+      "StockIssued",
+      "StockConsumed",
+      "StockReturned",
+      "StockAdjusted",
+      "StockTransferred",
+      "ApplicationSubmitted",
+      "QuotationSubmitted",
+      "QuotationRevisionCreated",
+      "ContractAwardCreated",
+      "ContractAwardActivated",
+      "ContractAwardTerminated",
+      "SLAProposed",
+      "LowStockDetected",
+      "ProcurementNotificationRequested",
       // These lifecycle events are intentionally observed by the shared
       // audit listener even when no module-specific side effect is needed.
-      "facility.created", "facility.updated", "facility.deactivated", "facility.deleted",
-      "WorkOrderCreated", "WorkOrderAssigned", "WorkOrderStatusChanged",
-      "VendorAssignmentAccepted", "VendorAssignmentRejected", "InvoiceSubmitted", "InvoiceDisputed",
-      "PreventiveMaintenanceSkipped", "PreventiveMaintenanceOccurrenceSkipped", "WorkOrderAttachmentAdded",
-      "PreventiveMaintenancePlanCreated", "PreventiveMaintenancePlanUpdated", "PreventiveMaintenancePlanCancelled",
-      "PreventiveMaintenanceOccurrenceCreated", "PreventiveMaintenanceOccurrenceApproved", "PreventiveMaintenanceOccurrenceRejected",
-      "PreventiveMaintenanceOccurrenceCancelled", "PreventiveMaintenanceOccurrenceAssignmentChanged", "PreventiveMaintenanceOccurrenceLinkedToWorkOrder",
-      "ServiceRequestCreated", "ServiceRequestApproved", "ServiceRequestRejected", "ServiceRequestRated",
-      "VendorApplicationSubmitted", "VendorApplicationStatusChanged", "NotificationCreated",
+      "facility.created",
+      "facility.updated",
+      "facility.deactivated",
+      "facility.deleted",
+      "WorkOrderCreated",
+      "WorkOrderAssigned",
+      "WorkOrderStatusChanged",
+      "VendorAssignmentAccepted",
+      "VendorAssignmentRejected",
+      "InvoiceSubmitted",
+      "InvoiceDisputed",
+      "PreventiveMaintenanceSkipped",
+      "PreventiveMaintenanceOccurrenceSkipped",
+      "WorkOrderAttachmentAdded",
+      "PreventiveMaintenancePlanCreated",
+      "PreventiveMaintenancePlanUpdated",
+      "PreventiveMaintenancePlanCancelled",
+      "PreventiveMaintenanceOccurrenceCreated",
+      "PreventiveMaintenanceOccurrenceApproved",
+      "PreventiveMaintenanceOccurrenceRejected",
+      "PreventiveMaintenanceOccurrenceCancelled",
+      "PreventiveMaintenanceOccurrenceAssignmentChanged",
+      "PreventiveMaintenanceOccurrenceLinkedToWorkOrder",
+      "ServiceRequestCreated",
+      "ServiceRequestApproved",
+      "ServiceRequestRejected",
+      "ServiceRequestRated",
+      "VendorApplicationSubmitted",
+      "VendorApplicationStatusChanged",
+      "NotificationCreated",
     ].forEach((eventName) => this.eventBus.subscribe(eventName, this.crossCuttingEventListener));
 
-    this.eventBus.subscribe(
-      IdentityEvents.USER_LOGGED_IN,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.USER_LOGIN_FAILED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.USER_LOGGED_OUT,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.SESSION_CREATED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.SESSION_REVOKED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.SECURITY_ALERT_RAISED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.SECURITY_ALERT_RAISED,
-      this.securityListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.INVITATION_ACCEPTED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.INVITATION_CREATED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.ORGANIZATION_REGISTERED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.VENDOR_REGISTERED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.USER_REGISTERED,
-      this.auditLogListener,
-    );
+    this.eventBus.subscribe(IdentityEvents.USER_LOGGED_IN, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.USER_LOGIN_FAILED, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.USER_LOGGED_OUT, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.SESSION_CREATED, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.SESSION_REVOKED, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.SECURITY_ALERT_RAISED, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.SECURITY_ALERT_RAISED, this.securityListener);
+    this.eventBus.subscribe(IdentityEvents.INVITATION_ACCEPTED, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.INVITATION_CREATED, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.ORGANIZATION_REGISTERED, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.VENDOR_REGISTERED, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.USER_REGISTERED, this.auditLogListener);
 
     // --------------------------------------------------------------
     // Account lockout: security alert + audit entry + user notification,
     // all reacting to LockoutService's single UserLockedOutEvent publish.
     // --------------------------------------------------------------
-    this.eventBus.subscribe(
-      IdentityEvents.USER_LOCKED_OUT,
-      this.securityListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.USER_LOCKED_OUT,
-      this.auditLogListener,
-    );
+    this.eventBus.subscribe(IdentityEvents.USER_LOCKED_OUT, this.securityListener);
+    this.eventBus.subscribe(IdentityEvents.USER_LOCKED_OUT, this.auditLogListener);
     this.eventBus.subscribe(IdentityEvents.USER_LOCKED_OUT, this.emailListener);
 
     // --------------------------------------------------------------
@@ -511,83 +484,44 @@ export class AppContainer {
     // "your password changed" email, all reacting to UserService's single
     // PasswordChangedEvent publish.
     // --------------------------------------------------------------
-    this.eventBus.subscribe(
-      IdentityEvents.PASSWORD_CHANGED,
-      this.securityListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.PASSWORD_CHANGED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.PASSWORD_CHANGED,
-      this.emailListener,
-    );
+    this.eventBus.subscribe(IdentityEvents.PASSWORD_CHANGED, this.securityListener);
+    this.eventBus.subscribe(IdentityEvents.PASSWORD_CHANGED, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.PASSWORD_CHANGED, this.emailListener);
     // A changed password invalidates every other active session — a
     // stolen session must not survive the owner regaining control of
     // their password (see SessionSecurityListener).
-    this.eventBus.subscribe(
-      IdentityEvents.PASSWORD_CHANGED,
-      this.sessionSecurityListener,
-    );
+    this.eventBus.subscribe(IdentityEvents.PASSWORD_CHANGED, this.sessionSecurityListener);
 
     // --------------------------------------------------------------
     // Password reset (forgot-password flow completion): security alert +
     // audit entry + confirmation email, all reacting to UserService's
     // single PasswordResetCompletedEvent publish.
     // --------------------------------------------------------------
-    this.eventBus.subscribe(
-      IdentityEvents.PASSWORD_RESET_COMPLETED,
-      this.securityListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.PASSWORD_RESET_COMPLETED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.PASSWORD_RESET_COMPLETED,
-      this.emailListener,
-    );
+    this.eventBus.subscribe(IdentityEvents.PASSWORD_RESET_COMPLETED, this.securityListener);
+    this.eventBus.subscribe(IdentityEvents.PASSWORD_RESET_COMPLETED, this.auditLogListener);
+    this.eventBus.subscribe(IdentityEvents.PASSWORD_RESET_COMPLETED, this.emailListener);
     // Same reasoning as PASSWORD_CHANGED above — a completed reset is
     // exactly the "someone else may have access" scenario, so every other
     // active session must be invalidated too.
-    this.eventBus.subscribe(
-      IdentityEvents.PASSWORD_RESET_COMPLETED,
-      this.sessionSecurityListener,
-    );
+    this.eventBus.subscribe(IdentityEvents.PASSWORD_RESET_COMPLETED, this.sessionSecurityListener);
 
     // --------------------------------------------------------------
     // Email changed: security alert + audit entry + notice to the OLD
     // address, all reacting to UserService's single EmailChangedEvent
     // publish.
     // --------------------------------------------------------------
-    this.eventBus.subscribe(
-      IdentityEvents.EMAIL_CHANGED,
-      this.securityListener,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.EMAIL_CHANGED,
-      this.auditLogListener,
-    );
+    this.eventBus.subscribe(IdentityEvents.EMAIL_CHANGED, this.securityListener);
+    this.eventBus.subscribe(IdentityEvents.EMAIL_CHANGED, this.auditLogListener);
     this.eventBus.subscribe(IdentityEvents.EMAIL_CHANGED, this.emailListener);
 
-    this.eventBus.subscribe(
-      IdentityEvents.OTP_REQUESTED,
-      this.sendVerificationOtpEmailHandler,
-    );
-    this.eventBus.subscribe(
-      IdentityEvents.OTP_REQUESTED,
-      this.sendEmailChangeOtpEmailHandler,
-    );
+    this.eventBus.subscribe(IdentityEvents.OTP_REQUESTED, this.sendVerificationOtpEmailHandler);
+    this.eventBus.subscribe(IdentityEvents.OTP_REQUESTED, this.sendEmailChangeOtpEmailHandler);
     this.eventBus.subscribe(IdentityEvents.EMAIL_VERIFIED, this.emailListener);
     this.eventBus.subscribe(
       IdentityEvents.PASSWORD_RESET_REQUESTED,
       this.sendPasswordResetEmailHandler,
     );
-    this.eventBus.subscribe(
-      IdentityEvents.INVITATION_CREATED,
-      this.emailListener,
-    );
+    this.eventBus.subscribe(IdentityEvents.INVITATION_CREATED, this.emailListener);
 
     const allIdentityEvents = [
       IdentityEvents.ORGANIZATION_REGISTERED,
@@ -634,55 +568,19 @@ export class AppContainer {
     });
 
     // Billing events: audit + email notifications
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_CREATED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_ACTIVATED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_UPGRADED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_DOWNGRADED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_CANCELLED,
-      this.auditLogListener,
-    );
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_EXPIRED,
-      this.auditLogListener,
-    );
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_CREATED, this.auditLogListener);
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_ACTIVATED, this.auditLogListener);
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_UPGRADED, this.auditLogListener);
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_DOWNGRADED, this.auditLogListener);
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_CANCELLED, this.auditLogListener);
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_EXPIRED, this.auditLogListener);
 
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_CREATED,
-      this.billingListener,
-    );
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_ACTIVATED,
-      this.billingListener,
-    );
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_UPGRADED,
-      this.billingListener,
-    );
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_DOWNGRADED,
-      this.billingListener,
-    );
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_CANCELLED,
-      this.billingListener,
-    );
-    this.eventBus.subscribe(
-      BillingEvents.SUBSCRIPTION_EXPIRED,
-      this.billingListener,
-    );
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_CREATED, this.billingListener);
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_ACTIVATED, this.billingListener);
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_UPGRADED, this.billingListener);
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_DOWNGRADED, this.billingListener);
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_CANCELLED, this.billingListener);
+    this.eventBus.subscribe(BillingEvents.SUBSCRIPTION_EXPIRED, this.billingListener);
   }
 
   /**
@@ -724,8 +622,7 @@ export class AppContainer {
   }
 
   /**
-   * Shuts down all application resources and dependencies gracefully.
-   * This method should be called before the application exits.
+   * Shutdown all application resources and dependencies gracefully.
    */
   public async shutdown(): Promise<void> {
     this.loggerService.info("Shutting down application container...");

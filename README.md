@@ -30,11 +30,28 @@ npm run dev
 
 ### Scripts
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start development server with hot-reload |
-| `npm run build` | Compile TypeScript to JavaScript |
-| `npm start` | Run the compiled production server |
+| Command         | Description                              |
+| --------------- | ---------------------------------------- |
+| `npm run dev`   | Start development server with hot-reload |
+| `npm run build` | Compile TypeScript to JavaScript         |
+| `npm start`     | Run the compiled production server       |
+
+### Local integration tests
+
+Database-backed tests should use disposable local services, matching CI. Start MongoDB and Redis with:
+
+```bash
+docker compose -f docker-compose.infrastructure.yml up -d mongodb redis
+```
+
+If port `6379` is already occupied by another local Redis container, reuse that instance. Run the suite with the external MongoDB URI so the tests do not start `mongodb-memory-server`:
+
+```bash
+TEST_MONGODB_URI=mongodb://127.0.0.1:27017/maintainpro_test \
+REDIS_DISABLE_CONNECTION=false npm test
+```
+
+The test database is disposable; do not point `TEST_MONGODB_URI` at a shared or production database.
 
 ## Project Structure
 

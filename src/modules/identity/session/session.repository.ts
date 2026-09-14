@@ -13,6 +13,8 @@ export class SessionRepository {
   async findBySessionId(sessionId: string) {
     return Session.findOne({
       sessionId,
+      revokedAt: null,
+      expiresAt: { $gt: new Date() },
     });
   }
 
@@ -51,7 +53,7 @@ export class SessionRepository {
       { tokenHash },
       {
         revokedAt: new Date(),
-        ...(reason && { revokedReason: reason }),
+        ...(reason && { revokeReason: reason }),
       },
     );
   }
@@ -69,16 +71,20 @@ export class SessionRepository {
     );
   }
 
-  async revokeSessionBySessionId(sessionId: string) {
+  async revokeSessionBySessionId(
+    sessionId: string,
+    reason: IRefreshToken["revokeReason"] = "logout",
+  ) {
     return Session.updateMany(
       {
         sessionId,
+        revokedAt: null,
       },
 
       {
         revokedAt: new Date(),
 
-        revokeReason: "manual_logout",
+        revokeReason: reason,
       },
     );
   }
@@ -104,7 +110,7 @@ export class SessionRepository {
       },
       {
         revokedAt: new Date(),
-        ...(reason && { revokedReason: reason }),
+        ...(reason && { revokeReason: reason }),
       },
     );
   }
@@ -125,11 +131,7 @@ export class SessionRepository {
     return null;
   }
 
-  async rotateToken(
-    oldTokenHash: string,
-    newTokenHash: string,
-    expiresAt: Date,
-  ) {
+  async rotateToken(oldTokenHash: string, newTokenHash: string, expiresAt: Date) {
     const token = await Session.findOneAndUpdate(
       {
         tokenHash: oldTokenHash,

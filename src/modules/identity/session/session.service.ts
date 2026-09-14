@@ -21,10 +21,7 @@ import {
 } from "@/shared/errors/index.js";
 import { SecurityAlertType } from "@/modules/security/security.types.js";
 import type { SessionResponse } from "./session.types.js";
-import {
-  toAuthenticatedUser,
-  toUserProfile,
-} from "@/modules/users/mappers/user.mapper.js";
+import { toAuthenticatedUser, toUserProfile } from "@/modules/users/mappers/user.mapper.js";
 import type { AuthResponse } from "../auth.types.js";
 import { UserReader } from "@/modules/users/user.reader.js";
 import type { EventBus } from "@/infrastructure/events/bus/event-bus.interface.js";
@@ -44,9 +41,7 @@ export class SessionService {
 
   private validateToken(refreshToken: string) {
     if (!refreshToken) {
-      throw new AuthenticationException(
-        "Session expired or revoked. Please log in again.",
-      );
+      throw new AuthenticationException("Session expired or revoked. Please log in again.");
     }
     const decoded = verifyRefreshToken(refreshToken);
 
@@ -98,10 +93,7 @@ export class SessionService {
   // ================================
   // AUTH RESPONSE
   // ================================
-  async createAuthenticatedSession(
-    user: IUser,
-    session: SessionMetadata,
-  ): Promise<AuthResponse> {
+  async createAuthenticatedSession(user: IUser, session: SessionMetadata): Promise<AuthResponse> {
     const accessToken = generateAccessToken({
       userId: user._id.toString(),
 
@@ -122,14 +114,16 @@ export class SessionService {
 
     const { refreshToken, sessionId } = await this.createSession(user, session);
 
-    void this.eventBus.publish(
-      new SessionCreatedEvent({
-        userId: user._id.toString(),
-        sessionId,
-        ipAddress: session.ipAddress,
-        userAgent: session.userAgent,
-      }),
-    ).catch(() => undefined);
+    void this.eventBus
+      .publish(
+        new SessionCreatedEvent({
+          userId: user._id.toString(),
+          sessionId,
+          ipAddress: session.ipAddress,
+          userAgent: session.userAgent,
+        }),
+      )
+      .catch(() => undefined);
 
     let organizationSlug: string | undefined;
     let vendorSlug: string | undefined;
@@ -175,10 +169,7 @@ export class SessionService {
   // REFRESH TOKEN
   // =================================
 
-  async refresh(
-    refreshToken: string,
-    session: SessionMetadata,
-  ): Promise<RefreshResponse> {
+  async refresh(refreshToken: string, session: SessionMetadata): Promise<RefreshResponse> {
     const decoded = this.validateToken(refreshToken);
 
     const oldHash = hashToken(refreshToken);
@@ -207,14 +198,10 @@ export class SessionService {
        * alert for the rotation-reuse case specifically, since that one
        * is a strong signal of token theft rather than a normal logout.
        */
-      const revokedRecord =
-        await this.repository.findByHashIncludingRevoked(oldHash);
+      const revokedRecord = await this.repository.findByHashIncludingRevoked(oldHash);
 
       if (revokedRecord?.revokeReason === "rotation") {
-        await this.repository.revokeFamily(
-          revokedRecord.familyId,
-          "token_reuse",
-        );
+        await this.repository.revokeFamily(revokedRecord.familyId, "token_reuse");
 
         await this.eventBus.publish(
           new SecurityAlertRaisedEvent({
@@ -230,9 +217,7 @@ export class SessionService {
         throw new AuthenticationException("Session compromised. Login again.");
       }
 
-      throw new AuthenticationException(
-        "Session expired or revoked. Please log in again.",
-      );
+      throw new AuthenticationException("Session expired or revoked. Please log in again.");
     }
 
     const user = await this.userReader.findById(decoded.userId);
@@ -248,20 +233,14 @@ export class SessionService {
 
     const newHash = hashToken(newRefreshToken);
 
-    const rotated = await this.repository.rotateToken(
-      oldHash,
-      newHash,
-      calculateRefreshExpiry(),
-    );
+    const rotated = await this.repository.rotateToken(oldHash, newHash, calculateRefreshExpiry());
 
     if (!rotated) {
       // Someone else (a concurrent refresh using the same token) won
       // the race and already rotated it out from under us. Treat this
       // request as denied rather than handing back tokens with no
       // backing session record.
-      throw new AuthenticationException(
-        "Session expired or revoked. Please log in again.",
-      );
+      throw new AuthenticationException("Session expired or revoked. Please log in again.");
     }
 
     const accessToken = generateAccessToken({
@@ -299,10 +278,7 @@ export class SessionService {
   // ==================================
   // GET SESSIONS
   // ==================================
-  async getSessions(
-    userId: string,
-    session: SessionMetadata,
-  ): Promise<SessionResponse[]> {
+  async getSessions(userId: string, session: SessionMetadata): Promise<SessionResponse[]> {
     const user = await this.userReader.findById(userId);
 
     if (!user) {
@@ -356,16 +332,13 @@ export class SessionService {
       throw new NotFoundException("User not found");
     }
 
-    await this.repository.revokeSession(
-      session._id.toString(),
-      "manual_logout",
-    );
+    await this.repository.revokeSessionBySessionId(sessionId, "logout");
 
     await this.eventBus.publish(
       new SessionRevokedEvent({
         userId: user.id,
         sessionId,
-        reason: "manual_logout",
+        reason: "logout",
       }),
     );
 

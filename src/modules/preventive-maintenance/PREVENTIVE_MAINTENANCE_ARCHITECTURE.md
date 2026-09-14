@@ -10,11 +10,11 @@ Routes/controllers expose plan and occurrence operations. Schemas/types validate
 
 ## 3. Lifecycle
 
-A plan is created, activated, paused, edited, or retired. Active plans produce occurrences according to frequency and timezone. An occurrence may be completed, skipped with a reason, overdue, or converted to a work order. Generation must be idempotent so a scheduler restart does not duplicate work.
+A plan is created, approved, rejected, cancelled, or edited. Approved active plans produce occurrences according to frequency and timezone. An occurrence may be completed, skipped with a reason, overdue, or converted to a work order. Generation must be idempotent so a scheduler restart does not duplicate work.
 
 ## 4. Boundaries and testing
 
-The module owns schedule state; work orders own execution. Test timezone and date boundaries, frequency calculation, duplicate generation, skip reasons, asset scope, tenant isolation, activation, and event output.
+The plan owns reusable schedule definition and approval state; PMOccurrence owns execution state and work-order linkage. Test timezone and date boundaries, frequency calculation, duplicate generation, skip reasons, asset scope, tenant isolation, approval, cancellation, and event output.
 
 ## 5. Trade-offs and future work
 

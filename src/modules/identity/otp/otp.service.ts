@@ -52,7 +52,7 @@ export class OtpService {
   }
 
   // -------------------------------
-  // Increment Attempts
+  // Increment Attemptshash
   // -------------------------------
   private async incrementAttempts(purpose: OtpPurpose, userId: string) {
     const key = this.attemptKey(purpose, userId);

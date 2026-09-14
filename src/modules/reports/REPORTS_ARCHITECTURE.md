@@ -9,7 +9,7 @@ Reports provide read-focused summaries, trends, compliance views, vendor perform
 - Routes/controllers validate report type, tenant scope, date range, filters, and pagination.
 - Query/services assemble summaries and trend points from domain repositories.
 - DTOs define stable response shapes for frontend charts and tables.
-- Queue jobs handle exports or queries that may exceed request time limits.
+- Export routes currently run bounded synchronous report queries.
 - Report APIs expose maintenance, work-order, preventive, SLA, vendor, and inventory views.
 
 ## 3. Flow
@@ -17,8 +17,8 @@ Reports provide read-focused summaries, trends, compliance views, vendor perform
 1. The actor requests a report with an allowed date range and filters.
 2. The service applies organization, facility, and role scope before querying.
 3. The query returns summary, trend, table, or compliance data.
-4. Large exports become tracked jobs and provide status rather than blocking the request.
-5. Generated artifacts follow upload and retention policies.
+4. Export routes return the bounded result of the selected report query.
+5. Asynchronous export jobs are a future scaling decision, not part of the current MVP contract.
 
 ## 4. Data correctness
 
@@ -26,7 +26,7 @@ Metrics must be derived from real records and clearly define time zones, statuse
 
 ## 5. Performance and testing
 
-Use indexed filters, bounded date ranges, pagination, aggregation limits, and read projections. Test tenant isolation, facility scope, date boundaries, empty data, large datasets, status definitions, export retries, and stable response contracts.
+Use indexed filters, bounded date ranges, pagination, aggregation limits, and read projections. Test tenant isolation, facility scope, date boundaries, empty data, large datasets, status definitions, and stable response contracts.
 
 ## 6. Trade-offs and future work
 

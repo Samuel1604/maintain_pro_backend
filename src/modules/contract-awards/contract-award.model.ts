@@ -22,7 +22,12 @@ export interface IContractAward extends Document {
 
 const contractAwardSchema = new Schema<IContractAward>(
   {
-    organizationId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+    organizationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+      index: true,
+    },
     workOrderId: {
       type: Schema.Types.ObjectId,
       ref: "WorkOrder",
@@ -64,7 +69,15 @@ const contractAwardSchema = new Schema<IContractAward>(
     notes: String,
     status: {
       type: String,
-      enum: ["draft", "pending_approval", "awarded", "active", "completed", "terminated", "cancelled"],
+      enum: [
+        "draft",
+        "pending_approval",
+        "awarded",
+        "active",
+        "completed",
+        "terminated",
+        "cancelled",
+      ],
       default: "pending_approval",
     },
   },
@@ -73,9 +86,6 @@ const contractAwardSchema = new Schema<IContractAward>(
   },
 );
 
-contractAwardSchema.index({ organizationId: 1, workOrderId: 1 });
+contractAwardSchema.index({ organizationId: 1, workOrderId: 1 }, { unique: true });
 
-export const ContractAward = model<IContractAward>(
-  "ContractAward",
-  contractAwardSchema,
-);
+export const ContractAward = model<IContractAward>("ContractAward", contractAwardSchema);

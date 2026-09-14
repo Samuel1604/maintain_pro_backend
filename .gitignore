@@ -5,9 +5,12 @@ node_modules/
 
 dist/
 
+
 # Environment files — never commit these
 .env
 
+# zips
+*.zip
 
 # Logs
 *.log
