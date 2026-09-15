@@ -84,6 +84,7 @@ const sendTempInviteBodySchema = z.object({
   firstName: firstNameSchema,
   lastName: lastNameSchema,
   role: z.enum(Object.values(ROLES) as [string, ...string[]]),
+  facilityId: objectIdSchema.optional(),
 });
 
 export const sendTempInviteSchema = z.object({

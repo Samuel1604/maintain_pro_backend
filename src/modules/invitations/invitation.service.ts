@@ -297,6 +297,7 @@ export class InvitationService {
         invitationType: InvitationType.ORGANIZATION,
         invitedBy: new Types.ObjectId(actor.userId),
         organizationId: inviter.organizationId,
+        ...(dto.facilityId && { facilityId: new Types.ObjectId(dto.facilityId) }),
         tokenHash,
         expiresAt,
         status: InvitationStatus.PENDING,
