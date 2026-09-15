@@ -16,6 +16,9 @@ export interface IFacility extends Document {
   };
   status: "active" | "inactive" | "suspended";
   description?: string;
+  managerName?: string;
+  primaryPhone?: string;
+  emergencyContact?: string;
   createdBy: Types.ObjectId;
   updatedBy?: Types.ObjectId;
   createdAt: Date;
@@ -77,6 +80,18 @@ const facilitySchema = new Schema<IFacility>(
     },
     description: {
       type: String,
+    },
+    managerName: {
+      type: String,
+      trim: true,
+    },
+    primaryPhone: {
+      type: String,
+      trim: true,
+    },
+    emergencyContact: {
+      type: String,
+      trim: true,
     },
     createdBy: {
       type: Schema.Types.ObjectId,

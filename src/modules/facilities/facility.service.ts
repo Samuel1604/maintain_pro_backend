@@ -16,16 +16,10 @@ import {
 } from "./events/events.js";
 import type { FacilityUpdatedPayload } from "./events/facility.event-payloads.js";
 import type { JwtPayload } from "@/shared/types/jwt.types.js";
-import type {
-  CreateFacilityInput,
-  UpdateFacilityInput,
-} from "./facility.schema.js";
+import type { CreateFacilityInput, UpdateFacilityInput } from "./facility.schema.js";
 import type { ApplicationResult } from "@/shared/application-result/index.js";
 import { facilityMapper } from "./dto/facility.mapper.js";
-import type {
-  FacilityResponse,
-  ListFacilitiesResponse,
-} from "./dto/facility.dto.js";
+import type { FacilityResponse, ListFacilitiesResponse } from "./dto/facility.dto.js";
 
 interface PaginationOptions {
   page: number;
@@ -60,9 +54,7 @@ export class FacilityService {
 
     // Verify facility belongs to actor's organization
     if (facility.organizationId.toString() !== actor.organizationId) {
-      throw new AuthorizationException(
-        "You do not have access to this facility",
-      );
+      throw new AuthorizationException("You do not have access to this facility");
     }
 
     return {
@@ -72,9 +64,7 @@ export class FacilityService {
     };
   }
 
-  async findByOrganization(
-    organizationId: string,
-  ): Promise<ApplicationResult<FacilityResponse[]>> {
+  async findByOrganization(organizationId: string): Promise<ApplicationResult<FacilityResponse[]>> {
     const facilities = await this.repository.findByOrganization(organizationId);
 
     return {
@@ -111,12 +101,7 @@ export class FacilityService {
     const total = await this.repository.count(filter);
 
     // Get paginated data
-    const data = await this.repository.findManyWithSort(
-      filter,
-      sort,
-      skip,
-      limit,
-    );
+    const data = await this.repository.findManyWithSort(filter, sort, skip, limit);
 
     const pages = Math.ceil(total / limit);
 
@@ -136,9 +121,18 @@ export class FacilityService {
     return this.repository.count({ organizationId });
   }
 
-  async statistics(organizationId: string): Promise<ApplicationResult<{ total: number; byStatus: Record<string, number> }>> {
-    const [total, byStatus] = await Promise.all([this.repository.count({ organizationId }), this.repository.countByStatus(organizationId)]);
-    return { success: true, message: "Facility statistics retrieved successfully", data: { total, byStatus } };
+  async statistics(
+    organizationId: string,
+  ): Promise<ApplicationResult<{ total: number; byStatus: Record<string, number> }>> {
+    const [total, byStatus] = await Promise.all([
+      this.repository.count({ organizationId }),
+      this.repository.countByStatus(organizationId),
+    ]);
+    return {
+      success: true,
+      message: "Facility statistics retrieved successfully",
+      data: { total, byStatus },
+    };
   }
 
   // ─── Mutation Operations ───────────────────────────────────────────────────
@@ -151,9 +145,7 @@ export class FacilityService {
 
     // Verify actor's organization matches the facility's organization
     if (facilityData.organizationId !== actor.organizationId) {
-      throw new AuthorizationException(
-        "You can only create facilities in your own organization",
-      );
+      throw new AuthorizationException("You can only create facilities in your own organization");
     }
 
     // Check facility limit entitlement (optional: if subscription active)
@@ -166,11 +158,7 @@ export class FacilityService {
         "organization",
       );
       // If subscription exists and is not active, reject
-      if (
-        subscription &&
-        subscription.status !== "active" &&
-        subscription.status !== "trial"
-      ) {
+      if (subscription && subscription.status !== "active" && subscription.status !== "trial") {
         throw new BusinessException(
           "Facility creation requires an active subscription. Please upgrade your subscription.",
         );
@@ -203,6 +191,10 @@ export class FacilityService {
         organizationId: facility.organizationId.toString(),
         name: facility.name,
         address: facility.address,
+        description: facility.description,
+        managerName: facility.managerName,
+        primaryPhone: facility.primaryPhone,
+        emergencyContact: facility.emergencyContact,
         createdBy: facility.createdBy.toString(),
       }),
     );
@@ -228,16 +220,10 @@ export class FacilityService {
     }
 
     if (facility.organizationId.toString() !== actor.organizationId) {
-      throw new AuthorizationException(
-        "You do not have access to update this facility",
-      );
+      throw new AuthorizationException("You do not have access to update this facility");
     }
 
-    const updated = await this.repository.update(
-      facilityId,
-      updateData,
-      actor.userId,
-    );
+    const updated = await this.repository.update(facilityId, updateData, actor.userId);
     if (!updated) {
       throw new NotFoundException("Facility not found after update");
     }
@@ -250,12 +236,16 @@ export class FacilityService {
     };
 
     if (updateData.name !== undefined) updatedPayload.name = updateData.name;
-    if (updateData.address !== undefined)
-      updatedPayload.address = updateData.address;
+    if (updateData.address !== undefined) updatedPayload.address = updateData.address;
     if (updateData.description !== undefined && updateData.description !== null)
       updatedPayload.description = updateData.description;
-    if (updateData.status !== undefined)
-      updatedPayload.status = updateData.status;
+    if (updateData.managerName !== undefined && updateData.managerName !== null)
+      updatedPayload.managerName = updateData.managerName;
+    if (updateData.primaryPhone !== undefined && updateData.primaryPhone !== null)
+      updatedPayload.primaryPhone = updateData.primaryPhone;
+    if (updateData.emergencyContact !== undefined && updateData.emergencyContact !== null)
+      updatedPayload.emergencyContact = updateData.emergencyContact;
+    if (updateData.status !== undefined) updatedPayload.status = updateData.status;
 
     await this.eventPublisher.publish(new FacilityUpdatedEvent(updatedPayload));
 
@@ -279,16 +269,10 @@ export class FacilityService {
     }
 
     if (facility.organizationId.toString() !== actor.organizationId) {
-      throw new AuthorizationException(
-        "You do not have access to deactivate this facility",
-      );
+      throw new AuthorizationException("You do not have access to deactivate this facility");
     }
 
-    const updated = await this.repository.update(
-      facilityId,
-      { status: "inactive" },
-      actor.userId,
-    );
+    const updated = await this.repository.update(facilityId, { status: "inactive" }, actor.userId);
 
     if (!updated) {
       throw new NotFoundException("Facility not found after deactivation");
@@ -310,10 +294,7 @@ export class FacilityService {
     };
   }
 
-  async delete(
-    facilityId: string,
-    actor: JwtPayload,
-  ): Promise<ApplicationResult<void>> {
+  async delete(facilityId: string, actor: JwtPayload): Promise<ApplicationResult<void>> {
     this.accessControl.requireOrganization(actor);
 
     // Verify facility exists and belongs to actor's organization
@@ -323,9 +304,7 @@ export class FacilityService {
     }
 
     if (facility.organizationId.toString() !== actor.organizationId) {
-      throw new AuthorizationException(
-        "You do not have access to delete this facility",
-      );
+      throw new AuthorizationException("You do not have access to delete this facility");
     }
 
     await this.repository.delete(facilityId);

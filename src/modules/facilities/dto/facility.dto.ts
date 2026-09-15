@@ -15,6 +15,9 @@ export interface FacilityResponse {
   };
   status: "active" | "inactive" | "suspended";
   description?: string;
+  managerName?: string;
+  primaryPhone?: string;
+  emergencyContact?: string;
   createdAt: string;
   updatedAt: string;
   /** Relationship totals are included by the paginated list endpoint. */
@@ -35,6 +38,9 @@ export interface CreateFacilityRequest {
   latitude: number;
   longitude: number;
   description?: string;
+  managerName?: string;
+  primaryPhone?: string;
+  emergencyContact?: string;
 }
 
 export interface UpdateFacilityRequest {
@@ -49,6 +55,9 @@ export interface UpdateFacilityRequest {
   latitude?: number;
   longitude?: number;
   description?: string | null;
+  managerName?: string | null;
+  primaryPhone?: string | null;
+  emergencyContact?: string | null;
   status?: "active" | "inactive" | "suspended";
 }
 

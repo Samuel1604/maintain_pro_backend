@@ -9,6 +9,10 @@ export interface FacilityCreatedPayload {
     postalCode?: string;
     country: string;
   };
+  description?: string;
+  managerName?: string;
+  primaryPhone?: string;
+  emergencyContact?: string;
   createdBy: string;
 }
 
@@ -24,6 +28,9 @@ export interface FacilityUpdatedPayload {
     country?: string;
   };
   description?: string;
+  managerName?: string;
+  primaryPhone?: string;
+  emergencyContact?: string;
   status?: "active" | "inactive" | "suspended";
   updatedBy: string;
 }

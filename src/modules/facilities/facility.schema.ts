@@ -19,6 +19,9 @@ export const createFacilitySchema = z.object({
   latitude: z.number().min(-90, "Latitude must be between -90 and 90").max(90),
   longitude: z.number().min(-180, "Longitude must be between -180 and 180").max(180),
   description: z.string().trim().optional(),
+  managerName: z.string().trim().optional(),
+  primaryPhone: z.string().trim().optional(),
+  emergencyContact: z.string().trim().optional(),
 });
 
 export type CreateFacilityInput = z.infer<typeof createFacilitySchema>;
@@ -31,6 +34,9 @@ export const updateFacilitySchema = z.object({
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
   description: z.string().trim().optional().nullable(),
+  managerName: z.string().trim().optional().nullable(),
+  primaryPhone: z.string().trim().optional().nullable(),
+  emergencyContact: z.string().trim().optional().nullable(),
   status: z.enum(["active", "inactive", "suspended"]).optional(),
 });
 

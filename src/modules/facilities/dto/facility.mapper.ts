@@ -12,6 +12,9 @@ export const facilityMapper = {
       coordinates: facility.coordinates,
       status: facility.status,
       description: facility.description,
+      managerName: facility.managerName,
+      primaryPhone: facility.primaryPhone,
+      emergencyContact: facility.emergencyContact,
       createdAt: toIsoString(facility.createdAt)!,
       updatedAt: toIsoString(facility.updatedAt)!,
     };
@@ -32,8 +35,7 @@ export const facilityMapper = {
   },
 };
 
-export const toFacilityResponse = (facility: IFacility) =>
-  facilityMapper.toResponse(facility);
+export const toFacilityResponse = (facility: IFacility) => facilityMapper.toResponse(facility);
 
 export const toFacilityResponseArray = (facilities: IFacility[]) =>
   facilityMapper.toResponseArray(facilities);

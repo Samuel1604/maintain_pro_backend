@@ -15,6 +15,9 @@ export class FacilityRepository {
       },
       status: "active",
       description: data.description,
+      managerName: data.managerName,
+      primaryPhone: data.primaryPhone,
+      emergencyContact: data.emergencyContact,
       createdBy: new Types.ObjectId(createdBy),
     });
   }
@@ -37,11 +40,7 @@ export class FacilityRepository {
     skip: number = 0,
     limit: number = 10,
   ): Promise<IFacility[]> {
-    return Facility.find(filter)
-      .sort(sort)
-      .skip(skip)
-      .limit(limit)
-      .exec();
+    return Facility.find(filter).sort(sort).skip(skip).limit(limit).exec();
   }
 
   async findByOrganizationAndStatus(
@@ -63,6 +62,9 @@ export class FacilityRepository {
     if (data.name !== undefined) updates.name = data.name;
     if (data.address !== undefined) updates.address = data.address;
     if (data.description !== undefined) updates.description = data.description;
+    if (data.managerName !== undefined) updates.managerName = data.managerName;
+    if (data.primaryPhone !== undefined) updates.primaryPhone = data.primaryPhone;
+    if (data.emergencyContact !== undefined) updates.emergencyContact = data.emergencyContact;
     if (data.status !== undefined) updates.status = data.status;
 
     if (data.latitude !== undefined && data.longitude !== undefined) {
@@ -84,8 +86,14 @@ export class FacilityRepository {
   }
 
   async countByStatus(organizationId: string): Promise<Record<string, number>> {
-    const rows = await Facility.aggregate([{ $match: { organizationId: new Types.ObjectId(organizationId) } }, { $group: { _id: "$status", count: { $sum: 1 } } }]);
-    return rows.reduce<Record<string, number>>((result, row: { _id: string; count: number }) => { result[row._id] = row.count; return result; }, {});
+    const rows = await Facility.aggregate([
+      { $match: { organizationId: new Types.ObjectId(organizationId) } },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]);
+    return rows.reduce<Record<string, number>>((result, row: { _id: string; count: number }) => {
+      result[row._id] = row.count;
+      return result;
+    }, {});
   }
 
   async exists(filter: Record<string, unknown>): Promise<boolean> {
