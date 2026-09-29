@@ -1,78 +1,115 @@
 # MaintainPro Backend
 
-Backend API for MaintainPro — a comprehensive maintenance management platform.
+The MaintainPro backend is a TypeScript modular monolith that provides the REST API, realtime updates, domain events, background jobs, authentication, tenant isolation, maintenance workflows, inventory, procurement, vendors, billing, and reporting.
 
-## Tech Stack
+## Stack
 
-- **Runtime**: Node.js
-- **Framework**: Express.js v5
-- **Language**: TypeScript
-- **Database**: MongoDB with Mongoose
-- **Authentication**: JWT (JSON Web Tokens)
-- **Validation**: Zod
-- **File Uploads**: Cloudinary + Multer
+- Node.js `>=22.13.1 <23`
+- Express 5 and TypeScript
+- MongoDB with Mongoose
+- Redis with BullMQ for durable queues and workers
+- Socket.IO for realtime updates
+- Zod for request validation
+- Cloudinary/Multer for file uploads
 
-## Getting Started
+## Local setup
 
-### Prerequisites
-
-- Node.js >= 18
-- MongoDB (local or Atlas)
-
-### Installation
+Prerequisites: Node.js `22.13.x`, MongoDB, and Redis when using BullMQ locally.
 
 ```bash
 npm install
 cp .env.example .env
-# Edit .env with your configuration
+# Update .env with local secrets and service URLs.
 npm run dev
 ```
 
-### Scripts
+The API listens on `http://localhost:8000` by default and exposes routes under `http://localhost:8000/api/v1`.
 
-| Command         | Description                              |
-| --------------- | ---------------------------------------- |
-| `npm run dev`   | Start development server with hot-reload |
-| `npm run build` | Compile TypeScript to JavaScript         |
-| `npm start`     | Run the compiled production server       |
+The frontend is a separate project and normally runs at `http://localhost:3000`.
 
-### Local integration tests
+## Queues and workers
 
-Database-backed tests should use disposable local services, matching CI. Start MongoDB and Redis with:
+The HTTP server and background worker run as separate processes:
+
+```bash
+npm run dev          # API server
+npm run worker:dev   # background worker in development
+```
+
+For a built deployment:
+
+```bash
+npm run build
+npm start            # API server
+npm run worker:start # background worker
+```
+
+`QUEUE_DRIVER=bullmq` uses Redis for durable jobs, retries, and scheduled work. `QUEUE_DRIVER=in-memory` is intended only for local development and tests; production validation rejects it. Domain events are published to the queue and processed by registered workers.
+
+## Environment
+
+Copy `.env.example` and configure at least `NODE_ENV`, `PORT`, `CLIENT_URL`, `MONGODB_URI`, `QUEUE_DRIVER`, Redis settings, and the required authentication secrets. Mail, OAuth, payment, storage, and notification settings are configured in the same file when those integrations are enabled.
+
+Never commit `.env`, production secrets, payment credentials, or private keys. Production validation rejects localhost MongoDB/Redis and in-memory queues.
+
+## Commands
+
+| Command                  | Purpose                                                  |
+| ------------------------ | -------------------------------------------------------- |
+| `npm run dev`            | Start the API with `tsx` watch mode                      |
+| `npm run worker:dev`     | Start the background worker with watch mode              |
+| `npm run build`          | Type-check, compile, alias imports, and verify the build |
+| `npm start`              | Start the compiled API from `dist/server.js`             |
+| `npm run worker:start`   | Start the compiled worker                                |
+| `npm run type-check`     | Run TypeScript without emitting files                    |
+| `npm run lint`           | Check ESLint rules                                       |
+| `npm run format`         | Format backend files with Prettier                       |
+| `npm run format:check`   | Verify Prettier formatting                               |
+| `npm test`               | Run the Vitest suite                                     |
+| `npm run verify`         | Run formatting, lint, type-check, tests, and build       |
+| `npm run release:verify` | Run release-readiness checks                             |
+
+## Integration tests
+
+Start disposable infrastructure:
 
 ```bash
 docker compose -f docker-compose.infrastructure.yml up -d mongodb redis
 ```
 
-If port `6379` is already occupied by another local Redis container, reuse that instance. Run the suite with the external MongoDB URI so the tests do not start `mongodb-memory-server`:
+Then run tests against a disposable database:
 
 ```bash
 TEST_MONGODB_URI=mongodb://127.0.0.1:27017/maintainpro_test \
 REDIS_DISABLE_CONNECTION=false npm test
 ```
 
-The test database is disposable; do not point `TEST_MONGODB_URI` at a shared or production database.
+Do not point `TEST_MONGODB_URI` at a shared or production database.
 
-## Project Structure
+## Repository structure
 
-```
+```text
 src/
-├── config/          # App configuration (DB, env, CORS, etc.)
-├── modules/         # Feature modules (auth, users, assets, etc.)
-├── shared/          # Shared utilities, middleware, constants, types
-├── jobs/            # Background/scheduled jobs
-├── events/          # Event emitters and handlers
-├── sockets/         # WebSocket handlers
-├── tests/           # Test suites
-├── app.ts           # Express app setup
-└── server.ts        # Server entry point
+├── config/             # Environment, database, Redis, and application config
+├── container/          # Application dependency container and lifecycle
+├── infrastructure/     # Queues, events, jobs, realtime, storage, logging
+├── modules/            # Domain modules and their routes/services/repositories
+├── shared/             # Authorization, errors, responses, validators, types
+├── tests/              # Unit, integration, security, and workflow tests
+├── app.ts              # Express middleware and route composition
+├── server.ts           # HTTP API bootstrap and graceful shutdown
+└── worker.ts           # Background worker bootstrap
 ```
 
-## API Base URL
+Each domain module owns its schema, model, repository, service, controller, and routes where applicable. MongoDB is the system of record; Redis/BullMQ is the operational transport for asynchronous work.
 
-```
-http://localhost:8080/api/v1
-```
+## Documentation
+
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — backend architecture and boundaries
+- [`API_ENDPOINTS_ARCHITECTURE.md`](./API_ENDPOINTS_ARCHITECTURE.md) — endpoint organization
+- [`DEPLOYMENT_READINESS.md`](./DEPLOYMENT_READINESS.md) — deployment checks
+- [`ARCHITECTURE_DOCUMENTATION_INDEX.md`](./ARCHITECTURE_DOCUMENTATION_INDEX.md) — documentation index
+- Module-specific API and architecture documents live beside their modules under `src/modules/`.
 
 ## License
 

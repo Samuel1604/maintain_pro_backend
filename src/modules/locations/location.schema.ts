@@ -13,7 +13,8 @@ const createLocationBodySchema = z.object({
 });
 
 export const createLocationSchema = z.object({ body: createLocationBodySchema });
-export const updateLocationSchema = z.object({ body: createLocationBodySchema.partial().omit({ facilityId: true }) });
+const updateLocationBodySchema = createLocationBodySchema.partial().omit({ facilityId: true });
+export const updateLocationSchema = z.object({ body: updateLocationBodySchema });
 
 export type CreateLocationInput = z.infer<typeof createLocationBodySchema>;
-export type UpdateLocationInput = z.infer<typeof createLocationBodySchema.partial().omit({ facilityId: true })>;
+export type UpdateLocationInput = z.infer<typeof updateLocationBodySchema>;
