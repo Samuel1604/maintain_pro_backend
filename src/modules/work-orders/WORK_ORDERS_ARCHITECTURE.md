@@ -17,7 +17,7 @@ Work orders are the main operational record for maintenance work. This module ow
 1. A requester creates a work order with organization and facility context.
 2. The service validates location, asset, category, priority, and requester permission.
 3. Triage assigns a responsible team, technician, or vendor.
-4. Work moves through supported statuses such as open, assigned, in progress, on hold, completed, cancelled, or rejected.
+4. Work moves through the supported statuses `open`, `assigned`, `in_progress`, `pending_completion`, `completed`, `cancelled`, and `on_hold`.
 5. Completion records work notes, resolution, parts, cost, and SLA outcome.
 6. Lifecycle events and audit entries expose the transition to other modules.
 

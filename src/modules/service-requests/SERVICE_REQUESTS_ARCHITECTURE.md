@@ -10,7 +10,7 @@ Routes/controllers expose request intake and review. Schemas/types validate desc
 
 ## Lifecycle
 
-Requests begin as submitted, then move through triage and an approval decision. An approved request may convert to one work order; rejected requests retain the reason and history. Conversion must preserve the source request ID and must not duplicate a work order on retry.
+Requests begin as submitted, then move through triage and an approval decision. An approved request converts to one work order; rejected requests retain the reason and history. Approval, work-order creation, and their outbox records share one MongoDB transaction. Conversion preserves the source request ID and is protected against duplicate work-order creation on retry.
 
 ## Boundaries
 

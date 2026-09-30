@@ -28,4 +28,4 @@ Other domain events remain reserved until their publishers expose stable payload
 
 ## Frontend dependency
 
-The backend contract is ready for the existing notification UI to consume. The frontend currently contains a local-storage seeded notification implementation; replacing that source with these endpoints requires write access to the frontend workspace and should preserve the existing presentation components.
+The frontend notification hook consumes these endpoints for the initial list, unread count, and read mutations. Realtime events trigger a refresh signal; they do not become an independent notification source of truth.

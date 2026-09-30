@@ -81,7 +81,7 @@ If `workerTimeoutMs` is configured, it must reject the job and participate in re
 
 ## 9. Rate limiting and downstream protection
 
-Queues that call email, billing, AI, notification, or external APIs must use provider-aware rate limits. Limits are configuration, not arbitrary constants. Backoff should avoid retry storms when a provider returns a rate-limit response.
+Queues that call email, billing, notification, or external APIs must use provider-aware rate limits. Limits are configuration, not arbitrary constants. Backoff should avoid retry storms when a provider returns a rate-limit response.
 
 ## 10. Observability
 

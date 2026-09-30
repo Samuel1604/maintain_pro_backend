@@ -15,6 +15,10 @@ The test suite protects business rules, API contracts, persistence boundaries, e
 
 Each test arranges isolated data and dependencies, executes one observable behavior, and asserts response, persistence, events, logs, or side effects. Tests should clean up data and avoid dependence on execution order.
 
+## Required test infrastructure
+
+Database-backed tests require a disposable MongoDB instance, and queue/infrastructure tests require Redis when the test environment enables real queue connections. The default test configuration uses `TEST_MONGODB_URI` and local Redis settings; it must never point at shared or production services. If MongoDB is unavailable, the global setup hook fails before individual suites execute, so the resulting suite failures do not represent application assertions.
+
 ## Reliability scenarios
 
 Important coverage includes duplicate delivery, concurrent claims, retries, DLQ capture and replay, missing workers, timeouts, stalled jobs, provider rate limits, session rotation, tenant isolation, and retention deadlines.

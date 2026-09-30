@@ -2,7 +2,7 @@
 
 ## Purpose
 
-MaintainPro exposes one versioned HTTP API under `/api/v1`. Each module owns a resource collection and its authorization, validation, and persistence rules. The frontend keeps paths in one endpoint registry so route changes do not spread through components.
+MaintainPro exposes one versioned HTTP API under `/api/v1`. Each module owns a resource collection and its authorization, validation, and persistence rules. Frontend clients consume these contracts, but the backend route definitions remain the source of truth.
 
 ## Naming rules
 

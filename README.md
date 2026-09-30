@@ -111,6 +111,8 @@ Each domain module owns its schema, model, repository, service, controller, and 
 - [`ARCHITECTURE_DOCUMENTATION_INDEX.md`](./ARCHITECTURE_DOCUMENTATION_INDEX.md) — documentation index
 - Module-specific API and architecture documents live beside their modules under `src/modules/`.
 
+The dashboard, invoices, and search module boundaries are documented in their module folders, including current MVP limitations where a full service/repository boundary is not yet present.
+
 ## License
 
 ISC
