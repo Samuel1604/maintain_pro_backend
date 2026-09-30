@@ -94,35 +94,30 @@ event to verify signature rejection and idempotent duplicate handling.
 
 ## Release gate
 
-The GitHub backend workflow must pass deterministic install, type-check, lint,
-build, release-contract verification, tests against disposable MongoDB and Redis, and a container build. The
-frontend workflow must pass its lint, build, and route audit.
+The GitHub backend workflow at `.github/workflows/backend-ci.yml` is the
+authoritative backend release gate. It must pass deterministic install,
+type-check, lint, build, production dependency audit, release-contract
+verification, tests against disposable MongoDB and Redis, and a container
+build. The frontend workflow must pass its lint, type-check, tests, build,
+route audit, and production dependency audit.
 
 Before production traffic is enabled, confirm the release commit is tagged,
 the Git status/diff is healthy, production secrets and callback URLs are
 configured, the container API is ready, a worker consumes jobs, and the
 staging smoke tests have passed.
 
-## Verification record
+## Verification evidence
 
-The current implementation has been verified locally with:
+The repository contains automated release checks, but this document does not
+store a permanent test count or claim that a local run passed. Use the CI run
+for the release commit as the current evidence. The backend workflow covers
+type-checking, linting, production dependency audit, build output, release
+contracts, disposable MongoDB/Redis-backed tests, and the production image.
+The frontend workflow covers type-checking, linting, tests, build output,
+route auditing, and production dependency audit.
 
-- Backend: 40 test files, 155 passing tests, and one intentional skip, run
-  against disposable MongoDB replica-set and Redis services. This includes
-  concurrent billing webhook delivery, inventory race/idempotency checks, and
-  work-order concurrency coverage.
-- Frontend: type-check, lint, tests, production build, 27-entry route audit,
-  and `npm audit --omit=dev --audit-level=high` pass.
-- Backend type-check, lint, production build, and release-contract
-  verification passed.
-- Security: `npm audit --omit=dev --audit-level=high` reports zero vulnerabilities.
-- Container: production image build, compiled import verification, dependency
-  pruning, API live health (`200`), and API/worker SIGTERM exit code `0`.
-- Compose: production topology validates against `.env.production.example`
-  when invoked with `DEPLOY_ENV_FILE=.env.production.example`.
-
-These checks prove the repository implementation and runtime topology. They do
-not supply deployment-owned values. Before release, the owner must provide
+These checks validate repository behavior and runtime topology; they do not
+provide deployment-owned values. Before release, the owner must provide
 managed MongoDB and Redis endpoints, HTTPS domains, mail and storage
 credentials, provider webhook secrets, rotated JWT/OAuth secrets, and a clean
 reviewed Git status. Provider dashboards must also confirm signed Paystack,
