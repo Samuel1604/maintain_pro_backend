@@ -23,4 +23,4 @@ All routes use the shared response enhancer and error handler. List endpoints re
 
 ## Future improvements
 
-The route registry can later generate an OpenAPI document, deprecation headers can be added to compatibility aliases, and cursor pagination can replace page pagination for very large collections without changing resource names.
+OpenAPI generation can be added later from the route schemas and response contracts, deprecation headers can be added to compatibility aliases, and cursor pagination can replace page pagination for very large collections without changing resource names.
