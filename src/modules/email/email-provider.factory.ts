@@ -18,6 +18,13 @@ export function createEmailProvider(logger?: LoggerService): EmailProvider {
       apiKey: process.env.RESEND_API_KEY,
       defaultFromName: process.env.MAIL_FROM_NAME,
       defaultFromEmail: process.env.MAIL_FROM_EMAIL,
+      ...(process.env.NODE_ENV === "test" && {
+        client: {
+          emails: {
+            send: async () => ({ data: { id: "test-email-id" }, error: null }),
+          },
+        },
+      }),
     },
     logger,
   );

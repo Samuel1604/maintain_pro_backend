@@ -10,7 +10,8 @@ process.env.NODE_ENV = "test";
 // overwrites a variable already present in process.env, so this only
 // fills in what an ambient .env (if any) hasn't already set.
 loadEnv({ path: path.resolve(process.cwd(), ".env.test") });
-process.env.MAIL_PROVIDER = "noop";
+process.env.MAIL_PROVIDER = "resend";
+process.env.RESEND_API_KEY = "test-resend-api-key";
 // Do not allow a developer's production/shared Redis URL from .env to leak
 // into tests. CI can explicitly opt into its disposable Redis service.
 if (process.env.TEST_USE_REDIS !== "true") {
@@ -21,7 +22,8 @@ if (process.env.TEST_USE_REDIS !== "true") {
 }
 
 const { beforeAll, beforeEach, afterAll } = await import("vitest");
-const { startTestDatabase, clearTestDatabase, stopTestDatabase } = await import("./helpers/database.js");
+const { startTestDatabase, clearTestDatabase, stopTestDatabase } =
+  await import("./helpers/database.js");
 
 beforeAll(async () => {
   if (process.env.TEST_SKIP_DATABASE === "true") return;
