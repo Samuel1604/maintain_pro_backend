@@ -9,11 +9,10 @@ const toMs = (value: string): number => ms(value as StringValue);
 const baseCookieOptions = {
   secure: appConfig.isProduction,
 
-  // NOTE: if the frontend and API ever live on different top-level
-  // domains, "strict" will silently stop the browser from sending
-  // these cookies on cross-site navigations/requests. Keep this in
-  // sync with your actual deployment topology.
-  sameSite: appConfig.isProduction ? "strict" : "lax",
+  // The production frontend and API are hosted on different sites
+  // (maintainpro.samueldev.cv and *.onrender.com). Credentialed browser
+  // requests therefore require SameSite=None together with Secure.
+  sameSite: appConfig.isProduction ? "none" : "lax",
 
   path: "/",
 } as const;
