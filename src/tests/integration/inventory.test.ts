@@ -22,14 +22,41 @@ async function csrf(app: Awaited<ReturnType<typeof createTestApp>>, token: strin
     .set("X-CSRF-Token", header);
 }
 
+async function createInventoryScope(
+  client: ReturnType<typeof request.agent>,
+  organizationId: string,
+) {
+  const facility = await client.post("/api/v1/facilities").send({
+    organizationId,
+    name: `Inventory Facility ${new Types.ObjectId().toString()}`,
+    address: { street: "123 Test Street", city: "Test City", state: "CA", country: "US" },
+    latitude: 34.05,
+    longitude: -118.25,
+  });
+  expect(facility.status).toBe(201);
+
+  const location = await client.post("/api/v1/locations").send({
+    facilityId: facility.body.data.id,
+    name: `Inventory Location ${new Types.ObjectId().toString()}`,
+    type: "ROOM",
+  });
+  expect(location.status).toBe(201);
+  return { facilityId: facility.body.data.id, locationId: location.body.data.id };
+}
+
 describe("Inventory domain", () => {
   it("receives, reserves, consumes and returns stock through explicit transactions", async () => {
     const app = await createTestApp();
-    const { accessToken } = await loginAsOrganizationAdmin();
+    const { accessToken, user } = await loginAsOrganizationAdmin();
     const client = await csrf(app, accessToken);
-    const item = await client
-      .post("/api/v1/inventory/items")
-      .send({ sku: "FILTER-001", name: "HVAC Filter", unitOfMeasure: "piece", reorderLevel: 2 });
+    const scope = await createInventoryScope(client, user.organizationId!.toString());
+    const item = await client.post("/api/v1/inventory/items").send({
+      sku: "FILTER-001",
+      name: "HVAC Filter",
+      unitOfMeasure: "piece",
+      reorderLevel: 2,
+      ...scope,
+    });
     expect(item.status).toBe(201);
     const location = await client
       .post("/api/v1/inventory/locations")
@@ -86,10 +113,12 @@ describe("Inventory domain", () => {
     const first = await loginAsOrganizationAdmin();
     const second = await loginAsOrganizationAdmin();
     const firstClient = await csrf(app, first.accessToken);
+    const scope = await createInventoryScope(firstClient, first.user.organizationId!.toString());
     const created = await firstClient.post("/api/v1/inventory/items").send({
       sku: `ISO-${new Types.ObjectId().toString()}`,
       name: "Private Part",
       unitOfMeasure: "piece",
+      ...scope,
     });
     const secondClient = await csrf(app, second.accessToken);
     const response = await secondClient.get(`/api/v1/inventory/items`);
@@ -101,12 +130,14 @@ describe("Inventory domain", () => {
 
   it("applies one idempotent receipt when concurrent retries share a key", async () => {
     const app = await createTestApp();
-    const { accessToken } = await loginAsOrganizationAdmin();
+    const { accessToken, user } = await loginAsOrganizationAdmin();
     const client = await csrf(app, accessToken);
+    const scope = await createInventoryScope(client, user.organizationId!.toString());
     const item = await client.post("/api/v1/inventory/items").send({
       sku: `CONCURRENT-${new Types.ObjectId().toString()}`,
       name: "Concurrent Part",
       unitOfMeasure: "piece",
+      ...scope,
     });
     const location = await client
       .post("/api/v1/inventory/locations")
@@ -135,12 +166,14 @@ describe("Inventory domain", () => {
 
   it("never reserves more stock than is available under concurrent requests", async () => {
     const app = await createTestApp();
-    const { accessToken } = await loginAsOrganizationAdmin();
+    const { accessToken, user } = await loginAsOrganizationAdmin();
     const client = await csrf(app, accessToken);
+    const scope = await createInventoryScope(client, user.organizationId!.toString());
     const item = await client.post("/api/v1/inventory/items").send({
       sku: `RESERVE-RACE-${new Types.ObjectId().toString()}`,
       name: "Reserve Race Part",
       unitOfMeasure: "piece",
+      ...scope,
     });
     const location = await client
       .post("/api/v1/inventory/locations")
@@ -174,12 +207,14 @@ describe("Inventory domain", () => {
 
   it("serializes concurrent consumption against one reservation", async () => {
     const app = await createTestApp();
-    const { accessToken } = await loginAsOrganizationAdmin();
+    const { accessToken, user } = await loginAsOrganizationAdmin();
     const client = await csrf(app, accessToken);
+    const scope = await createInventoryScope(client, user.organizationId!.toString());
     const item = await client.post("/api/v1/inventory/items").send({
       sku: `CONSUME-RACE-${new Types.ObjectId().toString()}`,
       name: "Consume Race Part",
       unitOfMeasure: "piece",
+      ...scope,
     });
     const location = await client
       .post("/api/v1/inventory/locations")

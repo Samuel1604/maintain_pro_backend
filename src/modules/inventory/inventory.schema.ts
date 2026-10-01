@@ -4,8 +4,8 @@ const objectId = z.string().regex(/^[a-f\d]{24}$/i, "Invalid ObjectId");
 const quantity = z.number().positive();
 
 export const createItemSchema = z.object({
-  facilityId: objectId.optional(),
-  locationId: objectId.optional(),
+  facilityId: objectId,
+  locationId: objectId,
   sku: z.string().trim().min(1).max(80),
   name: z.string().trim().min(1).max(200),
   description: z.string().trim().max(2000).optional(),
