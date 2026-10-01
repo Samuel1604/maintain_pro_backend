@@ -3,9 +3,9 @@ import { ResendProvider } from "./resend.provider.js";
 
 describe("ResendProvider", () => {
   it("requires an API key", () => {
-    expect(() => new ResendProvider({ client: { emails: { send: vi.fn() } } })).toThrow(
-      "RESEND_API_KEY is not configured",
-    );
+    vi.stubEnv("RESEND_API_KEY", "");
+    expect(() => new ResendProvider({})).toThrow("RESEND_API_KEY is not configured");
+    vi.unstubAllEnvs();
   });
 
   it("maps the email abstraction payload to Resend", async () => {
