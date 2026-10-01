@@ -7,10 +7,7 @@ import type { StringValue } from "ms";
 // service settings.
 if (process.env.NODE_ENV !== "test") config();
 
-
-const durationSchema =
-  z.custom<StringValue>();
-
+const durationSchema = z.custom<StringValue>();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]),
@@ -50,7 +47,7 @@ const envSchema = z.object({
   REDIS_USERNAME: z.string().optional().default(""),
   REDIS_PASSWORD: z.string().optional().default(""),
 
-  MAIL_PROVIDER: z.enum(["smtp", "brevo", "mailforge", "noop"]).default("smtp"),
+  MAIL_PROVIDER: z.enum(["smtp", "brevo", "mailforge", "resend", "noop"]).default("smtp"),
   BREVO_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   MAILFORGE_URL: z.string().url().optional(),
@@ -87,8 +84,6 @@ const envSchema = z.object({
   // AWS_SECRET_ACCESS_KEY: z.string(),
   // AWS_S3_BUCKET: z.string(),
 
-  
-
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
   GOOGLE_CLIENT_REDIRECT_URI: z.string(),
@@ -114,7 +109,11 @@ export const env = envSchema
   .superRefine((data, ctx) => {
     if (data.MAIL_PROVIDER === "smtp") {
       if (!data.MAIL_HOST) {
-        ctx.addIssue({ code: "custom", path: ["MAIL_HOST"], message: "MAIL_HOST is required when MAIL_PROVIDER=smtp" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["MAIL_HOST"],
+          message: "MAIL_HOST is required when MAIL_PROVIDER=smtp",
+        });
       }
       const hasUser = Boolean(data.MAIL_USER);
       const hasPassword = Boolean(data.MAIL_PASSWORD);
@@ -135,10 +134,31 @@ export const env = envSchema
       });
     }
     if (data.MAIL_PROVIDER === "mailforge") {
-      if (!data.MAILFORGE_URL) ctx.addIssue({ code: "custom", path: ["MAILFORGE_URL"], message: "MAILFORGE_URL is required when MAIL_PROVIDER=mailforge" });
-      if (!data.MAILFORGE_ACCOUNT_ID) ctx.addIssue({ code: "custom", path: ["MAILFORGE_ACCOUNT_ID"], message: "MAILFORGE_ACCOUNT_ID is required when MAIL_PROVIDER=mailforge" });
-      if (!data.MAILFORGE_API_KEY) ctx.addIssue({ code: "custom", path: ["MAILFORGE_API_KEY"], message: "MAILFORGE_API_KEY is required when MAIL_PROVIDER=mailforge" });
+      if (!data.MAILFORGE_URL)
+        ctx.addIssue({
+          code: "custom",
+          path: ["MAILFORGE_URL"],
+          message: "MAILFORGE_URL is required when MAIL_PROVIDER=mailforge",
+        });
+      if (!data.MAILFORGE_ACCOUNT_ID)
+        ctx.addIssue({
+          code: "custom",
+          path: ["MAILFORGE_ACCOUNT_ID"],
+          message: "MAILFORGE_ACCOUNT_ID is required when MAIL_PROVIDER=mailforge",
+        });
+      if (!data.MAILFORGE_API_KEY)
+        ctx.addIssue({
+          code: "custom",
+          path: ["MAILFORGE_API_KEY"],
+          message: "MAILFORGE_API_KEY is required when MAIL_PROVIDER=mailforge",
+        });
     }
-
+    if (data.MAIL_PROVIDER === "resend" && !data.RESEND_API_KEY) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["RESEND_API_KEY"],
+        message: "RESEND_API_KEY is required when MAIL_PROVIDER=resend",
+      });
+    }
   })
   .parse(process.env);

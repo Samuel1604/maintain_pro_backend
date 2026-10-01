@@ -13,6 +13,7 @@ export interface ResendProviderOptions {
   apiKey?: string;
   defaultFromName?: string;
   defaultFromEmail?: string;
+  client?: Pick<Resend, "emails">;
 }
 
 export class ResendProvider implements EmailProvider {
@@ -29,7 +30,8 @@ export class ResendProvider implements EmailProvider {
       throw new ConfigurationError("RESEND_API_KEY is not configured in environment variables.");
     }
 
-    const defaultFromEmail = options.defaultFromEmail || process.env.MAIL_FROM_EMAIL || "noreply@maintainpro.com";
+    const defaultFromEmail =
+      options.defaultFromEmail || process.env.MAIL_FROM_EMAIL || "noreply@maintainpro.samueldev.cv";
     const defaultFromName = options.defaultFromName || process.env.MAIL_FROM_NAME || "MaintainPro";
 
     this.defaultFrom = {
@@ -37,7 +39,7 @@ export class ResendProvider implements EmailProvider {
       name: defaultFromName,
     };
 
-    this.client = new Resend(apiKey);
+    this.client = options.client ?? new Resend(apiKey);
   }
 
   async sendEmail(payload: SendEmailPayload): Promise<SendEmailResult> {
@@ -123,12 +125,22 @@ export class ResendProvider implements EmailProvider {
       correlationId,
     });
 
-    if (error.name === "missing_api_key" || error.name === "invalid_api_key" || error.name === "restricted_api_key") {
-      return new ConfigurationError(`Resend API key is invalid or unauthorized: ${error.message}`, error);
+    if (
+      error.name === "missing_api_key" ||
+      error.name === "invalid_api_key" ||
+      error.name === "restricted_api_key"
+    ) {
+      return new ConfigurationError(
+        `Resend API key is invalid or unauthorized: ${error.message}`,
+        error,
+      );
     }
 
     if (error.name === "invalid_from_address") {
-      return new ConfigurationError(`Resend sender address is not verified: ${error.message}`, error);
+      return new ConfigurationError(
+        `Resend sender address is not verified: ${error.message}`,
+        error,
+      );
     }
 
     if (
@@ -138,7 +150,10 @@ export class ResendProvider implements EmailProvider {
       error.name === "internal_server_error" ||
       (error.statusCode != null && error.statusCode >= 500)
     ) {
-      return new EmailProviderUnavailable(`Resend API service is currently unavailable: ${error.message}`, error);
+      return new EmailProviderUnavailable(
+        `Resend API service is currently unavailable: ${error.message}`,
+        error,
+      );
     }
 
     return new EmailSendFailed(`Failed to send email via Resend: ${error.message}`, error);

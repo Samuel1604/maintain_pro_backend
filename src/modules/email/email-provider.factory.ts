@@ -5,8 +5,9 @@ import { ConfigurationError } from "./exceptions/email.exceptions.js";
 import { LoggerService } from "@/infrastructure/logging/logger.service.js";
 import { MailforgeProvider } from "./providers/mailforge.provider.js";
 import { NoopEmailProvider } from "./providers/noop.provider.js";
+import { ResendProvider } from "./providers/resend.provider.js";
 
-export type MailProviderName = "smtp" | "brevo" | "mailforge" | "noop";
+export type MailProviderName = "smtp" | "brevo" | "mailforge" | "resend" | "noop";
 
 /**
  * Provider registration point.
@@ -46,7 +47,9 @@ export function createEmailProvider(logger?: LoggerService): EmailProvider {
         {
           host: process.env.MAIL_HOST,
           port: process.env.MAIL_PORT ? Number(process.env.MAIL_PORT) : undefined,
-          secure: process.env.MAIL_SECURE ? process.env.MAIL_SECURE.toLowerCase() === "true" : undefined,
+          secure: process.env.MAIL_SECURE
+            ? process.env.MAIL_SECURE.toLowerCase() === "true"
+            : undefined,
           user: process.env.MAIL_USER,
           password: process.env.MAIL_PASSWORD,
           defaultFromName: process.env.MAIL_FROM_NAME,
@@ -65,9 +68,19 @@ export function createEmailProvider(logger?: LoggerService): EmailProvider {
         logger,
       );
 
+    case "resend":
+      return new ResendProvider(
+        {
+          apiKey: process.env.RESEND_API_KEY,
+          defaultFromName: process.env.MAIL_FROM_NAME,
+          defaultFromEmail: process.env.MAIL_FROM_EMAIL,
+        },
+        logger,
+      );
+
     default:
       throw new ConfigurationError(
-        `Unsupported MAIL_PROVIDER "${providerName}". Supported values: smtp, brevo, mailforge.`,
+        `Unsupported MAIL_PROVIDER "${providerName}". Supported values: smtp, brevo, mailforge, resend, noop.`,
       );
   }
 }
