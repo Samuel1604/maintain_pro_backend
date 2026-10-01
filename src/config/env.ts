@@ -47,7 +47,7 @@ const envSchema = z.object({
   REDIS_USERNAME: z.string().optional().default(""),
   REDIS_PASSWORD: z.string().optional().default(""),
 
-  MAIL_PROVIDER: z.enum(["smtp", "brevo", "mailforge", "resend", "noop"]).default("smtp"),
+  MAIL_PROVIDER: z.literal("resend").default("resend"),
   BREVO_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   MAILFORGE_URL: z.string().url().optional(),
@@ -107,52 +107,6 @@ const envSchema = z.object({
 
 export const env = envSchema
   .superRefine((data, ctx) => {
-    if (data.MAIL_PROVIDER === "smtp") {
-      if (!data.MAIL_HOST) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["MAIL_HOST"],
-          message: "MAIL_HOST is required when MAIL_PROVIDER=smtp",
-        });
-      }
-      const hasUser = Boolean(data.MAIL_USER);
-      const hasPassword = Boolean(data.MAIL_PASSWORD);
-      if (hasUser !== hasPassword) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["MAIL_PASSWORD"],
-          message:
-            "MAIL_USER and MAIL_PASSWORD must be set together, or both left unset for unauthenticated SMTP (e.g. Mailpit)",
-        });
-      }
-    }
-    if (data.MAIL_PROVIDER === "brevo" && !data.BREVO_API_KEY) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["BREVO_API_KEY"],
-        message: "BREVO_API_KEY is required when MAIL_PROVIDER=brevo",
-      });
-    }
-    if (data.MAIL_PROVIDER === "mailforge") {
-      if (!data.MAILFORGE_URL)
-        ctx.addIssue({
-          code: "custom",
-          path: ["MAILFORGE_URL"],
-          message: "MAILFORGE_URL is required when MAIL_PROVIDER=mailforge",
-        });
-      if (!data.MAILFORGE_ACCOUNT_ID)
-        ctx.addIssue({
-          code: "custom",
-          path: ["MAILFORGE_ACCOUNT_ID"],
-          message: "MAILFORGE_ACCOUNT_ID is required when MAIL_PROVIDER=mailforge",
-        });
-      if (!data.MAILFORGE_API_KEY)
-        ctx.addIssue({
-          code: "custom",
-          path: ["MAILFORGE_API_KEY"],
-          message: "MAILFORGE_API_KEY is required when MAIL_PROVIDER=mailforge",
-        });
-    }
     if (data.MAIL_PROVIDER === "resend" && !data.RESEND_API_KEY) {
       ctx.addIssue({
         code: "custom",
