@@ -21,7 +21,11 @@ export function createEmailProvider(logger?: LoggerService): EmailProvider {
       ...(process.env.NODE_ENV === "test" && {
         client: {
           emails: {
-            send: async () => ({ data: { id: "test-email-id" }, error: null }),
+            send: async () => ({
+              data: { id: "test-email-id" },
+              error: null,
+              headers: null,
+            }),
           },
         },
       }),
