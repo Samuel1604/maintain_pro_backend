@@ -38,6 +38,9 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-  initialLogger.error("❌ Failed to bootstrap the workers:", error);
+  initialLogger.error("❌ Failed to bootstrap the workers:", {
+    error: error instanceof Error ? error.message : String(error),
+    ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
+  });
   process.exit(1);
 });
