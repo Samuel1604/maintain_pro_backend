@@ -19,14 +19,21 @@ import { Location } from "@/modules/locations/location.model.js";
 import { Asset } from "@/modules/assets/asset.model.js";
 import { AssetStatus, AssetCategory } from "@/modules/assets/asset.types.js";
 
-function accessCookie(token: string) { return [`accessToken=${token}`]; }
+function accessCookie(token: string) {
+  return [`accessToken=${token}`];
+}
 async function csrfAgent(app: Awaited<ReturnType<typeof createTestApp>>, token: string) {
   const health = await request(app).get("/api/v1/health");
   const raw = health.headers["set-cookie"];
   const cookies = raw ? (Array.isArray(raw) ? raw : [raw]) : [];
-  const csrf = cookies.find((v: string) => v.startsWith("csrfToken="))?.match(/csrfToken=([^;]+)/)?.[1];
+  const csrf = cookies
+    .find((v: string) => v.startsWith("csrfToken="))
+    ?.match(/csrfToken=([^;]+)/)?.[1];
   if (!csrf) throw new Error("CSRF cookie not issued");
-  return request.agent(app).set("Cookie", [...accessCookie(token), `csrfToken=${csrf}`]).set("X-CSRF-Token", csrf);
+  return request
+    .agent(app)
+    .set("Cookie", [...accessCookie(token), `csrfToken=${csrf}`])
+    .set("X-CSRF-Token", csrf);
 }
 
 describe("PM Skip Workflow", () => {
@@ -42,7 +49,12 @@ describe("PM Skip Workflow", () => {
       createdBy: admin.user._id,
       coordinates: { type: "Point", coordinates: [3.3792, 6.5244] },
     });
-    const location = await Location.create({ organizationId: admin.user.organizationId, facilityId: facility._id, name: "PM Loc", type: "BUILDING" });
+    const location = await Location.create({
+      organizationId: admin.user.organizationId,
+      facilityId: facility._id,
+      name: "PM Loc",
+      type: "BUILDING",
+    });
     const asset = await Asset.create({
       organizationId: admin.user.organizationId,
       facilityId: facility._id,
@@ -93,7 +105,9 @@ describe("PM Skip Workflow", () => {
       createdBy: admin.user._id,
     });
 
-    const res = await adminClient.post(`/api/v1/preventive-maintenance/${pmPlan._id}/skip`).send({ reason: "Technician unavailable, reschedule" });
+    const res = await adminClient
+      .post(`/api/v1/preventive-maintenance/${pmPlan._id}/skip`)
+      .send({ reason: "Technician unavailable, reschedule" });
     expect(res.status).toBe(200);
 
     // Skipped occurrence should be cancelled
@@ -103,7 +117,9 @@ describe("PM Skip Workflow", () => {
 
     // Plan should have advanced to next weekly occurrence (startDate + 7 days)
     const updatedPlan = await PMPlan.findById(pmPlan._id);
-    const startUtc = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate()));
+    const startUtc = new Date(
+      Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate()),
+    );
     const expectedNextDate = new Date(startUtc.getTime() + 7 * 24 * 60 * 60 * 1000);
     expect(updatedPlan!.plannedDate.getTime()).toBe(expectedNextDate.getTime());
 

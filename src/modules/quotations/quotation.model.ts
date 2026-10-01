@@ -25,7 +25,12 @@ export interface IQuotation extends Document {
 
 const quotationSchema = new Schema<IQuotation>(
   {
-    organizationId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+    organizationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+      index: true,
+    },
     vendorApplicationId: {
       type: Schema.Types.ObjectId,
       ref: "VendorApplication",

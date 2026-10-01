@@ -24,9 +24,24 @@ export class WorkOrderRepository {
     return WorkOrder.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit);
   }
 
-  findCursorPage(filter: Record<string, unknown>, cursor: { createdAt: Date; id: string } | undefined, limit: number) {
-    const cursorFilter = cursor ? { ...filter, $or: [{ createdAt: { $lt: cursor.createdAt } }, { createdAt: cursor.createdAt, _id: { $lt: cursor.id } }] } : filter;
-    return WorkOrder.find(cursorFilter).sort({ createdAt: -1, _id: -1 }).limit(limit + 1).lean();
+  findCursorPage(
+    filter: Record<string, unknown>,
+    cursor: { createdAt: Date; id: string } | undefined,
+    limit: number,
+  ) {
+    const cursorFilter = cursor
+      ? {
+          ...filter,
+          $or: [
+            { createdAt: { $lt: cursor.createdAt } },
+            { createdAt: cursor.createdAt, _id: { $lt: cursor.id } },
+          ],
+        }
+      : filter;
+    return WorkOrder.find(cursorFilter)
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit + 1)
+      .lean();
   }
 
   count(filter: Record<string, unknown>) {

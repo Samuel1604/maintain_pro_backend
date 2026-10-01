@@ -28,7 +28,8 @@ export class BrevoProvider implements EmailProvider {
       throw new ConfigurationError("BREVO_API_KEY is not configured in environment variables.");
     }
 
-    const defaultFromEmail = options.defaultFromEmail || process.env.MAIL_FROM_EMAIL || "noreply@maintainpro.com";
+    const defaultFromEmail =
+      options.defaultFromEmail || process.env.MAIL_FROM_EMAIL || "noreply@maintainpro.com";
     const defaultFromName = options.defaultFromName || process.env.MAIL_FROM_NAME || "MaintainPro";
 
     this.defaultFrom = {
@@ -58,7 +59,9 @@ export class BrevoProvider implements EmailProvider {
         subject: payload.subject,
         ...(payload.html && { htmlContent: payload.html }),
         ...(payload.text && { textContent: payload.text }),
-        ...(payload.replyTo && { replyTo: { email: payload.replyTo.email, name: payload.replyTo.name } }),
+        ...(payload.replyTo && {
+          replyTo: { email: payload.replyTo.email, name: payload.replyTo.name },
+        }),
         ...(payload.tags && { tags: payload.tags }),
         ...(payload.metadata && { params: payload.metadata }),
       });
@@ -91,7 +94,10 @@ export class BrevoProvider implements EmailProvider {
           throw new ConfigurationError("Brevo API key is invalid or unauthorized.", error);
         }
         if (status && status >= 500) {
-          throw new EmailProviderUnavailable("Brevo API service is currently down or failing.", error);
+          throw new EmailProviderUnavailable(
+            "Brevo API service is currently down or failing.",
+            error,
+          );
         }
       }
 

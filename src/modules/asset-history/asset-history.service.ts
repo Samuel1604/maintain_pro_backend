@@ -6,5 +6,62 @@ import { AssetHistoryRepository, type AssetHistoryQuery } from "./asset-history.
 import { toAssetHistoryResponse } from "./asset-history.mapper.js";
 import type { AssetHistoryListResponse } from "./asset-history.dto.js";
 import type { AssetHistoryEvent } from "./asset-history.types.js";
-export class AssetHistoryService { constructor(private readonly repository = new AssetHistoryRepository(), private readonly assets = new AssetRepository()) {} async append(input: { organizationId: string; assetId: string; event: AssetHistoryEvent; description?: string; actorId?: string; sourceType?: string; sourceId?: string; data?: Record<string, unknown> }) { return this.repository.append({ organizationId: new Types.ObjectId(input.organizationId), assetId: new Types.ObjectId(input.assetId), event: input.event, description: input.description, actorId: input.actorId ? new Types.ObjectId(input.actorId) : undefined, sourceType: input.sourceType, sourceId: input.sourceId ? new Types.ObjectId(input.sourceId) : undefined, data: input.data, occurredAt: new Date() }); } async list(assetTag: string, actor: JwtPayload, query: AssetHistoryQuery): Promise<{ success: true; message: string; data: AssetHistoryListResponse }> { if (!actor.organizationId) throw new NotFoundException("Organization not found"); const asset = actor.facilityId ? await this.assets.findByTag(assetTag, actor.organizationId, actor.facilityId) : await this.assets.findByTagInOrganization(assetTag, actor.organizationId); if (!asset || asset.organizationId.toString() !== actor.organizationId) throw new NotFoundException("Asset not found"); const result = await this.repository.findByAsset(actor.organizationId, asset._id.toString(), query); return { success: true, message: "Asset history retrieved successfully", data: { data: result.data.map(toAssetHistoryResponse), pagination: { page: query.page, limit: query.limit, total: result.total, pages: Math.ceil(result.total / query.limit) } } }; } }
+export class AssetHistoryService {
+  constructor(
+    private readonly repository = new AssetHistoryRepository(),
+    private readonly assets = new AssetRepository(),
+  ) {}
+  async append(input: {
+    organizationId: string;
+    assetId: string;
+    event: AssetHistoryEvent;
+    description?: string;
+    actorId?: string;
+    sourceType?: string;
+    sourceId?: string;
+    data?: Record<string, unknown>;
+  }) {
+    return this.repository.append({
+      organizationId: new Types.ObjectId(input.organizationId),
+      assetId: new Types.ObjectId(input.assetId),
+      event: input.event,
+      description: input.description,
+      actorId: input.actorId ? new Types.ObjectId(input.actorId) : undefined,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId ? new Types.ObjectId(input.sourceId) : undefined,
+      data: input.data,
+      occurredAt: new Date(),
+    });
+  }
+  async list(
+    assetTag: string,
+    actor: JwtPayload,
+    query: AssetHistoryQuery,
+  ): Promise<{ success: true; message: string; data: AssetHistoryListResponse }> {
+    if (!actor.organizationId) throw new NotFoundException("Organization not found");
+    const asset = actor.facilityId
+      ? await this.assets.findByTag(assetTag, actor.organizationId, actor.facilityId)
+      : await this.assets.findByTagInOrganization(assetTag, actor.organizationId);
+    if (!asset || asset.organizationId.toString() !== actor.organizationId)
+      throw new NotFoundException("Asset not found");
+    const result = await this.repository.findByAsset(
+      actor.organizationId,
+      asset._id.toString(),
+      query,
+    );
+    return {
+      success: true,
+      message: "Asset history retrieved successfully",
+      data: {
+        data: result.data.map(toAssetHistoryResponse),
+        pagination: {
+          page: query.page,
+          limit: query.limit,
+          total: result.total,
+          pages: Math.ceil(result.total / query.limit),
+        },
+      },
+    };
+  }
+}
 export const assetHistoryService = new AssetHistoryService();

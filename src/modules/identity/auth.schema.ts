@@ -85,9 +85,7 @@ const oauthRegisterVendorDataSchema = z.object({
   lastName: lastNameSchema,
 });
 
-export type OAuthRegisterVendorDto = z.infer<
-  typeof oauthRegisterVendorDataSchema
->;
+export type OAuthRegisterVendorDto = z.infer<typeof oauthRegisterVendorDataSchema>;
 
 export const oauthRegisterVendorDataParser = oauthRegisterVendorDataSchema;
 

@@ -12,15 +12,27 @@ export const errorHandler = (
   _next: NextFunction,
 ) => {
   if (err instanceof ZodError) {
-    const validation = new ValidationException("Request validation failed", err.flatten().fieldErrors);
+    const validation = new ValidationException(
+      "Request validation failed",
+      err.flatten().fieldErrors,
+    );
     return res.status(validation.statusCode).json(
-      ResponseBuilder.buildError(validation.message, validation.validationErrors, { includeTimestamp: true }),
+      ResponseBuilder.buildError(validation.message, validation.validationErrors, {
+        includeTimestamp: true,
+      }),
     );
   }
 
   if (err.name === "VersionError") {
-    const conflict = new ConflictException("The record changed while you were updating it. Refresh and try again.");
-    return res.status(conflict.statusCode).json(ResponseBuilder.buildError(conflict.message, undefined, { includeTimestamp: true, code: conflict.code }));
+    const conflict = new ConflictException(
+      "The record changed while you were updating it. Refresh and try again.",
+    );
+    return res.status(conflict.statusCode).json(
+      ResponseBuilder.buildError(conflict.message, undefined, {
+        includeTimestamp: true,
+        code: conflict.code,
+      }),
+    );
   }
 
   // Operational errors (AppError and subclasses) are errors we threw on
@@ -33,13 +45,9 @@ export const errorHandler = (
       requestId: req.requestId,
     });
 
-    const payload = ResponseBuilder.buildError(
-      err.message,
-      err.validationErrors,
-      {
-        includeTimestamp: true,
-      },
-    );
+    const payload = ResponseBuilder.buildError(err.message, err.validationErrors, {
+      includeTimestamp: true,
+    });
 
     return res.status(err.statusCode).json(payload);
   }
@@ -53,14 +61,10 @@ export const errorHandler = (
       requestId: req.requestId,
     });
 
-    const payload = ResponseBuilder.buildError(
-      err.message,
-      undefined,
-      {
-        includeTimestamp: true,
-        code: err.code,
-      },
-    );
+    const payload = ResponseBuilder.buildError(err.message, undefined, {
+      includeTimestamp: true,
+      code: err.code,
+    });
 
     return res.status(err.statusCode).json(payload);
   }

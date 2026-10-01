@@ -15,17 +15,13 @@ import type { SendPasswordResetEmailPayload } from "../jobs/send-password-reset-
  * - No business validation.
  * - Idempotent: re-sending the same email is safe.
  */
-export class PasswordResetEmailWorker
-  implements QueueWorker<SendPasswordResetEmailPayload>
-{
+export class PasswordResetEmailWorker implements QueueWorker<SendPasswordResetEmailPayload> {
   constructor(
     private readonly emailService: EmailService,
     private readonly logger: Logger,
   ) {}
 
-  async execute(
-    job: QueueJob<SendPasswordResetEmailPayload>,
-  ): Promise<void> {
+  async execute(job: QueueJob<SendPasswordResetEmailPayload>): Promise<void> {
     const { email } = job.payload;
 
     this.logger.info("[PasswordResetEmailWorker] Started", {

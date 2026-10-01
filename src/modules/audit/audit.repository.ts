@@ -45,6 +45,9 @@ export class AuditLogRepository {
       action: "login_failed",
       outcome: "failure",
       "metadata.email": email,
-    }).sort({ createdAt: -1 }).limit(limit).lean();
+    })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
   }
 }

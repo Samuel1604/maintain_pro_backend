@@ -44,9 +44,7 @@ export const listUsersQuerySchema = z.object({
 
   role: z.enum(Object.values(ROLES)).optional(),
 
-  status: z
-    .enum(["active", "inactive", "suspended", "pending_verification"])
-    .optional(),
+  status: z.enum(["active", "inactive", "suspended", "pending_verification"]).optional(),
 });
 
 export type ListUsersQueryDto = z.infer<typeof listUsersQuerySchema>;

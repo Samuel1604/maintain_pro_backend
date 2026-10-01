@@ -34,7 +34,11 @@ const locationSchema = new Schema<ILocation>(
       required: true,
       trim: true,
     },
-    type: { type: String, enum: ["BUILDING", "FLOOR", "AREA", "ROOM", "ZONE", "OTHER"], required: true },
+    type: {
+      type: String,
+      enum: ["BUILDING", "FLOOR", "AREA", "ROOM", "ZONE", "OTHER"],
+      required: true,
+    },
     parentId: { type: Schema.Types.ObjectId, ref: "Location", index: true },
     code: {
       type: String,

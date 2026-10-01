@@ -20,14 +20,21 @@ import { UserFactory } from "@/tests/factories/user.factory.js";
 import { ROLES } from "@/shared/constants/roles.js";
 import { AppContainer } from "@/container/app.container.js";
 
-function accessCookie(token: string) { return [`accessToken=${token}`]; }
+function accessCookie(token: string) {
+  return [`accessToken=${token}`];
+}
 async function csrfAgent(app: Awaited<ReturnType<typeof createTestApp>>, token: string) {
   const health = await request(app).get("/api/v1/health");
   const raw = health.headers["set-cookie"];
   const cookies = raw ? (Array.isArray(raw) ? raw : [raw]) : [];
-  const csrf = cookies.find((v: string) => v.startsWith("csrfToken="))?.match(/csrfToken=([^;]+)/)?.[1];
+  const csrf = cookies
+    .find((v: string) => v.startsWith("csrfToken="))
+    ?.match(/csrfToken=([^;]+)/)?.[1];
   if (!csrf) throw new Error("CSRF cookie not issued");
-  return request.agent(app).set("Cookie", [...accessCookie(token), `csrfToken=${csrf}`]).set("X-CSRF-Token", csrf);
+  return request
+    .agent(app)
+    .set("Cookie", [...accessCookie(token), `csrfToken=${csrf}`])
+    .set("X-CSRF-Token", csrf);
 }
 
 describe("Work Order Lifecycle", () => {
@@ -56,15 +63,22 @@ describe("Work Order Lifecycle", () => {
     });
 
     const container = new AppContainer();
-    const techLogin = await container.authService.login({ email: tech.email, password: rawPassword }, { ipAddress: "127.0.0.1", userAgent: "Vitest" });
+    const techLogin = await container.authService.login(
+      { email: tech.email, password: rawPassword },
+      { ipAddress: "127.0.0.1", userAgent: "Vitest" },
+    );
     const techClient = await csrfAgent(app, techLogin.data!.accessToken);
 
     // Missing reason → Zod superRefine fires, ZodError → ValidationException → HTTP 400
-    const noReason = await techClient.post(`/api/v1/work-orders/${wo._id}/transition`).send({ status: "on_hold" });
+    const noReason = await techClient
+      .post(`/api/v1/work-orders/${wo._id}/transition`)
+      .send({ status: "on_hold" });
     expect(noReason.status).toBe(400);
 
     // With reason → should succeed
-    const withReason = await techClient.post(`/api/v1/work-orders/${wo._id}/transition`).send({ status: "on_hold", reason: "Awaiting parts delivery" });
+    const withReason = await techClient
+      .post(`/api/v1/work-orders/${wo._id}/transition`)
+      .send({ status: "on_hold", reason: "Awaiting parts delivery" });
     expect(withReason.status).toBe(200);
 
     // statusHistory entry should be recorded
@@ -128,7 +142,9 @@ describe("Work Order Lifecycle", () => {
     });
 
     const vendorClient = await csrfAgent(app, vendorLead.accessToken);
-    const res = await vendorClient.post(`/api/v1/work-orders/${wo._id}/vendor/reject`).send({ reason: "Too far from our service area" });
+    const res = await vendorClient
+      .post(`/api/v1/work-orders/${wo._id}/vendor/reject`)
+      .send({ reason: "Too far from our service area" });
     expect(res.status).toBe(200);
 
     const updated = await WorkOrder.findById(wo._id);
@@ -182,7 +198,9 @@ describe("Work Order Lifecycle", () => {
       submittedAt: new Date(),
     });
 
-    const res = await adminClient.patch(`/api/v1/invoices/${invoice._id}/dispute`).send({ reason: "Overcharged by 30%" });
+    const res = await adminClient
+      .patch(`/api/v1/invoices/${invoice._id}/dispute`)
+      .send({ reason: "Overcharged by 30%" });
     expect(res.status).toBe(200);
 
     const updated = await Invoice.findById(invoice._id);

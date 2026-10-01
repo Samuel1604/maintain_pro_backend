@@ -23,5 +23,7 @@ export class ServiceRequestRepository {
     return ServiceRequest.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
   }
 
-  count(filter: Record<string, unknown>) { return ServiceRequest.countDocuments(filter); }
+  count(filter: Record<string, unknown>) {
+    return ServiceRequest.countDocuments(filter);
+  }
 }

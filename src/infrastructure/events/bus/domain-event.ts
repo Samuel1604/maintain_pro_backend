@@ -25,7 +25,6 @@ export abstract class DomainEvent<TPayload = unknown> {
   public readonly causationId?: string;
   public readonly version: number;
 
-
   protected constructor(
     public readonly name: string,
     public readonly payload: TPayload,
@@ -37,8 +36,10 @@ export abstract class DomainEvent<TPayload = unknown> {
     this.occurredAt = occurredAt ?? new Date();
     this.organizationId = metadata.organizationId ?? this.payloadContext("organizationId");
     this.facilityId = metadata.facilityId ?? this.payloadContext("facilityId");
-    this.vendorId = metadata.vendorId ?? this.payloadContext("vendorId", "assignedVendorId", "selectedVendorId");
-    this.actorId = metadata.actorId ?? this.payloadContext("actorId", "createdBy", "updatedBy", "performedBy");
+    this.vendorId =
+      metadata.vendorId ?? this.payloadContext("vendorId", "assignedVendorId", "selectedVendorId");
+    this.actorId =
+      metadata.actorId ?? this.payloadContext("actorId", "createdBy", "updatedBy", "performedBy");
     this.aggregateType = metadata.aggregateType;
     this.aggregateId = metadata.aggregateId;
     this.correlationId = metadata.correlationId ?? this.eventId;
@@ -49,7 +50,9 @@ export abstract class DomainEvent<TPayload = unknown> {
   private payloadContext(...keys: string[]): string | undefined {
     if (!this.payload || typeof this.payload !== "object") return undefined;
     const payload = this.payload as Record<string, unknown>;
-    const value = keys.map((key) => payload[key]).find((candidate): candidate is string => typeof candidate === "string");
+    const value = keys
+      .map((key) => payload[key])
+      .find((candidate): candidate is string => typeof candidate === "string");
     return value;
   }
 }

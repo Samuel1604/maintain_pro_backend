@@ -25,7 +25,9 @@ export class EventDispatcher {
     }
 
     const results = await Promise.allSettled(handlers.map((handler) => handler.handle(event)));
-    const failures = results.filter((result): result is PromiseRejectedResult => result.status === "rejected");
+    const failures = results.filter(
+      (result): result is PromiseRejectedResult => result.status === "rejected",
+    );
     const durationMs = Date.now() - startedAt;
 
     if (failures.length > 0) {

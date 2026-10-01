@@ -25,20 +25,15 @@ export class LockoutService {
     }
 
     if (user.lockedUntil && user.lockedUntil > new Date()) {
-      throw new AuthorizationException(
-        "Account temporarily locked. Try again later.",
-        {
-          statusCode: 423,
-          code: "ACCOUNT_LOCKED",
-        },
-      );
+      throw new AuthorizationException("Account temporarily locked. Try again later.", {
+        statusCode: 423,
+        code: "ACCOUNT_LOCKED",
+      });
     }
   }
 
   async isLocked(data: IUser, session: SessionMetadata) {
-    const user = await this.userReader.getRequiredUser(
-      data.email,
-    );
+    const user = await this.userReader.getRequiredUser(data.email);
 
     if (!user) {
       return;

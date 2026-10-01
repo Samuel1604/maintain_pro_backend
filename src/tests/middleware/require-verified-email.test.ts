@@ -1,15 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Response, NextFunction } from "express";
 import { requireVerifiedEmail } from "@/shared/middleware/require-verified-email.js";
-import {
-  AuthenticationException,
-  AuthorizationException,
-} from "@/shared/errors/index.js";
+import { AuthenticationException, AuthorizationException } from "@/shared/errors/index.js";
 import type { AuthRequest } from "@/shared/types/request.js";
 
-function fakeAuthenticatedRequest(
-  overrides: Partial<AuthRequest["user"]> = {},
-): AuthRequest {
+function fakeAuthenticatedRequest(overrides: Partial<AuthRequest["user"]> = {}): AuthRequest {
   return {
     user: {
       userId: "user-1",

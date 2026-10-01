@@ -5,9 +5,7 @@ export interface SendPasswordResetEmailPayload {
   email: string;
 }
 
-export class SendPasswordResetEmailJob
-  implements QueueJob<SendPasswordResetEmailPayload>
-{
+export class SendPasswordResetEmailJob implements QueueJob<SendPasswordResetEmailPayload> {
   public static readonly NAME = "identity.password-reset";
 
   public readonly name = SendPasswordResetEmailJob.NAME;

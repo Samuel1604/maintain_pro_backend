@@ -11,12 +11,34 @@ export class ContractAwardRepository {
   findByWorkOrder(workOrderId: string) {
     return ContractAward.findOne({ workOrderId });
   }
-  findById(id: string) { return ContractAward.findById(id); }
-  findByOrganization(organizationId: string) { return ContractAward.find({ organizationId }).sort({ createdAt: -1 }).limit(100); }
-  findByVendor(vendorId: string) { return ContractAward.find({ vendorId }).sort({ createdAt: -1 }).limit(100); }
-  update(id: string, data: Record<string, unknown>) { return ContractAward.findByIdAndUpdate(id, data, { new: true }); }
-  addWorkOrder(data: Record<string, unknown>) { return ContractAwardWorkOrder.create(data); }
-  listWorkOrders(awardId: string) { return ContractAwardWorkOrder.find({ contractAwardId: awardId, removedAt: { $exists: false } }).sort({ associatedAt: 1 }).limit(100); }
-  findWorkOrder(awardId: string, workOrderId: string) { return ContractAwardWorkOrder.findOne({ contractAwardId: awardId, workOrderId }); }
-  removeWorkOrder(awardId: string, workOrderId: string) { return ContractAwardWorkOrder.findOneAndUpdate({ contractAwardId: awardId, workOrderId, removedAt: { $exists: false } }, { removedAt: new Date() }, { new: true }); }
+  findById(id: string) {
+    return ContractAward.findById(id);
+  }
+  findByOrganization(organizationId: string) {
+    return ContractAward.find({ organizationId }).sort({ createdAt: -1 }).limit(100);
+  }
+  findByVendor(vendorId: string) {
+    return ContractAward.find({ vendorId }).sort({ createdAt: -1 }).limit(100);
+  }
+  update(id: string, data: Record<string, unknown>) {
+    return ContractAward.findByIdAndUpdate(id, data, { new: true });
+  }
+  addWorkOrder(data: Record<string, unknown>) {
+    return ContractAwardWorkOrder.create(data);
+  }
+  listWorkOrders(awardId: string) {
+    return ContractAwardWorkOrder.find({ contractAwardId: awardId, removedAt: { $exists: false } })
+      .sort({ associatedAt: 1 })
+      .limit(100);
+  }
+  findWorkOrder(awardId: string, workOrderId: string) {
+    return ContractAwardWorkOrder.findOne({ contractAwardId: awardId, workOrderId });
+  }
+  removeWorkOrder(awardId: string, workOrderId: string) {
+    return ContractAwardWorkOrder.findOneAndUpdate(
+      { contractAwardId: awardId, workOrderId, removedAt: { $exists: false } },
+      { removedAt: new Date() },
+      { new: true },
+    );
+  }
 }

@@ -4,7 +4,9 @@ import type { OtpRequestedPayload } from "@/modules/identity/events/identity.eve
 import { OtpPurpose } from "@/modules/identity/otp/otp.types.js";
 import { EmailService } from "@/modules/email/email.service.js";
 
-export class SendVerificationOtpEmailHandler implements EventHandler<DomainEvent<OtpRequestedPayload>> {
+export class SendVerificationOtpEmailHandler implements EventHandler<
+  DomainEvent<OtpRequestedPayload>
+> {
   constructor(private readonly emailService: EmailService) {}
 
   async handle(event: DomainEvent<OtpRequestedPayload>): Promise<void> {

@@ -4,10 +4,7 @@ import { Vendor } from "@/modules/vendors/vendor.model.js";
 import { uniqueOrganizationSlug, uniqueVendorSlug } from "@/shared/utils/slug.js";
 
 import type { RegisterOrgDto, RegisterVendorDto } from "./auth.schema.js";
-import type {
-  OAuthRegisterOrgDto,
-  OAuthRegisterVendorDto,
-} from "./auth.schema.js";
+import type { OAuthRegisterOrgDto, OAuthRegisterVendorDto } from "./auth.schema.js";
 
 export class AuthRepository {
   // -------------------------

@@ -69,9 +69,14 @@ describe("AuthService.regenerateVerificationLink — response shape & normalizat
     const unverifiedEmail = await registerUnverifiedOrgAdmin(container);
     const { user: verifiedUser } = await UserFactory.create({ isVerified: true });
 
-    const nonExistentResult = await container.authService.regenerateVerificationLink("ghost-nonexistent@test.com");
-    const unverifiedResult = await container.authService.regenerateVerificationLink(unverifiedEmail);
-    const verifiedResult = await container.authService.regenerateVerificationLink(verifiedUser.email);
+    const nonExistentResult = await container.authService.regenerateVerificationLink(
+      "ghost-nonexistent@test.com",
+    );
+    const unverifiedResult =
+      await container.authService.regenerateVerificationLink(unverifiedEmail);
+    const verifiedResult = await container.authService.regenerateVerificationLink(
+      verifiedUser.email,
+    );
 
     // All three must succeed and return the exact same shape
     expect(nonExistentResult).toEqual({

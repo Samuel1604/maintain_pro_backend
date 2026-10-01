@@ -1,5 +1,9 @@
 import { Types } from "mongoose";
-import { AuthorizationException, NotFoundException, BusinessException } from "@/shared/errors/index.js";
+import {
+  AuthorizationException,
+  NotFoundException,
+  BusinessException,
+} from "@/shared/errors/index.js";
 import { ROLES } from "@/shared/constants/roles.js";
 import { User } from "@/modules/users/user.model.js";
 import { VendorApplication } from "@/modules/vendor-applications/vendor-application.model.js";
@@ -28,14 +32,15 @@ export class SlaAgreementService {
   private repository = new SlaAgreementRepository();
   private events = new ProcurementEventsService();
 
-  async create(data: CreateSlaAgreementInput, actor: Actor): Promise<ApplicationResult<ISlaAgreement>> {
+  async create(
+    data: CreateSlaAgreementInput,
+    actor: Actor,
+  ): Promise<ApplicationResult<ISlaAgreement>> {
     if (!participantRoles.includes(actor.role)) {
       throw new AuthorizationException("This role cannot create SLA agreements");
     }
 
-    const application = await VendorApplication.findById(
-      data.vendorApplicationId,
-    );
+    const application = await VendorApplication.findById(data.vendorApplicationId);
 
     if (!application) {
       throw new NotFoundException("Vendor application not found");
@@ -54,10 +59,7 @@ export class SlaAgreementService {
       throw new AuthorizationException("Work order is outside the organization scope");
     }
 
-    if (
-      actor.role === ROLES.VENDOR_LEAD ||
-      actor.role === ROLES.VENDOR_MANAGER
-    ) {
+    if (actor.role === ROLES.VENDOR_LEAD || actor.role === ROLES.VENDOR_MANAGER) {
       const user = await User.findById(actor.userId).select("vendorId");
 
       if (!user?.vendorId || !application.vendorId.equals(user.vendorId)) {
@@ -86,7 +88,12 @@ export class SlaAgreementService {
     }
 
     const created = await this.repository.create(agreement);
-    await this.events.auditEvent({ action: "procurement.sla_proposed", actorId: actor.userId, organizationId: workOrder.organizationId.toString(), entityId: created._id.toString() });
+    await this.events.auditEvent({
+      action: "procurement.sla_proposed",
+      actorId: actor.userId,
+      organizationId: workOrder.organizationId.toString(),
+      entityId: created._id.toString(),
+    });
 
     return {
       success: true,
@@ -95,7 +102,10 @@ export class SlaAgreementService {
     };
   }
 
-  async listByApplication(vendorApplicationId: string, actor: Actor): Promise<ApplicationResult<ISlaAgreement[]>> {
+  async listByApplication(
+    vendorApplicationId: string,
+    actor: Actor,
+  ): Promise<ApplicationResult<ISlaAgreement[]>> {
     const application = await VendorApplication.findById(vendorApplicationId);
     if (!application) throw new NotFoundException("Vendor application not found");
     if (actor.organizationId && application.organizationId.toString() !== actor.organizationId) {
@@ -114,21 +124,47 @@ export class SlaAgreementService {
   }
 
   async listForVendor(actor: Actor): Promise<ApplicationResult<ISlaAgreement[]>> {
-    if (!actor.vendorId || ![ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER].includes(actor.role as typeof ROLES.VENDOR_LEAD)) throw new AuthorizationException("Vendor SLA access required");
-    return { success: true, message: "Vendor SLA agreements retrieved successfully", data: await this.repository.findByVendor(actor.vendorId) };
+    if (
+      !actor.vendorId ||
+      ![ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER].includes(actor.role as typeof ROLES.VENDOR_LEAD)
+    )
+      throw new AuthorizationException("Vendor SLA access required");
+    return {
+      success: true,
+      message: "Vendor SLA agreements retrieved successfully",
+      data: await this.repository.findByVendor(actor.vendorId),
+    };
   }
 
-  async updateStatus(id: string, status: "proposed" | "accepted" | "rejected" | "active" | "terminated", actor: Actor): Promise<ApplicationResult<ISlaAgreement>> {
+  async updateStatus(
+    id: string,
+    status: "proposed" | "accepted" | "rejected" | "active" | "terminated",
+    actor: Actor,
+  ): Promise<ApplicationResult<ISlaAgreement>> {
     const agreement = await this.repository.findById(id);
     if (!agreement) throw new NotFoundException("SLA agreement not found");
     const application = await VendorApplication.findById(agreement.vendorApplicationId);
     if (!application) throw new NotFoundException("Vendor application not found");
     const isOrg = [ROLES.ADMIN, ROLES.FACILITY_MANAGER].includes(actor.role as typeof ROLES.ADMIN);
-    if (isOrg && (!actor.organizationId || agreement.organizationId.toString() !== actor.organizationId)) throw new AuthorizationException("SLA is outside the organization scope");
-    if (!isOrg && (!actor.vendorId || agreement.vendorId.toString() !== actor.vendorId)) throw new AuthorizationException("SLA is outside the vendor scope");
-    const allowed: Record<string, string[]> = { draft: ["proposed"], proposed: ["accepted", "rejected"], accepted: ["active"], active: ["terminated"] };
-    if (!allowed[agreement.status]?.includes(status)) throw new BusinessException("Invalid SLA status transition");
-    const updated = await this.repository.update(id, { status, ...(status === "active" ? { effectiveAt: new Date() } : {}) });
+    if (
+      isOrg &&
+      (!actor.organizationId || agreement.organizationId.toString() !== actor.organizationId)
+    )
+      throw new AuthorizationException("SLA is outside the organization scope");
+    if (!isOrg && (!actor.vendorId || agreement.vendorId.toString() !== actor.vendorId))
+      throw new AuthorizationException("SLA is outside the vendor scope");
+    const allowed: Record<string, string[]> = {
+      draft: ["proposed"],
+      proposed: ["accepted", "rejected"],
+      accepted: ["active"],
+      active: ["terminated"],
+    };
+    if (!allowed[agreement.status]?.includes(status))
+      throw new BusinessException("Invalid SLA status transition");
+    const updated = await this.repository.update(id, {
+      status,
+      ...(status === "active" ? { effectiveAt: new Date() } : {}),
+    });
     return { success: true, message: "SLA status updated", data: updated! };
   }
 }

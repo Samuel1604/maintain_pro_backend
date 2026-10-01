@@ -11,6 +11,4 @@ export const createSlaAgreementSchema = z.object({
   notes: z.string().trim().max(2000).optional(),
 });
 
-export type CreateSlaAgreementInput = z.infer<
-  typeof createSlaAgreementSchema
->;
+export type CreateSlaAgreementInput = z.infer<typeof createSlaAgreementSchema>;

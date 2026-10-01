@@ -22,8 +22,18 @@ router.post(
   createVendorApplication,
 );
 router.get("/mine", authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER), listVendorApplications);
-router.patch("/:id/status", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER), requireVerifiedEmail, updateVendorApplicationStatus);
-router.post("/:id/withdraw", authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER), requireVerifiedEmail, withdrawVendorApplication);
+router.patch(
+  "/:id/status",
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER),
+  requireVerifiedEmail,
+  updateVendorApplicationStatus,
+);
+router.post(
+  "/:id/withdraw",
+  authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER),
+  requireVerifiedEmail,
+  withdrawVendorApplication,
+);
 
 router.get(
   "/work-orders/:workOrderId",

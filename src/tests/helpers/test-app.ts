@@ -24,10 +24,7 @@ export async function createTestApp(): Promise<{
   return { container: container as unknown as AppContainer, server };
 }
 
-export async function teardownTestApp(
-  container?: AppContainer,
-  server?: import("http").Server,
-) {
+export async function teardownTestApp(container?: AppContainer, server?: import("http").Server) {
   try {
     if (container) await container.shutdown();
   } catch {

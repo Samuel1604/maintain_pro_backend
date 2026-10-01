@@ -10,20 +10,10 @@ router.use(authMiddleware);
 
 router.get(
   "/me",
-  authorize(
-    ROLES.ADMIN,
-    ROLES.FACILITY_MANAGER,
-    ROLES.TECHNICIAN,
-    ROLES.FINANCE,
-    ROLES.STAFF,
-  ),
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF),
   getOrganization,
 );
 
-router.patch(
-  "/me",
-  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER),
-  updateOrganization,
-);
+router.patch("/me", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER), updateOrganization);
 
 export default router;

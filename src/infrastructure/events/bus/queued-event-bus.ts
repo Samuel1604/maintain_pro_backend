@@ -45,11 +45,17 @@ export class QueuedEventBus implements EventBus {
     });
   }
 
-  subscribe<TEvent extends DomainEvent>(eventName: TEvent["name"], handler: EventHandler<TEvent>): void {
+  subscribe<TEvent extends DomainEvent>(
+    eventName: TEvent["name"],
+    handler: EventHandler<TEvent>,
+  ): void {
     this.registry.register(eventName, handler);
   }
 
-  unsubscribe<TEvent extends DomainEvent>(eventName: TEvent["name"], handler: EventHandler<TEvent>): void {
+  unsubscribe<TEvent extends DomainEvent>(
+    eventName: TEvent["name"],
+    handler: EventHandler<TEvent>,
+  ): void {
     this.registry.unregister(eventName, handler);
   }
 }

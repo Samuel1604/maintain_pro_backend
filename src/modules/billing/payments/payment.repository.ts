@@ -43,10 +43,7 @@ export class PaymentRepository {
     });
   }
 
-  async update(
-    id: string,
-    updates: UpdateQuery<IPayment>,
-  ): Promise<IPayment | null> {
+  async update(id: string, updates: UpdateQuery<IPayment>): Promise<IPayment | null> {
     return Payment.findByIdAndUpdate(id, updates, { returnDocument: "after" });
   }
 }

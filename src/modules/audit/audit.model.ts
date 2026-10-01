@@ -8,7 +8,6 @@ import {
 } from "./audit.types.js";
 import type { IAuditLog } from "./audit.types.js";
 
-
 export const auditLogSchema = new Schema<IAuditLog>(
   {
     organizationId: {

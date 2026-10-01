@@ -1,7 +1,4 @@
-import type {
-  OAuthRegisterOrgDto,
-  OAuthRegisterVendorDto,
-} from "../auth.schema.js";
+import type { OAuthRegisterOrgDto, OAuthRegisterVendorDto } from "../auth.schema.js";
 
 export interface OAuthProfile {
   email: string;
@@ -17,11 +14,7 @@ export interface OAuthProfile {
   emailVerified: boolean;
 }
 
-export type OAuthAction =
-  | "login"
-  | "register-org"
-  | "register-vendor"
-  | "accept-invitation";
+export type OAuthAction = "login" | "register-org" | "register-vendor" | "accept-invitation";
 
 export interface OAuthState {
   nonce?: string;

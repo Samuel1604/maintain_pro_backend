@@ -38,7 +38,9 @@ export class CleanupTempUsersJob {
   private async run(): Promise<void> {
     const deleted = await this.userRepository.deleteExpiredTempUsers();
     if (deleted > 0) {
-      this.logger?.info("[CleanupTempUsers] Deleted expired temp-invitation users", { count: deleted });
+      this.logger?.info("[CleanupTempUsers] Deleted expired temp-invitation users", {
+        count: deleted,
+      });
     }
   }
 }

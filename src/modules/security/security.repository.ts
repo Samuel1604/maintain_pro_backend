@@ -1,9 +1,6 @@
 import type { Types } from "mongoose";
 import { SecurityAlert } from "./security.model.js";
-import {
-  SecurityAlertStatus,
-  type ISecurityAlert,
-} from "./security.types.js";
+import { SecurityAlertStatus, type ISecurityAlert } from "./security.types.js";
 
 export class SecurityAlertRepository {
   async create(data: Partial<ISecurityAlert>) {

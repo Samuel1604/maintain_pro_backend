@@ -13,12 +13,12 @@ router.get(
   authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER, ROLES.VENDOR_TECHNICIAN),
   getVendor,
 );
-router.get("/me/performance", authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER), getVendorPerformance);
-
-router.patch(
-  "/me",
+router.get(
+  "/me/performance",
   authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER),
-  updateVendor,
+  getVendorPerformance,
 );
+
+router.patch("/me", authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER), updateVendor);
 
 export default router;

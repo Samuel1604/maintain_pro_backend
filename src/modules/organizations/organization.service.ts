@@ -2,10 +2,7 @@ import { OrganizationRepository } from "./organization.repository.js";
 import type { ApplicationResult } from "@/shared/application-result/index.js";
 import type { OrganizationProfile } from "./dto/organization-profile.dto.js";
 import { toOrganizationProfile } from "./organization.mapper.js";
-import {
-  AuthorizationException,
-  NotFoundException,
-} from "@/shared/errors/index.js";
+import { AuthorizationException, NotFoundException } from "@/shared/errors/index.js";
 import { RedisCache } from "@/infrastructure/cache/redis.cache.js";
 import { cacheKeys, cacheTtlSeconds } from "@/infrastructure/cache/cache-keys.js";
 
@@ -33,15 +30,14 @@ export class OrganizationService {
     return org ? toOrganizationProfile(org) : null;
   }
 
-  async getOrganization(
-    actor: Actor,
-  ): Promise<ApplicationResult<OrganizationProfile>> {
+  async getOrganization(actor: Actor): Promise<ApplicationResult<OrganizationProfile>> {
     if (!actor.organizationId) {
       throw new AuthorizationException("Organization context required");
     }
     const key = cacheKeys.organizationProfile(actor.organizationId);
     const cached = await this.cache.get<OrganizationProfile>(key);
-    if (cached) return { success: true, message: "Organization retrieved successfully", data: cached };
+    if (cached)
+      return { success: true, message: "Organization retrieved successfully", data: cached };
     const organization = await this.repository.findById(actor.organizationId);
     if (!organization) {
       throw new NotFoundException("Organization not found");

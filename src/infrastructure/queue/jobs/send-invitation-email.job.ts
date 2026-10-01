@@ -9,9 +9,7 @@ export interface SendInvitationEmailPayload {
   vendorId?: string;
 }
 
-export class SendInvitationEmailJob
-  implements QueueJob<SendInvitationEmailPayload>
-{
+export class SendInvitationEmailJob implements QueueJob<SendInvitationEmailPayload> {
   public static readonly NAME = "invitation.send";
 
   public readonly name = SendInvitationEmailJob.NAME;

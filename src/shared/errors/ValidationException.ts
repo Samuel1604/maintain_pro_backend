@@ -9,9 +9,7 @@ export class ValidationException extends AppError {
     options: Omit<AppErrorOptions, "statusCode" | "details"> = {},
   ) {
     const validationErrors: ValidationIssue[] =
-      typeof errors === "string"
-        ? [{ field: "", message: errors }]
-        : errors;
+      typeof errors === "string" ? [{ field: "", message: errors }] : errors;
 
     const message = typeof errors === "string" ? errors : "Validation failed";
 

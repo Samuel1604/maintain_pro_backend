@@ -1,1 +1,2 @@
-export type SlaAgreementStatus = "draft" | "proposed" | "accepted" | "active" | "expired" | "terminated" | "rejected";
+export type SlaAgreementStatus =
+  "draft" | "proposed" | "accepted" | "active" | "expired" | "terminated" | "rejected";

@@ -9,8 +9,7 @@ export const ROLES = {
   STAFF: "staff",
 } as const;
 
-export type UserRole =
-  (typeof ROLES)[keyof typeof ROLES];
+export type UserRole = (typeof ROLES)[keyof typeof ROLES];
 
 export const FacilityRoles = {
   FACILITY_MANAGER: ROLES.FACILITY_MANAGER,
@@ -18,5 +17,4 @@ export const FacilityRoles = {
   STAFF: ROLES.STAFF,
 } as const;
 
-export type FacilityRole =
-  (typeof FacilityRoles)[keyof typeof FacilityRoles];
+export type FacilityRole = (typeof FacilityRoles)[keyof typeof FacilityRoles];

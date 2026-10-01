@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 import request from "supertest";
 import { Types } from "mongoose";
 import { createTestApp } from "@/tests/helpers/app.js";
-import {
-  loginAsOrganizationAdmin,
-  loginAsVendorLead,
-} from "@/tests/helpers/auth.js";
+import { loginAsOrganizationAdmin, loginAsVendorLead } from "@/tests/helpers/auth.js";
 import { OrganizationFactory } from "@/tests/factories/organization.factory.js";
 import { VendorFactory } from "@/tests/factories/vendor.factory.js";
 import { Facility } from "@/modules/facilities/facility.model.js";
@@ -15,10 +12,7 @@ import { FacilityVendor } from "@/modules/organizations/vendor-relationships/fac
 import { MarketplaceGeographicPolicy } from "@/modules/organizations/marketplace-geographic-policy.model.js";
 
 const cookies = (token: string) => [`accessToken=${token}`];
-async function csrf(
-  app: Awaited<ReturnType<typeof createTestApp>>,
-  token: string,
-) {
+async function csrf(app: Awaited<ReturnType<typeof createTestApp>>, token: string) {
   const response = await request(app).get("/api/v1/health");
   const setCookie = response.headers["set-cookie"];
   const cookieHeader = Array.isArray(setCookie) ? setCookie[0] : setCookie;
@@ -40,7 +34,9 @@ describe("Marketplace geographic policy and applications", () => {
       .send({ priority: "critical", maxDistanceKm: 25, enabled: true });
     expect(created.status).toBe(201);
     expect(created.body.data.maxDistanceKm).toBe(25);
-    const duplicate = await (await csrf(app, accessToken))
+    const duplicate = await (
+      await csrf(app, accessToken)
+    )
       .post("/api/v1/organizations/me/marketplace/geographic-policies")
       .send({ priority: "critical", maxDistanceKm: 20, enabled: true });
     expect(duplicate.status).toBe(409);
@@ -51,9 +47,7 @@ describe("Marketplace geographic policy and applications", () => {
     expect(retrieved.status).toBe(200);
     const disabled = await (
       await csrf(app, accessToken)
-    ).post(
-      `/api/v1/organizations/me/marketplace/geographic-policies/${id}/deactivate`,
-    );
+    ).post(`/api/v1/organizations/me/marketplace/geographic-policies/${id}/deactivate`);
     expect(disabled.status).toBe(200);
     expect(disabled.body.data.enabled).toBe(false);
   });
@@ -118,9 +112,7 @@ describe("Marketplace geographic policy and applications", () => {
       .set("Cookie", cookies(accessToken));
     expect(visible.status).toBe(200);
     expect(visible.body.data).toHaveLength(1);
-    expect(visible.body.data[0].id ?? visible.body.data[0]._id).toBe(
-      workOrder._id.toString(),
-    );
+    expect(visible.body.data[0].id ?? visible.body.data[0]._id).toBe(workOrder._id.toString());
   });
 
   it("submits and awards one eligible vendor application through the existing Work Order", async () => {
@@ -170,12 +162,16 @@ describe("Marketplace geographic policy and applications", () => {
       enabled: true,
       createdBy: new Types.ObjectId(),
     });
-    const submitted = await (await csrf(app, accessToken))
+    const submitted = await (
+      await csrf(app, accessToken)
+    )
       .post("/api/v1/vendor-applications")
       .send({ workOrderId: wo._id.toString(), note: "Available tomorrow" });
     expect(submitted.status).toBe(201);
     const orgAuth = await loginAsOrganizationAdmin({ organizationId: org._id });
-    const reviewed = await (await csrf(app, orgAuth.accessToken))
+    const reviewed = await (
+      await csrf(app, orgAuth.accessToken)
+    )
       .patch(`/api/v1/vendor-applications/${submitted.body.data.id}/status`)
       .send({ status: "awarded" });
     expect(reviewed.status).toBe(200);

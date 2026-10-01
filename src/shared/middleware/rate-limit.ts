@@ -49,20 +49,17 @@ export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   store: store(15 * 60 * 1000),
-  message: "Too many login attempts. Please check your credentials and try again later."
+  message: "Too many login attempts. Please check your credentials and try again later.",
 });
 
-export const otpRateLimit =
-  rateLimit({
-    windowMs:
-      10 * 60 * 1000,
+export const otpRateLimit = rateLimit({
+  windowMs: 10 * 60 * 1000,
 
-    max: 3,
-    store: store(10 * 60 * 1000),
+  max: 3,
+  store: store(10 * 60 * 1000),
 
-    message:
-      "Too many OTP requests. Please try again later.",
-  });
+  message: "Too many OTP requests. Please try again later.",
+});
 
 /**
  * OTP verification (as opposed to request/resend) needs a slightly

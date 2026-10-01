@@ -12,9 +12,10 @@ import { SUBSCRIPTION_OWNER_TYPES } from "./billing.types.js";
 //
 // Index position = tier rank. Higher index = higher plan.
 
-const PLAN_RANK = Object.fromEntries(
-  BILLING_PLANS.map((plan, index) => [plan, index]),
-) as Record<BillingPlan, number>;
+const PLAN_RANK = Object.fromEntries(BILLING_PLANS.map((plan, index) => [plan, index])) as Record<
+  BillingPlan,
+  number
+>;
 
 // ─── Subscription Policy ──────────────────────────────────────────────────────
 
@@ -78,9 +79,7 @@ export class SubscriptionPolicy {
     }
 
     if (subscription.status === "expired") {
-      throw new BusinessException(
-        "An expired subscription cannot be cancelled.",
-      );
+      throw new BusinessException("An expired subscription cannot be cancelled.");
     }
   }
 
@@ -90,9 +89,7 @@ export class SubscriptionPolicy {
    */
   static canChangePlan(subscription: ISubscription): void {
     if (subscription.status === "cancelled" || subscription.status === "expired") {
-      throw new BusinessException(
-        `Cannot change plan for a ${subscription.status} subscription.`,
-      );
+      throw new BusinessException(`Cannot change plan for a ${subscription.status} subscription.`);
     }
   }
 
@@ -107,9 +104,7 @@ export class SubscriptionPolicy {
    */
   static canUpgrade(currentPlan: BillingPlan, newPlan: BillingPlan): void {
     if (currentPlan === newPlan) {
-      throw new ConflictException(
-        `Subscription is already on the "${currentPlan}" plan.`,
-      );
+      throw new ConflictException(`Subscription is already on the "${currentPlan}" plan.`);
     }
 
     if (PLAN_RANK[newPlan] <= PLAN_RANK[currentPlan]) {
@@ -129,9 +124,7 @@ export class SubscriptionPolicy {
    */
   static canDowngrade(currentPlan: BillingPlan, newPlan: BillingPlan): void {
     if (currentPlan === newPlan) {
-      throw new ConflictException(
-        `Subscription is already on the "${currentPlan}" plan.`,
-      );
+      throw new ConflictException(`Subscription is already on the "${currentPlan}" plan.`);
     }
 
     if (PLAN_RANK[newPlan] >= PLAN_RANK[currentPlan]) {
@@ -165,15 +158,11 @@ export class SubscriptionPolicy {
     }
 
     if (!subscription.trialEndsAt) {
-      throw new BusinessException(
-        "Cannot expire trial: subscription has no trial end date.",
-      );
+      throw new BusinessException("Cannot expire trial: subscription has no trial end date.");
     }
 
     if (new Date() < subscription.trialEndsAt) {
-      throw new BusinessException(
-        "Cannot expire trial: trial period has not ended yet.",
-      );
+      throw new BusinessException("Cannot expire trial: trial period has not ended yet.");
     }
   }
 }

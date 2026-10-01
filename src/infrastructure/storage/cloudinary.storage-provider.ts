@@ -63,24 +63,16 @@ export class CloudinaryStorageProvider implements IStorageProvider {
           (error: unknown, result: unknown) => {
             if (error || !result) {
               const message =
-                typeof error === "object" &&
-                error !== null &&
-                "message" in error
+                typeof error === "object" && error !== null && "message" in error
                   ? String((error as { message?: unknown }).message)
                   : "Unknown error";
 
-              return reject(
-                new InternalServerException(
-                  `Cloudinary upload failed: ${message}`,
-                ),
-              );
+              return reject(new InternalServerException(`Cloudinary upload failed: ${message}`));
             }
 
             if (typeof result !== "object" || result === null) {
               return reject(
-                new InternalServerException(
-                  "Cloudinary upload returned unexpected result",
-                ),
+                new InternalServerException("Cloudinary upload returned unexpected result"),
               );
             }
 
@@ -95,8 +87,7 @@ export class CloudinaryStorageProvider implements IStorageProvider {
               bytes: typeof res.bytes === "number" ? res.bytes : 0,
               width: typeof res.width === "number" ? res.width : undefined,
               height: typeof res.height === "number" ? res.height : undefined,
-              duration:
-                typeof res.duration === "number" ? res.duration : undefined,
+              duration: typeof res.duration === "number" ? res.duration : undefined,
             });
           },
         );
@@ -107,16 +98,11 @@ export class CloudinaryStorageProvider implements IStorageProvider {
         typeof err === "object" && err !== null && "message" in err
           ? String((err as { message?: unknown }).message)
           : String(err);
-      throw new InternalServerException(
-        `Storage upload provider error: ${message}`,
-      );
+      throw new InternalServerException(`Storage upload provider error: ${message}`);
     }
   }
 
-  async delete(
-    publicId: string,
-    resourceType: string = "image",
-  ): Promise<boolean> {
+  async delete(publicId: string, resourceType: string = "image"): Promise<boolean> {
     if (!this.isConfigured()) {
       if (env.NODE_ENV === "production") {
         throw new InternalServerException(
@@ -144,9 +130,7 @@ export class CloudinaryStorageProvider implements IStorageProvider {
         typeof err === "object" && err !== null && "message" in err
           ? String((err as { message?: unknown }).message)
           : String(err);
-      throw new InternalServerException(
-        `Storage delete provider error: ${message}`,
-      );
+      throw new InternalServerException(`Storage delete provider error: ${message}`);
     }
   }
 }

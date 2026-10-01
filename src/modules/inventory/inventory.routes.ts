@@ -2,7 +2,30 @@ import { Router } from "express";
 import { authMiddleware } from "@/shared/middleware/authenticate.js";
 import { authorize } from "@/shared/middleware/authorize.js";
 import { ROLES } from "@/shared/constants/roles.js";
-import { adjust, balances, consume, createCategory, createItem, createLocation, deactivateItem, deactivateLocation, history, issue, listCategories, listItems, listLocations, receive, release, reserve, updateItem, updateLocation, transfer, returnStock, overview, reconcile } from "./inventory.controller.js";
+import {
+  adjust,
+  balances,
+  consume,
+  createCategory,
+  createItem,
+  createLocation,
+  deactivateItem,
+  deactivateLocation,
+  history,
+  issue,
+  listCategories,
+  listItems,
+  listLocations,
+  receive,
+  release,
+  reserve,
+  updateItem,
+  updateLocation,
+  transfer,
+  returnStock,
+  overview,
+  reconcile,
+} from "./inventory.controller.js";
 
 const router = Router();
 router.use(authMiddleware);

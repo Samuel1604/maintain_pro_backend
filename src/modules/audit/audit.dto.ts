@@ -37,7 +37,7 @@ export interface CreateAuditLogDto {
 
   metadata?: Record<string, unknown>;
 
-  sessionMetadata?: SessionMetadata
+  sessionMetadata?: SessionMetadata;
 
   source?: string;
 

@@ -8,18 +8,14 @@ export class InMemoryEventBus implements EventBus {
 
   constructor(private readonly logger?: Logger) {}
 
-  public async publish<TEvent extends DomainEvent>(
-    event: TEvent,
-  ): Promise<void> {
+  public async publish<TEvent extends DomainEvent>(event: TEvent): Promise<void> {
     const handlers = this.listeners.get(event.name);
 
     if (!handlers?.size) {
       return;
     }
 
-    const results = await Promise.allSettled(
-      [...handlers].map((handler) => handler.handle(event)),
-    );
+    const results = await Promise.allSettled([...handlers].map((handler) => handler.handle(event)));
 
     const failures = results.filter(
       (result): result is PromiseRejectedResult => result.status === "rejected",

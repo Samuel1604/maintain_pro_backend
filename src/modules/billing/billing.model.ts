@@ -67,7 +67,4 @@ const subscriptionSchema = new Schema<ISubscription>(
 // Compound index: one active subscription per owner
 subscriptionSchema.index({ ownerId: 1, ownerType: 1 }, { unique: true });
 
-export const Subscription = model<ISubscription>(
-  "Subscription",
-  subscriptionSchema,
-);
+export const Subscription = model<ISubscription>("Subscription", subscriptionSchema);

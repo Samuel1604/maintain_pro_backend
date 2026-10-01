@@ -10,8 +10,8 @@ export const AUTH_LOG_ACTIONS = {
 
   // OAuth
   OAUTH_LOGIN: "oauth_login",
-    OAUTH_SIGNUP_ORGANIZATION: "oauth_signup_organization",
-    OAUTH_SIGNUP_VENDOR: "oauth_signup_vendor",
+  OAUTH_SIGNUP_ORGANIZATION: "oauth_signup_organization",
+  OAUTH_SIGNUP_VENDOR: "oauth_signup_vendor",
 
   // Invitations
   INVITATION_ACCEPTED: "invitation_accepted",

@@ -7,7 +7,9 @@ export const assetMapper = {
     return {
       id: toObjectIdString(asset._id)!,
       assetTag: asset.assetTag,
-      qrCode: `maintainpro://assets/${encodeURIComponent(asset.assetTag)}`,
+      // Use the browser route so scanning the QR code opens the asset detail page.
+      // The legacy route resolves the user's role and redirects to the correct portal.
+      qrCode: `${process.env.FRONTEND_URL || process.env.CLIENT_URL || "http://localhost:3000"}/assets/${encodeURIComponent(asset.assetTag)}`,
       name: asset.name,
       description: asset.description,
       category: asset.category,
@@ -24,6 +26,7 @@ export const assetMapper = {
       lastMaintenanceDate: toIsoString(asset.lastMaintenanceDate),
       nextMaintenanceDate: toIsoString(asset.nextMaintenanceDate),
       estimatedValue: asset.estimatedValue,
+      currency: asset.currency ?? "NGN",
       notes: asset.notes,
 
       organizationId: toObjectIdString(asset.organizationId),

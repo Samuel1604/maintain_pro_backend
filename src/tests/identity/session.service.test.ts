@@ -53,10 +53,10 @@ describe("SessionService.refresh", () => {
       sessionId,
     });
 
-    const sessions = await container.sessionService.getSessions(
-      user._id.toString(),
-      { ...sessionMeta, sessionId },
-    );
+    const sessions = await container.sessionService.getSessions(user._id.toString(), {
+      ...sessionMeta,
+      sessionId,
+    });
 
     // The rotated token is a new DB row, but it should still be the same
     // logical session the user sees in their device list — not a second,
@@ -75,10 +75,10 @@ describe("SessionService.refresh", () => {
       sessionId,
     });
 
-    const secondRefresh = await container.sessionService.refresh(
-      firstRefresh.refreshToken,
-      { ...sessionMeta, sessionId },
-    );
+    const secondRefresh = await container.sessionService.refresh(firstRefresh.refreshToken, {
+      ...sessionMeta,
+      sessionId,
+    });
 
     expect(secondRefresh.accessToken).toBeTruthy();
     expect(secondRefresh.refreshToken).not.toBe(firstRefresh.refreshToken);
@@ -135,10 +135,10 @@ describe("SessionService.refresh", () => {
 
     // Legitimate rotation: original -> rotated. `rotatedToken` is now the
     // one genuinely valid token for this session.
-    const { refreshToken: rotatedToken } = await container.sessionService.refresh(
-      originalToken,
-      { ...sessionMeta, sessionId },
-    );
+    const { refreshToken: rotatedToken } = await container.sessionService.refresh(originalToken, {
+      ...sessionMeta,
+      sessionId,
+    });
 
     const publishSpy = vi.spyOn(container.eventBus, "publish");
 
@@ -215,10 +215,10 @@ describe("SessionService.revokeSession", () => {
     const container = new AppContainer();
     const { user, refreshToken, sessionId } = await loginUser(container);
 
-    const sessions = await container.sessionService.getSessions(
-      user._id.toString(),
-      { ...sessionMeta, sessionId },
-    );
+    const sessions = await container.sessionService.getSessions(user._id.toString(), {
+      ...sessionMeta,
+      sessionId,
+    });
 
     expect(sessions).toHaveLength(1);
     const listedId = sessions[0]!.id;
@@ -239,10 +239,10 @@ describe("SessionService.revokeSession", () => {
     const { user: ownerUser, sessionId } = await loginUser(container);
     const { user: otherUser } = await loginUser(container);
 
-    const sessions = await container.sessionService.getSessions(
-      ownerUser._id.toString(),
-      { ...sessionMeta, sessionId },
-    );
+    const sessions = await container.sessionService.getSessions(ownerUser._id.toString(), {
+      ...sessionMeta,
+      sessionId,
+    });
     const listedId = sessions[0]!.id;
 
     await expect(

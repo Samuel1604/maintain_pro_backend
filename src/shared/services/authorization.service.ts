@@ -9,11 +9,7 @@ import { isSameObjectId } from "@/shared/validators/index.js";
 import type { JwtPayload } from "@/shared/types/jwt.types.js";
 import type { IAsset } from "@/modules/assets/asset.model.js";
 
-const facilityScopedRoles: string[] = [
-  ROLES.FACILITY_MANAGER,
-  ROLES.TECHNICIAN,
-  ROLES.STAFF,
-];
+const facilityScopedRoles: string[] = [ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.STAFF];
 
 export class AccessControlService {
   private facilityRepository = new FacilityRepository();

@@ -8,15 +8,17 @@ describe("ReportService dashboard scoping", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("scopes vendor dashboards by vendor assignment without organization context", async () => {
-    const count = vi.spyOn(WorkOrder, "countDocuments")
+    const count = vi
+      .spyOn(WorkOrder, "countDocuments")
       .mockResolvedValueOnce(3)
       .mockResolvedValueOnce(1)
       .mockResolvedValueOnce(2);
 
-    const result = await new ReportService().dashboard(
-      {} as never,
-      { userId: "user-1", role: "vendor_lead", vendorId: "vendor-1" },
-    );
+    const result = await new ReportService().dashboard({} as never, {
+      userId: "user-1",
+      role: "vendor_lead",
+      vendorId: "vendor-1",
+    });
 
     expect(result.summary).toEqual({
       totalWorkOrders: 3,
@@ -31,15 +33,17 @@ describe("ReportService dashboard scoping", () => {
   });
 
   it("scopes staff dashboards to requests submitted by the staff user", async () => {
-    const count = vi.spyOn(ServiceRequest, "countDocuments")
+    const count = vi
+      .spyOn(ServiceRequest, "countDocuments")
       .mockResolvedValueOnce(4)
       .mockResolvedValueOnce(2)
       .mockResolvedValueOnce(1);
 
-    const result = await new ReportService().dashboard(
-      {} as never,
-      { userId: "user-2", role: "staff", organizationId: "org-1" },
-    );
+    const result = await new ReportService().dashboard({} as never, {
+      userId: "user-2",
+      role: "staff",
+      organizationId: "org-1",
+    });
 
     expect(result.summary).toEqual({
       totalServiceRequests: 4,
@@ -54,29 +58,40 @@ describe("ReportService dashboard scoping", () => {
   });
 
   it("scopes technician dashboards to assigned work orders and organization", async () => {
-    const count = vi.spyOn(WorkOrder, "countDocuments")
+    const count = vi
+      .spyOn(WorkOrder, "countDocuments")
       .mockResolvedValueOnce(5)
       .mockResolvedValueOnce(3)
       .mockResolvedValueOnce(2);
 
-    const result = await new ReportService().dashboard(
-      {} as never,
-      { userId: "tech-1", role: "technician", organizationId: "org-1" },
-    );
+    const result = await new ReportService().dashboard({} as never, {
+      userId: "tech-1",
+      role: "technician",
+      organizationId: "org-1",
+    });
 
-    expect(result.summary).toEqual({ totalWorkOrders: 5, completedWorkOrders: 3, openWorkOrders: 2 });
+    expect(result.summary).toEqual({
+      totalWorkOrders: 5,
+      completedWorkOrders: 3,
+      openWorkOrders: 2,
+    });
     expect(count.mock.calls).toEqual([
       [{ organizationId: "org-1", assignedTechnicianId: "tech-1" }],
       [{ organizationId: "org-1", assignedTechnicianId: "tech-1", status: "completed" }],
-      [{ organizationId: "org-1", assignedTechnicianId: "tech-1", status: { $nin: ["completed", "cancelled"] } }],
+      [
+        {
+          organizationId: "org-1",
+          assignedTechnicianId: "tech-1",
+          status: { $nin: ["completed", "cancelled"] },
+        },
+      ],
     ]);
   });
 
   it("rejects vendor dashboards without vendor context", async () => {
-    await expect(new ReportService().dashboard(
-      {} as never,
-      { userId: "user-3", role: "vendor_manager" },
-    )).rejects.toThrow("Vendor reporting context is required");
+    await expect(
+      new ReportService().dashboard({} as never, { userId: "user-3", role: "vendor_manager" }),
+    ).rejects.toThrow("Vendor reporting context is required");
   });
 
   it("aggregates vendor performance in MongoDB instead of loading work orders", async () => {
@@ -111,10 +126,12 @@ describe("ReportService dashboard scoping", () => {
       onTimeRate: 66.67,
     });
     expect(aggregate).toHaveBeenCalledOnce();
-    expect(aggregate.mock.calls[0]?.[0]).toEqual(expect.arrayContaining([
-      expect.objectContaining({ $group: expect.any(Object) }),
-      expect.objectContaining({ $lookup: expect.any(Object) }),
-    ]));
+    expect(aggregate.mock.calls[0]?.[0]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ $group: expect.any(Object) }),
+        expect.objectContaining({ $lookup: expect.any(Object) }),
+      ]),
+    );
   });
 
   it("aggregates SLA compliance in MongoDB instead of loading agreements into Node", async () => {
@@ -152,9 +169,11 @@ describe("ReportService dashboard scoping", () => {
     });
     expect(result.vendors[0]).toMatchObject({ vendorId: "vendor-1", complianceRate: 50 });
     expect(aggregate).toHaveBeenCalledOnce();
-    expect(aggregate.mock.calls[0]?.[0]).toEqual(expect.arrayContaining([
-      expect.objectContaining({ $group: expect.any(Object) }),
-      expect.objectContaining({ $lookup: expect.any(Object) }),
-    ]));
+    expect(aggregate.mock.calls[0]?.[0]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ $group: expect.any(Object) }),
+        expect.objectContaining({ $lookup: expect.any(Object) }),
+      ]),
+    );
   });
 });

@@ -9,9 +9,10 @@ export class TunnelService {
     if (!env.TUNNEL_AUTOSTART || env.TUNNEL_PROVIDER === "none") return;
     const targetPort = env.TUNNEL_PORT ?? port;
     const command = env.TUNNEL_PROVIDER === "ngrok" ? "ngrok" : "cloudflared";
-    const args = env.TUNNEL_PROVIDER === "ngrok"
-      ? ["http", String(targetPort)]
-      : ["tunnel", "--url", `http://127.0.0.1:${targetPort}`];
+    const args =
+      env.TUNNEL_PROVIDER === "ngrok"
+        ? ["http", String(targetPort)]
+        : ["tunnel", "--url", `http://127.0.0.1:${targetPort}`];
 
     this.process = spawn(command, args, {
       stdio: "inherit",

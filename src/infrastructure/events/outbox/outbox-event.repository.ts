@@ -1,15 +1,22 @@
-import { OutboxEvent, type OutboxEventDocument, type OutboxEventStatus } from "./outbox-event.model.js";
+import {
+  OutboxEvent,
+  type OutboxEventDocument,
+  type OutboxEventStatus,
+} from "./outbox-event.model.js";
 import type { ClientSession } from "mongoose";
 
 export class OutboxEventRepository {
-  async append(input: {
-    eventId: string;
-    eventType: string;
-    aggregateId?: string;
-    aggregateType?: string;
-    payload: Record<string, unknown>;
-    availableAt?: Date;
-  }, session?: ClientSession): Promise<OutboxEventDocument> {
+  async append(
+    input: {
+      eventId: string;
+      eventType: string;
+      aggregateId?: string;
+      aggregateType?: string;
+      payload: Record<string, unknown>;
+      availableAt?: Date;
+    },
+    session?: ClientSession,
+  ): Promise<OutboxEventDocument> {
     const [event] = await OutboxEvent.create([input], session ? { session } : undefined);
     if (!event) throw new Error("Outbox event was not created");
     return event;
@@ -30,14 +37,28 @@ export class OutboxEventRepository {
   }
 
   async markPublished(eventId: string): Promise<void> {
-    await OutboxEvent.updateOne({ eventId, status: "processing" }, { $set: { status: "published", processedAt: new Date(), leaseUntil: null } });
+    await OutboxEvent.updateOne(
+      { eventId, status: "processing" },
+      { $set: { status: "published", processedAt: new Date(), leaseUntil: null } },
+    );
   }
 
-  async markFailed(eventId: string, error: unknown, options: { retryAt?: Date; deadLetter?: boolean } = {}): Promise<void> {
+  async markFailed(
+    eventId: string,
+    error: unknown,
+    options: { retryAt?: Date; deadLetter?: boolean } = {},
+  ): Promise<void> {
     const status: OutboxEventStatus = options.deadLetter ? "dead_letter" : "pending";
     await OutboxEvent.updateOne(
       { eventId, status: "processing" },
-      { $set: { status, availableAt: options.retryAt ?? new Date(), lastError: error instanceof Error ? error.message : String(error), leaseUntil: null } },
+      {
+        $set: {
+          status,
+          availableAt: options.retryAt ?? new Date(),
+          lastError: error instanceof Error ? error.message : String(error),
+          leaseUntil: null,
+        },
+      },
     );
   }
 

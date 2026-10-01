@@ -24,13 +24,19 @@ export function createPaymentProvider(provider: PaymentProvider): PaymentProvide
       return new MockPaymentProvider();
 
     case "stripe":
-      return new StripeProvider({ secretKey: env.STRIPE_SECRET_KEY, webhookSecret: env.STRIPE_WEBHOOK_SECRET });
+      return new StripeProvider({
+        secretKey: env.STRIPE_SECRET_KEY,
+        webhookSecret: env.STRIPE_WEBHOOK_SECRET,
+      });
 
     case "paystack":
       return new PaystackProvider({ secretKey: env.PAYSTACK_SECRET_KEY });
 
     case "flutterwave":
-      return new FlutterwaveProvider({ secretKey: env.FLUTTERWAVE_SECRET_KEY, webhookSecretHash: env.FLUTTERWAVE_WEBHOOK_SECRET_HASH });
+      return new FlutterwaveProvider({
+        secretKey: env.FLUTTERWAVE_SECRET_KEY,
+        webhookSecretHash: env.FLUTTERWAVE_WEBHOOK_SECRET_HASH,
+      });
 
     default:
       throw new Error(`Unsupported payment provider: ${String(provider)}`);

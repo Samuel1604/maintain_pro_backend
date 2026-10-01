@@ -19,7 +19,11 @@ export class LocationController {
     }
   };
 
-  getLocationsByFacility = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getLocationsByFacility = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
       const organizationId = req.user?.organizationId;
       const facilityId = req.params.facilityId as string;
@@ -30,20 +34,50 @@ export class LocationController {
     }
   };
 
-  getLocationsByOrganization = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getLocationsByOrganization = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
       const organizationId = req.user?.organizationId;
       const locations = await this.service.getLocationsByOrganization(organizationId!);
-      const ids = locations.map((location) => location._id.toString()).filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
-      const organizationObjectId = organizationId && Types.ObjectId.isValid(organizationId) ? new Types.ObjectId(organizationId) : organizationId;
+      const ids = locations
+        .map((location) => location._id.toString())
+        .filter((id) => Types.ObjectId.isValid(id))
+        .map((id) => new Types.ObjectId(id));
+      const organizationObjectId =
+        organizationId && Types.ObjectId.isValid(organizationId)
+          ? new Types.ObjectId(organizationId)
+          : organizationId;
       const [assetCounts, workOrderCounts] = await Promise.all([
-        Asset.aggregate([{ $match: { organizationId: organizationObjectId, locationId: { $in: ids } } }, { $group: { _id: "$locationId", count: { $sum: 1 } } }]),
-        WorkOrder.aggregate([{ $match: { organizationId: organizationObjectId, locationId: { $in: ids }, status: { $nin: ["completed", "cancelled"] } } }, { $group: { _id: "$locationId", count: { $sum: 1 } } }]),
+        Asset.aggregate([
+          { $match: { organizationId: organizationObjectId, locationId: { $in: ids } } },
+          { $group: { _id: "$locationId", count: { $sum: 1 } } },
+        ]),
+        WorkOrder.aggregate([
+          {
+            $match: {
+              organizationId: organizationObjectId,
+              locationId: { $in: ids },
+              status: { $nin: ["completed", "cancelled"] },
+            },
+          },
+          { $group: { _id: "$locationId", count: { $sum: 1 } } },
+        ]),
       ]);
-      const counts = (rows: Array<{ _id: unknown; count: number }>) => new Map(rows.map((row) => [String(row._id), row.count]));
+      const counts = (rows: Array<{ _id: unknown; count: number }>) =>
+        new Map(rows.map((row) => [String(row._id), row.count]));
       const assets = counts(assetCounts);
       const workOrders = counts(workOrderCounts);
-      res.ok(locations.map((location) => ({ ...toLocationResponse(location), assetCount: assets.get(location._id.toString()) ?? 0, openWorkOrderCount: workOrders.get(location._id.toString()) ?? 0 })), "Organization locations retrieved successfully");
+      res.ok(
+        locations.map((location) => ({
+          ...toLocationResponse(location),
+          assetCount: assets.get(location._id.toString()) ?? 0,
+          openWorkOrderCount: workOrders.get(location._id.toString()) ?? 0,
+        })),
+        "Organization locations retrieved successfully",
+      );
     } catch (error) {
       next(error);
     }
@@ -66,10 +100,24 @@ export class LocationController {
       const location = await this.service.getLocationById(organizationId!, req.params.id as string);
       const [assets, openWorkOrderCount] = await Promise.all([
         Asset.find({ organizationId, locationId: req.params.id }).limit(100).lean(),
-        WorkOrder.countDocuments({ organizationId, locationId: req.params.id, status: { $nin: ["completed", "cancelled"] } }),
+        WorkOrder.countDocuments({
+          organizationId,
+          locationId: req.params.id,
+          status: { $nin: ["completed", "cancelled"] },
+        }),
       ]);
-      res.ok({ location: toLocationResponse(location), assets, assetCount: assets.length, openWorkOrderCount }, "Location relationships retrieved successfully");
-    } catch (error) { next(error); }
+      res.ok(
+        {
+          location: toLocationResponse(location),
+          assets,
+          assetCount: assets.length,
+          openWorkOrderCount,
+        },
+        "Location relationships retrieved successfully",
+      );
+    } catch (error) {
+      next(error);
+    }
   };
 
   getChildren = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -78,7 +126,9 @@ export class LocationController {
       if (!organizationId) throw new AuthorizationException("Organization context required");
       const locations = await this.service.getChildren(organizationId, req.params.id as string);
       res.ok(locations.map(toLocationResponse), "Child locations retrieved successfully");
-    } catch (error) { next(error); }
+    } catch (error) {
+      next(error);
+    }
   };
 
   updateLocation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

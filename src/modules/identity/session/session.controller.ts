@@ -19,13 +19,10 @@ export class SessionController {
     const sessionId = req.cookies.sessionId;
     const session = await buildSessionMetadata(req);
 
-    const auth: RefreshResponse = await this.sessionService.refresh(
-      refreshToken,
-      {
-        ...session,
-        sessionId,
-      },
-    );
+    const auth: RefreshResponse = await this.sessionService.refresh(refreshToken, {
+      ...session,
+      sessionId,
+    });
 
     // Tokens are set as httpOnly cookies only — never returned in the
     // body, so client-side JS has no direct access to them.
@@ -56,14 +53,12 @@ export class SessionController {
   // =================================
   // REVOKE SESSION
   // =================================
-  revokeSession = requestHandler<AuthRequest<RevokeSessionParamsDto>>(
-    async (req, res) => {
-      const { id } = req.validated.params;
-      await this.sessionService.revokeSession(req.user.userId, id);
+  revokeSession = requestHandler<AuthRequest<RevokeSessionParamsDto>>(async (req, res) => {
+    const { id } = req.validated.params;
+    await this.sessionService.revokeSession(req.user.userId, id);
 
-      return res.ok({}, "Session revoked successfully");
-    },
-  );
+    return res.ok({}, "Session revoked successfully");
+  });
 
   // =================================
   // LOGOUT

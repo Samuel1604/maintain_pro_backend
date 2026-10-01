@@ -1,7 +1,12 @@
 import { AppError } from "@/shared/errors/AppError.js";
 
 export class IntegrationEventException extends AppError {
-  constructor(message: string, statusCode = 500, code = "INTEGRATION_EVENT_ERROR", details?: unknown) {
+  constructor(
+    message: string,
+    statusCode = 500,
+    code = "INTEGRATION_EVENT_ERROR",
+    details?: unknown,
+  ) {
     super(message, { statusCode, code, details });
   }
 }
@@ -21,7 +26,10 @@ export class IntegrationEventPublishFailed extends IntegrationEventException {
 }
 
 export class IntegrationEventConfigurationError extends IntegrationEventException {
-  constructor(message = "Integration event broker configuration is invalid or incomplete.", details?: unknown) {
+  constructor(
+    message = "Integration event broker configuration is invalid or incomplete.",
+    details?: unknown,
+  ) {
     super(message, 500, "INTEGRATION_EVENT_CONFIG_ERROR", details);
   }
 }

@@ -1,9 +1,6 @@
 import { requestHandler } from "@/shared/utils/request.js";
 import type { AuthRequest } from "@/shared/types/request.js";
-import {
-  AuthenticationException,
-  AuthorizationException,
-} from "../errors/index.js";
+import { AuthenticationException, AuthorizationException } from "../errors/index.js";
 
 /**
  * Gate for restricted business operations (creating organizations/facilities,
@@ -15,19 +12,17 @@ import {
  * handler can recognize it and show a verification prompt instead of
  * treating it like a generic 403.
  */
-export const requireVerifiedEmail = requestHandler<AuthRequest>(
-  async (req, _res, next) => {
-    if (!req.user?.userId) {
-      throw new AuthenticationException("Authentication required");
-    }
+export const requireVerifiedEmail = requestHandler<AuthRequest>(async (req, _res, next) => {
+  if (!req.user?.userId) {
+    throw new AuthenticationException("Authentication required");
+  }
 
-    if (!req.user.isVerified) {
-      throw new AuthorizationException(
-        "Please verify your email address before performing this action.",
-        { code: "EMAIL_NOT_VERIFIED" },
-      );
-    }
+  if (!req.user.isVerified) {
+    throw new AuthorizationException(
+      "Please verify your email address before performing this action.",
+      { code: "EMAIL_NOT_VERIFIED" },
+    );
+  }
 
-    return next();
-  },
-);
+  return next();
+});

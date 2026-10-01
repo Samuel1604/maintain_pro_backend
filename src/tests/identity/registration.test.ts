@@ -61,10 +61,7 @@ describe("AuthService.registerOrganization", () => {
     const container = new AppContainer();
     const payload = orgPayload();
 
-    const result = await container.authService.registerOrganization(
-      payload,
-      sessionMeta,
-    );
+    const result = await container.authService.registerOrganization(payload, sessionMeta);
 
     expect(result.success).toBe(true);
     expect(result.data?.user.role).toBe(ROLES.ADMIN);
@@ -101,10 +98,7 @@ describe("AuthService.registerOrganization", () => {
     await container.authService.registerOrganization(payload, sessionMeta);
 
     await expect(
-      container.authService.registerOrganization(
-        orgPayload({ email: payload.email }),
-        sessionMeta,
-      ),
+      container.authService.registerOrganization(orgPayload({ email: payload.email }), sessionMeta),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 });
@@ -114,10 +108,7 @@ describe("AuthService.registerVendor", () => {
     const container = new AppContainer();
     const payload = vendorPayload();
 
-    const result = await container.authService.registerVendor(
-      payload,
-      sessionMeta,
-    );
+    const result = await container.authService.registerVendor(payload, sessionMeta);
 
     expect(result.success).toBe(true);
     expect(result.data?.user.role).toBe(ROLES.VENDOR_LEAD);
@@ -129,9 +120,7 @@ describe("AuthService.registerVendor", () => {
     expect(createdUser!.isVerified).toBe(false);
     expect(createdUser!.status).toBe("pending_verification");
 
-    const vendor = await container.vendorRepository.findById(
-      createdUser!.vendorId!.toString(),
-    );
+    const vendor = await container.vendorRepository.findById(createdUser!.vendorId!.toString());
     expect(vendor).toBeTruthy();
     expect(vendor!.name).toBe(payload.vendorName);
 
@@ -148,10 +137,7 @@ describe("AuthService.registerVendor", () => {
     await container.authService.registerVendor(payload, sessionMeta);
 
     await expect(
-      container.authService.registerVendor(
-        vendorPayload({ email: payload.email }),
-        sessionMeta,
-      ),
+      container.authService.registerVendor(vendorPayload({ email: payload.email }), sessionMeta),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 });

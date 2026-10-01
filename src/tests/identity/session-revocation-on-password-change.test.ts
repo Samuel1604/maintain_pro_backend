@@ -77,20 +77,13 @@ describe("Session revocation on password reset (forgot-password flow)", () => {
     const { refreshToken, sessionId } = loginResult.data;
 
     const publishSpy = vi.spyOn(container.eventBus, "publish");
-    await container.userService.requestResetPassword(
-      user.email,
-      "198.51.100.10",
-    );
+    await container.userService.requestResetPassword(user.email, "198.51.100.10");
     const resetCall = publishSpy.mock.calls.find(
       ([event]) => event instanceof PasswordResetRequestedEvent,
     );
     const otp = (resetCall![0] as PasswordResetRequestedEvent).payload.otp!;
 
-    await container.userService.resetPassword(
-      user.email,
-      otp,
-      "BrandNewPassword123!",
-    );
+    await container.userService.resetPassword(user.email, otp, "BrandNewPassword123!");
 
     await waitUntil(async () => {
       try {
@@ -110,10 +103,7 @@ describe("Session revocation on password reset (forgot-password flow)", () => {
     const { user } = await UserFactory.create();
 
     const publishSpy = vi.spyOn(container.eventBus, "publish");
-    await container.userService.requestResetPassword(
-      user.email,
-      "198.51.100.11",
-    );
+    await container.userService.requestResetPassword(user.email, "198.51.100.11");
     const resetCall = publishSpy.mock.calls.find(
       ([event]) => event instanceof PasswordResetRequestedEvent,
     );
@@ -123,11 +113,7 @@ describe("Session revocation on password reset (forgot-password flow)", () => {
     // sessions" case must be handled gracefully by the listener rather
     // than surfacing as a job failure.
     await expect(
-      container.userService.resetPassword(
-        user.email,
-        otp,
-        "BrandNewPassword123!",
-      ),
+      container.userService.resetPassword(user.email, otp, "BrandNewPassword123!"),
     ).resolves.toMatchObject({ message: expect.stringMatching(/reset successfully/i) });
   });
 });

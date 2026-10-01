@@ -8,10 +8,7 @@ export { SubscriptionPolicy } from "./billing.policy.js";
 export { Subscription } from "./billing.model.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-export type {
-  ISubscription,
-  SubscriptionOwnerType,
-} from "./billing.types.js";
+export type { ISubscription, SubscriptionOwnerType } from "./billing.types.js";
 export { SUBSCRIPTION_OWNER_TYPES } from "./billing.types.js";
 
 // ─── Enums ────────────────────────────────────────────────────────────────────

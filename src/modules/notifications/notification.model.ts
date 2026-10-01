@@ -65,7 +65,16 @@ const notificationSchema = new Schema<INotification>(
     },
     type: {
       type: String,
-      enum: ["security", "work_order", "invitation", "service_request", "billing", "procurement", "inventory", "system"],
+      enum: [
+        "security",
+        "work_order",
+        "invitation",
+        "service_request",
+        "billing",
+        "procurement",
+        "inventory",
+        "system",
+      ],
       required: true,
       index: true,
     },

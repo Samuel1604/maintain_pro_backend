@@ -16,4 +16,6 @@ export const updateVendor = requestHandler<AuthRequest>(async (req, res) => {
   return res.ok(result.data, result.message);
 });
 
-export const getVendorPerformance = requestHandler<AuthRequest>(async (req, res) => res.ok(await vendorService.performance(req.user), "Vendor performance retrieved"));
+export const getVendorPerformance = requestHandler<AuthRequest>(async (req, res) =>
+  res.ok(await vendorService.performance(req.user), "Vendor performance retrieved"),
+);

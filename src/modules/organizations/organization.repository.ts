@@ -9,9 +9,7 @@ export class OrganizationRepository {
     return Organization.create(data);
   }
 
-  async findById(
-    organizationId: string | Types.ObjectId,
-  ): Promise<IOrganization | null> {
+  async findById(organizationId: string | Types.ObjectId): Promise<IOrganization | null> {
     return Organization.findById(organizationId);
   }
 

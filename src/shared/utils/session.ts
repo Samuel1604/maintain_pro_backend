@@ -34,8 +34,7 @@ const CLOUDFLARE_IPV6_RANGES = [
 const firstHeader = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] : value;
 
-const normalizeIp = (ip: string | undefined) =>
-  ip?.replace(/^::ffff:/, "").trim();
+const normalizeIp = (ip: string | undefined) => ip?.replace(/^::ffff:/, "").trim();
 
 const ipv4ToNumber = (ip: string) =>
   ip.split(".").reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0;
@@ -57,16 +56,9 @@ const ipv6ToBigInt = (ip: string) => {
   const headParts = head ? head.split(":") : [];
   const tailParts = tail ? tail.split(":") : [];
   const missingParts = 8 - headParts.length - tailParts.length;
-  const parts = [
-    ...headParts,
-    ...Array(Math.max(missingParts, 0)).fill("0"),
-    ...tailParts,
-  ];
+  const parts = [...headParts, ...Array(Math.max(missingParts, 0)).fill("0"), ...tailParts];
 
-  return parts.reduce(
-    (acc, part) => (acc << 16n) + BigInt(parseInt(part || "0", 16)),
-    0n,
-  );
+  return parts.reduce((acc, part) => (acc << 16n) + BigInt(parseInt(part || "0", 16)), 0n);
 };
 
 const isIpv6InCidr = (ip: string, cidr: string) => {
@@ -92,23 +84,17 @@ const isCloudflareIp = (ip: string | undefined) => {
   const ipVersion = isIP(normalizedIp);
 
   if (ipVersion === 4) {
-    return CLOUDFLARE_IPV4_RANGES.some((cidr) =>
-      isIpv4InCidr(normalizedIp, cidr),
-    );
+    return CLOUDFLARE_IPV4_RANGES.some((cidr) => isIpv4InCidr(normalizedIp, cidr));
   }
 
   if (ipVersion === 6) {
-    return CLOUDFLARE_IPV6_RANGES.some((cidr) =>
-      isIpv6InCidr(normalizedIp, cidr),
-    );
+    return CLOUDFLARE_IPV6_RANGES.some((cidr) => isIpv6InCidr(normalizedIp, cidr));
   }
 
   return false;
 };
 
-export async function buildSessionMetadata(
-  req: Request,
-): Promise<SessionMetadata> {
+export async function buildSessionMetadata(req: Request): Promise<SessionMetadata> {
   const userAgent = firstHeader(req.headers["user-agent"]) ?? "";
 
   const device = parseDevice(userAgent);
@@ -117,10 +103,7 @@ export async function buildSessionMetadata(
   const cloudflareIp = firstHeader(req.headers["cf-connecting-ip"]);
 
   const ipAddress =
-    (cloudflareTrusted && cloudflareIp) ||
-    req.ip ||
-    req.socket.remoteAddress ||
-    "unknown";
+    (cloudflareTrusted && cloudflareIp) || req.ip || req.socket.remoteAddress || "unknown";
 
   return {
     ipAddress,

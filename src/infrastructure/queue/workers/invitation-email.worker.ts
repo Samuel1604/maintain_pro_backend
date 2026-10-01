@@ -15,9 +15,7 @@ import type { SendInvitationEmailPayload } from "../jobs/send-invitation-email.j
  * - No business validation.
  * - Idempotent: re-sending the invitation email is safe.
  */
-export class InvitationEmailWorker
-  implements QueueWorker<SendInvitationEmailPayload>
-{
+export class InvitationEmailWorker implements QueueWorker<SendInvitationEmailPayload> {
   constructor(
     private readonly emailService: EmailService,
     private readonly logger: Logger,

@@ -1,7 +1,12 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import type Mail from "nodemailer/lib/mailer/index.js";
 import type { EmailProvider } from "../interfaces/email-provider.interface.js";
-import type { SendEmailPayload, SendEmailResult, Recipient, EmailAttachment } from "../types/email.types.js";
+import type {
+  SendEmailPayload,
+  SendEmailResult,
+  Recipient,
+  EmailAttachment,
+} from "../types/email.types.js";
 import {
   ConfigurationError,
   EmailProviderUnavailable,
@@ -134,10 +139,10 @@ export class SmtpProvider implements EmailProvider {
       const responseTimeMs = Date.now() - startedAt;
 
       const rejectedRecipients = (info.rejected || [])
-        .map((r: string | Mail.Address) => typeof r === "string" ? r : r.address)
+        .map((r: string | Mail.Address) => (typeof r === "string" ? r : r.address))
         .filter((email): email is string => typeof email === "string" && email.length > 0);
       const acceptedRecipients = (info.accepted || [])
-        .map((r: string | Mail.Address) => typeof r === "string" ? r : r.address)
+        .map((r: string | Mail.Address) => (typeof r === "string" ? r : r.address))
         .filter((email): email is string => typeof email === "string" && email.length > 0);
       const fallbackAcceptedRecipients = recipients
         .map((recipient) => recipient.email)
@@ -154,9 +159,8 @@ export class SmtpProvider implements EmailProvider {
       return {
         messageId: info.messageId || `smtp-${Date.now()}`,
         provider: this.providerName,
-        acceptedRecipients: acceptedRecipients.length > 0
-          ? acceptedRecipients
-          : fallbackAcceptedRecipients,
+        acceptedRecipients:
+          acceptedRecipients.length > 0 ? acceptedRecipients : fallbackAcceptedRecipients,
         ...(rejectedRecipients.length > 0 && { rejectedRecipients }),
       };
     } catch (error: unknown) {
@@ -179,7 +183,10 @@ export class SmtpProvider implements EmailProvider {
    * exposed outside this provider.
    */
   private mapError(error: unknown): Error {
-    const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : undefined;
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? (error as { code?: string }).code
+        : undefined;
     const responseCode =
       error && typeof error === "object" && "responseCode" in error
         ? (error as { responseCode?: number }).responseCode
@@ -216,7 +223,9 @@ export class SmtpProvider implements EmailProvider {
       return new EmailProviderUnavailable("SMTP server returned a server error.", { responseCode });
     }
     if (responseCode === 421 || responseCode === 450 || responseCode === 451) {
-      return new EmailProviderUnavailable("SMTP server is temporarily unavailable.", { responseCode });
+      return new EmailProviderUnavailable("SMTP server is temporarily unavailable.", {
+        responseCode,
+      });
     }
 
     return new EmailSendFailed(

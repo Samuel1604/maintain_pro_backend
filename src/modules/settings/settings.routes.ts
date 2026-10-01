@@ -1,7 +1,14 @@
 import { Router } from "express";
 import { authMiddleware } from "@/shared/middleware/authenticate.js";
 import { requireVerifiedEmail } from "@/shared/middleware/require-verified-email.js";
-import { getUserSettings, updateUserSettings, getOrganizationSettings, updateOrganizationSettings, getVendorSettings, updateVendorSettings } from "./settings.controller.js";
+import {
+  getUserSettings,
+  updateUserSettings,
+  getOrganizationSettings,
+  updateOrganizationSettings,
+  getVendorSettings,
+  updateVendorSettings,
+} from "./settings.controller.js";
 
 const router = Router();
 router.use(authMiddleware);

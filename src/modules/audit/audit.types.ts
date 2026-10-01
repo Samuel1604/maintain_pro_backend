@@ -29,8 +29,7 @@ export const AUDIT_SEVERITY = {
   CRITICAL: "critical",
 } as const; // {"info" , "warning" , "critical"};
 
-export type AuditSeverity =
-  (typeof AUDIT_SEVERITY)[keyof typeof AUDIT_SEVERITY];
+export type AuditSeverity = (typeof AUDIT_SEVERITY)[keyof typeof AUDIT_SEVERITY];
 
 export const AUDIT_ENTITY = {
   USER: "user",

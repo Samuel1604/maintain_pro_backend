@@ -27,11 +27,7 @@ describe("OAuth state consumption", () => {
     const nonce = `nonce-${Date.now()}-mismatch`;
     await saveOAuthState(nonce, "state-from-browser-a");
 
-    await expect(
-      consumeOAuthState(nonce, "state-from-browser-b"),
-    ).resolves.toBe(false);
-    await expect(
-      consumeOAuthState(nonce, "state-from-browser-a"),
-    ).resolves.toBe(true);
+    await expect(consumeOAuthState(nonce, "state-from-browser-b")).resolves.toBe(false);
+    await expect(consumeOAuthState(nonce, "state-from-browser-a")).resolves.toBe(true);
   });
 });

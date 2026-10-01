@@ -1,6 +1,10 @@
 import { LocationRepository } from "./location.repository.js";
 import { FacilityRepository } from "@/modules/facilities/facility.repository.js";
-import { NotFoundException, ConflictException, ValidationException } from "@/shared/errors/index.js";
+import {
+  NotFoundException,
+  ConflictException,
+  ValidationException,
+} from "@/shared/errors/index.js";
 import type { CreateLocationInput, UpdateLocationInput } from "./location.schema.js";
 import type { ILocation } from "./location.model.js";
 import { toObjectId } from "@/shared/validators/index.js";
@@ -19,11 +23,18 @@ export class LocationService {
 
     if (input.parentId) {
       const parent = await this.repository.findById(input.parentId);
-      if (!parent || parent.organizationId.toString() !== organizationId || parent.facilityId.toString() !== input.facilityId) throw new ValidationException("Parent location must belong to the same facility");
+      if (
+        !parent ||
+        parent.organizationId.toString() !== organizationId ||
+        parent.facilityId.toString() !== input.facilityId
+      )
+        throw new ValidationException("Parent location must belong to the same facility");
     }
     const existing = await this.repository.findByNameInFacility(input.facilityId, input.name);
     if (existing) {
-      throw new ConflictException(`Location with name "${input.name}" already exists in this facility.`);
+      throw new ConflictException(
+        `Location with name "${input.name}" already exists in this facility.`,
+      );
     }
 
     return this.repository.create({
@@ -73,28 +84,49 @@ export class LocationService {
     const location = await this.getLocationById(organizationId, locationId);
 
     if (input.name && input.name !== location.name) {
-      const existing = await this.repository.findByNameInFacility(location.facilityId.toString(), input.name);
+      const existing = await this.repository.findByNameInFacility(
+        location.facilityId.toString(),
+        input.name,
+      );
       if (existing && existing._id.toString() !== locationId) {
-        throw new ConflictException(`Location with name "${input.name}" already exists in this facility.`);
+        throw new ConflictException(
+          `Location with name "${input.name}" already exists in this facility.`,
+        );
       }
     }
     if (input.parentId !== undefined) {
-      if (input.parentId === locationId) throw new ValidationException("A location cannot be its own parent");
+      if (input.parentId === locationId)
+        throw new ValidationException("A location cannot be its own parent");
       if (input.parentId) {
         const parent = await this.repository.findById(input.parentId);
-        if (!parent || parent.organizationId.toString() !== organizationId || parent.facilityId.toString() !== location.facilityId.toString()) throw new ValidationException("Parent location must belong to the same facility");
-        if (await this.repository.hasDescendant(locationId, input.parentId)) throw new ValidationException("Location hierarchy cannot contain a cycle");
+        if (
+          !parent ||
+          parent.organizationId.toString() !== organizationId ||
+          parent.facilityId.toString() !== location.facilityId.toString()
+        )
+          throw new ValidationException("Parent location must belong to the same facility");
+        if (await this.repository.hasDescendant(locationId, input.parentId))
+          throw new ValidationException("Location hierarchy cannot contain a cycle");
       }
     }
 
-    const updated = await this.repository.update(locationId, { ...input, parentId: input.parentId === undefined ? undefined : input.parentId ? toObjectId(input.parentId) : undefined });
+    const updated = await this.repository.update(locationId, {
+      ...input,
+      parentId:
+        input.parentId === undefined
+          ? undefined
+          : input.parentId
+            ? toObjectId(input.parentId)
+            : undefined,
+    });
     return updated!;
   }
 
   async deleteLocation(organizationId: string, locationId: string): Promise<void> {
     await this.getLocationById(organizationId, locationId);
     const children = await this.repository.findChildren(locationId);
-    if (children.some((child) => child.status === "active")) throw new ConflictException("Cannot archive a location with active child locations");
+    if (children.some((child) => child.status === "active"))
+      throw new ConflictException("Cannot archive a location with active child locations");
     await this.repository.delete(locationId);
   }
 }

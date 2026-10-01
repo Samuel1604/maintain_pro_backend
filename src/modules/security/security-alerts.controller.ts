@@ -11,9 +11,7 @@ export class SecurityAlertsController {
    * List the current user's security alerts.
    */
   listAlerts = requestHandler<AuthRequest>(async (req, res) => {
-    const alerts = await this.securityService.getUserAlerts(
-      new Types.ObjectId(req.user.userId),
-    );
+    const alerts = await this.securityService.getUserAlerts(new Types.ObjectId(req.user.userId));
 
     return res.ok(alerts, "Security alerts retrieved");
   });
@@ -22,9 +20,7 @@ export class SecurityAlertsController {
    * Unread alert count — for a notification badge.
    */
   getUnreadCount = requestHandler<AuthRequest>(async (req, res) => {
-    const count = await this.securityService.getUnreadCount(
-      new Types.ObjectId(req.user.userId),
-    );
+    const count = await this.securityService.getUnreadCount(new Types.ObjectId(req.user.userId));
 
     return res.ok({ count }, "Unread count retrieved");
   });
@@ -50,9 +46,7 @@ export class SecurityAlertsController {
    * Mark every unread alert for the current user as read.
    */
   markAllRead = requestHandler<AuthRequest>(async (req, res) => {
-    const result = await this.securityService.markAllRead(
-      new Types.ObjectId(req.user.userId),
-    );
+    const result = await this.securityService.markAllRead(new Types.ObjectId(req.user.userId));
 
     return res.ok(null, result.message);
   });
@@ -64,10 +58,7 @@ export class SecurityAlertsController {
   dismiss = requestHandler<AuthRequest<AlertIdParamsDto>>(async (req, res) => {
     const { id } = req.validated.params;
 
-    const alert = await this.securityService.dismiss(
-      id,
-      new Types.ObjectId(req.user.userId),
-    );
+    const alert = await this.securityService.dismiss(id, new Types.ObjectId(req.user.userId));
 
     return res.ok(alert, "Alert dismissed");
   });

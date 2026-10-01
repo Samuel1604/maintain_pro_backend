@@ -42,14 +42,10 @@ export const redis = redisConfig.url
       ...redisOptions,
     });
 
-
-
 /** Log when the TCP connection is established. */
-redis.on("connect", async() => {
+redis.on("connect", async () => {
   logger.info("Redis connected");
 });
-
-
 
 /** Log when Redis can accept commands and verify maxmemory-policy. */
 redis.on("ready", async () => {
@@ -66,9 +62,12 @@ redis.on("ready", async () => {
           await redis.config("SET", "maxmemory-policy", "noeviction");
           logger.info("Configured Redis maxmemory policy", { policy: "noeviction" });
         } catch {
-          logger.warn("Could not configure Redis maxmemory policy; configure it in the managed Redis dashboard", {
-            policy: "noeviction",
-          });
+          logger.warn(
+            "Could not configure Redis maxmemory policy; configure it in the managed Redis dashboard",
+            {
+              policy: "noeviction",
+            },
+          );
         }
       }
     }
@@ -77,12 +76,12 @@ redis.on("ready", async () => {
   }
 });
 
-
-
-
 /** Log Redis connection errors. */
 redis.on("error", (error: unknown) => {
-  const code = error instanceof Error && "code" in error ? String((error as Error & { code?: unknown }).code) : "unknown";
+  const code =
+    error instanceof Error && "code" in error
+      ? String((error as Error & { code?: unknown }).code)
+      : "unknown";
   // ETIMEDOUT means the provider is unreachable, not that application data
   // has expired. Keep the message actionable and avoid dumping a stack on
   // every reconnect attempt.

@@ -38,7 +38,11 @@ router.get(
   controller.getChildren,
 );
 
-router.get("/:id/relationships", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF), controller.getRelationships);
+router.get(
+  "/:id/relationships",
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF),
+  controller.getRelationships,
+);
 
 router.get(
   "/:id",

@@ -16,9 +16,7 @@ import type { SendLoginNotificationPayload } from "../jobs/send-login-notificati
  * - No business validation.
  * - Idempotent: re-sending the login notification email is safe.
  */
-export class LoginNotificationWorker
-  implements QueueWorker<SendLoginNotificationPayload>
-{
+export class LoginNotificationWorker implements QueueWorker<SendLoginNotificationPayload> {
   constructor(
     private readonly emailService: EmailService,
     private readonly logger: Logger,

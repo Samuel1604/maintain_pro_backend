@@ -38,7 +38,13 @@ describe("Facility end-to-end", () => {
       .send({
         organizationId: auth.user.organizationId?.toString(),
         name: "Integration Facility",
-        address: { street: "123 Test Street", city: "Test City", state: "CA", postalCode: "90210", country: "US" },
+        address: {
+          street: "123 Test Street",
+          city: "Test City",
+          state: "CA",
+          postalCode: "90210",
+          country: "US",
+        },
         latitude: 34.05,
         longitude: -118.25,
       });

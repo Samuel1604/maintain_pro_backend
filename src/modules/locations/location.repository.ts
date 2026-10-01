@@ -15,13 +15,17 @@ export class LocationRepository {
     return Location.find({
       facilityId: toObjectId(facilityId),
       organizationId: toObjectId(organizationId),
-    }).sort({ name: 1 }).limit(100);
+    })
+      .sort({ name: 1 })
+      .limit(100);
   }
 
   async findByOrganization(organizationId: string): Promise<ILocation[]> {
     return Location.find({
       organizationId: toObjectId(organizationId),
-    }).sort({ name: 1 }).limit(100);
+    })
+      .sort({ name: 1 })
+      .limit(100);
   }
 
   async findByNameInFacility(facilityId: string, name: string): Promise<ILocation | null> {
@@ -36,7 +40,9 @@ export class LocationRepository {
   }
 
   async findByParent(id: string, organizationId: string): Promise<ILocation[]> {
-    return Location.find({ parentId: toObjectId(id), organizationId: toObjectId(organizationId) }).sort({ name: 1 }).limit(100);
+    return Location.find({ parentId: toObjectId(id), organizationId: toObjectId(organizationId) })
+      .sort({ name: 1 })
+      .limit(100);
   }
 
   async hasDescendant(id: string, possibleDescendantId: string): Promise<boolean> {
@@ -53,7 +59,11 @@ export class LocationRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    const res = await Location.findByIdAndUpdate(toObjectId(id), { status: "inactive" }, { new: true });
+    const res = await Location.findByIdAndUpdate(
+      toObjectId(id),
+      { status: "inactive" },
+      { new: true },
+    );
     return !!res;
   }
 }

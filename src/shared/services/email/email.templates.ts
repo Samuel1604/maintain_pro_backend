@@ -1,8 +1,4 @@
-
-
-export const verificationOtpTemplate = (
-  otp: string,
-) => `
+export const verificationOtpTemplate = (otp: string) => `
 <div>
   <h2>Verify Your Email</h2>
 
@@ -16,9 +12,7 @@ export const verificationOtpTemplate = (
 </div>
 `;
 
-export const passwordResetTemplate = (
-  otp: string,
-) => `
+export const passwordResetTemplate = (otp: string) => `
 <div>
   <h2>Password Reset</h2>
 
@@ -32,10 +26,7 @@ export const passwordResetTemplate = (
 </div>
 `;
 
-
-export const emailChangeTemplate = (
-  otp: string,
-) => `
+export const emailChangeTemplate = (otp: string) => `
 <div>
   <h2>Change Email</h2> 
 
@@ -49,9 +40,7 @@ export const emailChangeTemplate = (
 </div>
 `;
 
-export const invitationEmail = (
-  token: string
-) => `
+export const invitationEmail = (token: string) => `
 <div>
   <h2>Invitation</h2>
 
@@ -59,4 +48,4 @@ export const invitationEmail = (
 
   <a href="${process.env.CLIENT_URL}/accept-invitation?token=${token}">Accept Invitation</a>
 </div>
-`;  
+`;

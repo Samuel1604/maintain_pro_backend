@@ -31,10 +31,7 @@ import { randomUUID } from "node:crypto";
 import mongoose from "mongoose";
 import { OutboxEventRepository } from "@/infrastructure/events/outbox/outbox-event.repository.js";
 import { serializeDomainEvent } from "@/infrastructure/events/bus/serialized-domain-event.js";
-import type {
-  CreateSubscriptionInput,
-  ChangePlanInput,
-} from "./billing.schema.js";
+import type { CreateSubscriptionInput, ChangePlanInput } from "./billing.schema.js";
 import type { ISubscription, SubscriptionOwnerType } from "./billing.types.js";
 
 export class BillingService {
@@ -55,10 +52,8 @@ export class BillingService {
     this.repository = repository || new BillingRepository();
     this.paymentRepository = paymentRepository || new PaymentRepository();
     this.organizationService =
-      organizationService ||
-      new OrganizationService(new OrganizationRepository());
-    this.vendorService =
-      vendorService || new VendorService(new VendorRepository());
+      organizationService || new OrganizationService(new OrganizationRepository());
+    this.vendorService = vendorService || new VendorService(new VendorRepository());
     // Avoid importing container/index at module load to prevent circular
     // dependency issues during test startup. AppContainer passes a real
     // EventPublisher instance when constructing BillingService; fall back
@@ -77,9 +72,7 @@ export class BillingService {
    * Creates a new subscription for an organisation or vendor.
    * Enforces domain policy checks and returns serialized SubscriptionResponse DTO.
    */
-  async createSubscription(
-    input: CreateSubscriptionInput,
-  ): Promise<SubscriptionResponse> {
+  async createSubscription(input: CreateSubscriptionInput): Promise<SubscriptionResponse> {
     // 1. Validate owner type
     BillingPolicy.validateOwnerType(input.ownerType!);
 
@@ -87,15 +80,10 @@ export class BillingService {
     await this.assertOwnerExists(input.ownerId!, input.ownerType!);
 
     // 3. No existing subscription for this owner
-    const existing = await this.repository.findByOwner(
-      input.ownerId!,
-      input.ownerType!,
-    );
+    const existing = await this.repository.findByOwner(input.ownerId!, input.ownerType!);
 
     if (existing) {
-      throw new ConflictException(
-        `This ${input.ownerType} already has a subscription.`,
-      );
+      throw new ConflictException(`This ${input.ownerType} already has a subscription.`);
     }
 
     // 4. Determine trial duration based on selected plan
@@ -104,11 +92,8 @@ export class BillingService {
 
     if (!trialEndsAt) {
       const planDaysMap =
-        BILLING_CONFIG.PLAN_TRIAL_PERIOD_DAYS[
-          input.ownerType ?? "organization"
-        ] ?? {};
-      const trialDays =
-        planDaysMap[input.plan] ?? BILLING_CONFIG.TRIAL_PERIOD_DAYS;
+        BILLING_CONFIG.PLAN_TRIAL_PERIOD_DAYS[input.ownerType ?? "organization"] ?? {};
+      const trialDays = planDaysMap[input.plan] ?? BILLING_CONFIG.TRIAL_PERIOD_DAYS;
 
       if (trialDays > 0) {
         trialEndsAt = new Date(now);
@@ -146,10 +131,7 @@ export class BillingService {
   /**
    * Retrieves a subscription DTO by ID.
    */
-  async findSubscription(
-    subscriptionId: string,
-    actor: Actor,
-  ): Promise<SubscriptionResponse> {
+  async findSubscription(subscriptionId: string, actor: Actor): Promise<SubscriptionResponse> {
     const subscription = await this.findSubscriptionDocumentForActor(subscriptionId, actor);
     return billingMapper.toSubscriptionResponse(subscription);
   }
@@ -161,10 +143,7 @@ export class BillingService {
     ownerId: string,
     ownerType: SubscriptionOwnerType,
   ): Promise<SubscriptionResponse> {
-    const subscription = await this.findSubscriptionDocumentByOwner(
-      ownerId,
-      ownerType,
-    );
+    const subscription = await this.findSubscriptionDocumentByOwner(ownerId, ownerType);
     return billingMapper.toSubscriptionResponse(subscription);
   }
 
@@ -210,8 +189,7 @@ export class BillingService {
     const subscription = await this.findSubscriptionDocument(subscriptionId);
 
     // Re-use in-flight pending payment for idempotency
-    const existingPending =
-      await this.paymentRepository.findPendingBySubscription(subscriptionId);
+    const existingPending = await this.paymentRepository.findPendingBySubscription(subscriptionId);
     if (existingPending) {
       return {
         paymentId: existingPending._id.toString(),
@@ -221,8 +199,7 @@ export class BillingService {
       };
     }
 
-    const provider =
-      providerName || (subscription.provider as PaymentProvider) || "mock";
+    const provider = providerName || (subscription.provider as PaymentProvider) || "mock";
     const operationKey = idempotencyKey?.trim() || randomUUID();
 
     // Calculate checkout amount in cents based on plan, ownerType, and billingCycle (with 20% annual discount)
@@ -230,8 +207,7 @@ export class BillingService {
     const plan = subscription.plan;
     const cycle = subscription.billingCycle || "monthly";
 
-    const baseMonthly =
-      BILLING_CONFIG.PLAN_PRICES_USD_MONTHLY[ownerType]?.[plan] ?? 0;
+    const baseMonthly = BILLING_CONFIG.PLAN_PRICES_USD_MONTHLY[ownerType]?.[plan] ?? 0;
     const monthlyRate =
       cycle === "annual"
         ? baseMonthly * (1 - BILLING_CONFIG.ANNUAL_DISCOUNT_PERCENT / 100)
@@ -289,11 +265,7 @@ export class BillingService {
   /**
    * Parses & verifies webhook signatures and transitions payment & subscription states atomically.
    */
-  async handleWebhook(
-    providerName: string,
-    rawBody: Buffer,
-    signatureHeader: string | undefined,
-  ) {
+  async handleWebhook(providerName: string, rawBody: Buffer, signatureHeader: string | undefined) {
     const gateway = createPaymentProvider(providerName as PaymentProvider);
     let event;
     try {
@@ -306,9 +278,7 @@ export class BillingService {
       throw new ValidationException(message);
     }
 
-    const payment = await this.paymentRepository.findByProviderCheckoutId(
-      event.providerCheckoutId,
-    );
+    const payment = await this.paymentRepository.findByProviderCheckoutId(event.providerCheckoutId);
     if (!payment) {
       return { success: true };
     }
@@ -330,11 +300,18 @@ export class BillingService {
 
         if (!claimed) return;
 
-        const subscription = await this.repository.findById(payment.subscriptionId.toString(), session);
+        const subscription = await this.repository.findById(
+          payment.subscriptionId.toString(),
+          session,
+        );
         if (!subscription) throw new NotFoundException("Subscription not found.");
         if (event.outcome === "succeeded") {
           BillingPolicy.canActivate(subscription);
-          updatedSubscription = await this.repository.update(subscription._id.toString(), { status: "active" }, session);
+          updatedSubscription = await this.repository.update(
+            subscription._id.toString(),
+            { status: "active" },
+            session,
+          );
           if (updatedSubscription) {
             const activatedEvent = new SubscriptionActivatedEvent({
               subscriptionId: updatedSubscription._id.toString(),
@@ -344,10 +321,23 @@ export class BillingService {
               billingCycle: updatedSubscription.billingCycle,
               startsAt: (updatedSubscription.startsAt ?? new Date()).toISOString(),
             });
-            await this.outbox.append({ eventId: activatedEvent.eventId, eventType: activatedEvent.name, aggregateId: activatedEvent.aggregateId ?? updatedSubscription._id.toString(), aggregateType: activatedEvent.aggregateType ?? "subscription", payload: serializeDomainEvent(activatedEvent) as unknown as Record<string, unknown> }, session);
+            await this.outbox.append(
+              {
+                eventId: activatedEvent.eventId,
+                eventType: activatedEvent.name,
+                aggregateId: activatedEvent.aggregateId ?? updatedSubscription._id.toString(),
+                aggregateType: activatedEvent.aggregateType ?? "subscription",
+                payload: serializeDomainEvent(activatedEvent) as unknown as Record<string, unknown>,
+              },
+              session,
+            );
           }
         } else {
-          updatedSubscription = await this.repository.update(subscription._id.toString(), { status: "past_due" }, session);
+          updatedSubscription = await this.repository.update(
+            subscription._id.toString(),
+            { status: "past_due" },
+            session,
+          );
         }
       });
     } finally {
@@ -368,9 +358,7 @@ export class BillingService {
    * Transitions a subscription from "trial" → "active".
    * Returns serialized SubscriptionResponse DTO.
    */
-  async activateSubscription(
-    subscriptionId: string,
-  ): Promise<SubscriptionResponse> {
+  async activateSubscription(subscriptionId: string): Promise<SubscriptionResponse> {
     const subscription = await this.findSubscriptionDocument(subscriptionId);
 
     // Policy validates the transition
@@ -401,9 +389,7 @@ export class BillingService {
    * Cancels an active or trial subscription.
    * Returns serialized SubscriptionResponse DTO.
    */
-  async cancelSubscription(
-    subscriptionId: string,
-  ): Promise<SubscriptionResponse> {
+  async cancelSubscription(subscriptionId: string): Promise<SubscriptionResponse> {
     const subscription = await this.findSubscriptionDocument(subscriptionId);
 
     BillingPolicy.canCancel(subscription);
@@ -433,10 +419,7 @@ export class BillingService {
    * Upgrades the subscription to a higher-tier plan.
    * Returns serialized SubscriptionResponse DTO.
    */
-  async upgradePlan(
-    subscriptionId: string,
-    input: ChangePlanInput,
-  ): Promise<SubscriptionResponse> {
+  async upgradePlan(subscriptionId: string, input: ChangePlanInput): Promise<SubscriptionResponse> {
     const subscription = await this.findSubscriptionDocument(subscriptionId);
 
     BillingPolicy.canChangePlan(subscription);
@@ -548,9 +531,7 @@ export class BillingService {
   /**
    * Retrieves raw Mongoose document by ID for internal service policy execution & updates.
    */
-  private async findSubscriptionDocument(
-    subscriptionId: string,
-  ): Promise<ISubscription> {
+  private async findSubscriptionDocument(subscriptionId: string): Promise<ISubscription> {
     const subscription = await this.repository.findById(subscriptionId);
 
     if (!subscription) {
@@ -570,9 +551,7 @@ export class BillingService {
     const subscription = await this.repository.findByOwner(ownerId, ownerType);
 
     if (!subscription) {
-      throw new NotFoundException(
-        `Subscription for this ${ownerType} was not found.`,
-      );
+      throw new NotFoundException(`Subscription for this ${ownerType} was not found.`);
     }
 
     return subscription;
@@ -593,11 +572,7 @@ export class BillingService {
       throw new NotFoundException("Subscription not found.");
     }
 
-    const subscription = await this.repository.findByIdForOwner(
-      subscriptionId,
-      ownerId,
-      ownerType,
-    );
+    const subscription = await this.repository.findByIdForOwner(subscriptionId, ownerId, ownerType);
     if (!subscription) {
       throw new NotFoundException("Subscription not found.");
     }

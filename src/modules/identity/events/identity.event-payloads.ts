@@ -90,11 +90,7 @@ export interface UserLoginFailedPayload {
 
   provider: AuthProvider;
 
-  reason:
-    | "user_not_found"
-    | "invalid_password"
-    | "account_inactive"
-    | "unverified_email";
+  reason: "user_not_found" | "invalid_password" | "account_inactive" | "unverified_email";
 
   ipAddress?: string;
 

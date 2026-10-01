@@ -204,7 +204,10 @@ export class WorkOrderService {
   }
 
   async create(
-    data: CreateWorkOrderInput & { serviceRequestId?: string },
+    data: CreateWorkOrderInput & {
+      serviceRequestId?: string;
+      preventiveMaintenanceOccurrenceId?: string;
+    },
     actor: Actor,
     transactionSession?: ClientSession,
   ): Promise<ApplicationResult<IWorkOrder>> {
@@ -223,6 +226,7 @@ export class WorkOrderService {
       serviceCategory: data.serviceCategory,
       ...(data.dueDate ? { dueDate: data.dueDate } : {}),
       fulfillmentType: data.fulfillmentType,
+      sourceType: data.serviceRequestId ? "service_request" : (data.sourceType ?? "manual"),
       createdBy: toObjectId(actor.userId),
     };
 
@@ -230,6 +234,7 @@ export class WorkOrderService {
       assetId?: Types.ObjectId;
       locationId?: Types.ObjectId;
       serviceRequestId?: Types.ObjectId;
+      preventiveMaintenanceOccurrenceId?: Types.ObjectId;
     } = {};
 
     if (data.assetId) {
@@ -237,6 +242,10 @@ export class WorkOrderService {
     }
     if (data.locationId) optionalRefs.locationId = toObjectId(data.locationId);
     if (data.serviceRequestId) optionalRefs.serviceRequestId = toObjectId(data.serviceRequestId);
+    if (data.preventiveMaintenanceOccurrenceId)
+      optionalRefs.preventiveMaintenanceOccurrenceId = toObjectId(
+        data.preventiveMaintenanceOccurrenceId,
+      );
 
     if (data.fulfillmentType === FULFILLMENT_TYPE.MARKETPLACE) {
       const workOrder = await this.createWithOutbox(

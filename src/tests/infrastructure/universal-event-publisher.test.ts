@@ -68,48 +68,51 @@ describe("UniversalEventPublisher", () => {
    * RabbitMQ exchange, durable and routed by the event's routingKey — not
    * just "not throw".
    */
-  it.skipIf(process.env.RABBITMQ_TESTS !== "true")("routes an IntegrationEvent to RabbitMQ with durable, exchange-routed delivery", async () => {
-    const domainBus = new InMemoryEventBus();
-    const integrationPublisher = new RabbitMqIntegrationEventPublisher({
-      exchange: TEST_EXCHANGE,
-    });
-    openPublishers.push(integrationPublisher);
+  it.skipIf(process.env.RABBITMQ_TESTS !== "true")(
+    "routes an IntegrationEvent to RabbitMQ with durable, exchange-routed delivery",
+    async () => {
+      const domainBus = new InMemoryEventBus();
+      const integrationPublisher = new RabbitMqIntegrationEventPublisher({
+        exchange: TEST_EXCHANGE,
+      });
+      openPublishers.push(integrationPublisher);
 
-    const publisher = new UniversalEventPublisher(domainBus, integrationPublisher);
+      const publisher = new UniversalEventPublisher(domainBus, integrationPublisher);
 
-    // Independent consumer, separate from the publisher's own connection,
-    // proving the message really left the process via the broker.
-    const connection = await amqp.connect(
-      process.env.RABBITMQ_URL || "amqp://guest:guest@localhost:5672",
-    );
-    openConnections.push(connection);
-    const channel: Channel = await connection.createChannel();
-    await channel.assertExchange(TEST_EXCHANGE, "topic", { durable: true });
-    const { queue } = await channel.assertQueue("", { exclusive: true });
-    await channel.bindQueue(queue, TEST_EXCHANGE, "#");
+      // Independent consumer, separate from the publisher's own connection,
+      // proving the message really left the process via the broker.
+      const connection = await amqp.connect(
+        process.env.RABBITMQ_URL || "amqp://guest:guest@localhost:5672",
+      );
+      openConnections.push(connection);
+      const channel: Channel = await connection.createChannel();
+      await channel.assertExchange(TEST_EXCHANGE, "topic", { durable: true });
+      const { queue } = await channel.assertQueue("", { exclusive: true });
+      await channel.bindQueue(queue, TEST_EXCHANGE, "#");
 
-    const received: unknown[] = [];
-    await channel.consume(
-      queue,
-      (msg) => {
-        if (!msg) return;
-        received.push(JSON.parse(msg.content.toString()));
-        channel.ack(msg);
-      },
-      { noAck: false },
-    );
+      const received: unknown[] = [];
+      await channel.consume(
+        queue,
+        (msg) => {
+          if (!msg) return;
+          received.push(JSON.parse(msg.content.toString()));
+          channel.ack(msg);
+        },
+        { noAck: false },
+      );
 
-    await publisher.publish(new SampleIntegrationEvent({ hello: "integration" }));
+      await publisher.publish(new SampleIntegrationEvent({ hello: "integration" }));
 
-    await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-    expect(received).toHaveLength(1);
-    expect(received[0]).toMatchObject({
-      name: "test.sample.integration-event",
-      routingKey: "test.sample.integration-event",
-      payload: { hello: "integration" },
-    });
-  });
+      expect(received).toHaveLength(1);
+      expect(received[0]).toMatchObject({
+        name: "test.sample.integration-event",
+        routingKey: "test.sample.integration-event",
+        payload: { hello: "integration" },
+      });
+    },
+  );
 
   it("maps an unreachable broker to IntegrationEventBrokerUnavailable, never a raw amqplib error", async () => {
     const domainBus = new InMemoryEventBus();

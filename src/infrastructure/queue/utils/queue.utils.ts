@@ -7,9 +7,9 @@ export function createQueueJob<T>(job: QueueJob<T>): QueueJob<T> {
 export function isQueueJob(value: unknown): value is QueueJob {
   return Boolean(
     value &&
-      typeof value === "object" &&
-      "name" in value &&
-      typeof (value as QueueJob).name === "string" &&
-      "payload" in value,
+    typeof value === "object" &&
+    "name" in value &&
+    typeof (value as QueueJob).name === "string" &&
+    "payload" in value,
   );
 }

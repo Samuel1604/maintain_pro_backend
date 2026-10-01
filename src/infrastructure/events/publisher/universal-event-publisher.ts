@@ -51,9 +51,12 @@ export class UniversalEventPublisher {
     // classifications. A new event base class showing up here without a
     // routing rule is a programming error, not a runtime edge case to
     // silently swallow.
-    this.logger?.error("[UniversalEventPublisher] Unclassifiable event — neither DomainEvent nor IntegrationEvent", {
-      event,
-    });
+    this.logger?.error(
+      "[UniversalEventPublisher] Unclassifiable event — neither DomainEvent nor IntegrationEvent",
+      {
+        event,
+      },
+    );
     throw new Error(
       "UniversalEventPublisher.publish() received an event that is not a DomainEvent or an IntegrationEvent.",
     );

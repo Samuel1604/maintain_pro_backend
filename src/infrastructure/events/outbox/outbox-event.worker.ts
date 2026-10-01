@@ -36,9 +36,16 @@ export class OutboxEventWorker {
     } catch (error) {
       const attempts = event.attempts;
       const deadLetter = attempts >= MAX_ATTEMPTS;
-      const retryAt = new Date(Date.now() + Math.min(300_000, 2_000 * 2 ** Math.max(0, attempts - 1)));
+      const retryAt = new Date(
+        Date.now() + Math.min(300_000, 2_000 * 2 ** Math.max(0, attempts - 1)),
+      );
       await this.repository.markFailed(event.eventId, error, { retryAt, deadLetter });
-      this.logger?.error("[Outbox] Event relay failed", { eventId: event.eventId, attempts, deadLetter, error: String(error) });
+      this.logger?.error("[Outbox] Event relay failed", {
+        eventId: event.eventId,
+        attempts,
+        deadLetter,
+        error: String(error),
+      });
       return false;
     }
   }
@@ -48,7 +55,9 @@ export class OutboxEventWorker {
     this.running = true;
     this.timer = setInterval(() => {
       if (!this.running) return;
-      void this.runOnce().catch((error) => this.logger?.error("[Outbox] Poll failed", { error: String(error) }));
+      void this.runOnce().catch((error) =>
+        this.logger?.error("[Outbox] Poll failed", { error: String(error) }),
+      );
     }, intervalMs);
     this.timer.unref?.();
   }

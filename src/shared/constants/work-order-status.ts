@@ -9,13 +9,11 @@ export const WORK_ORDER_STATUS = {
   ON_HOLD: "on_hold",
 } as const;
 
-export type WorkOrderStatus =
-  (typeof WORK_ORDER_STATUS)[keyof typeof WORK_ORDER_STATUS];
+export type WorkOrderStatus = (typeof WORK_ORDER_STATUS)[keyof typeof WORK_ORDER_STATUS];
 
 export const FULFILLMENT_TYPE = {
   INTERNAL: "internal",
   MARKETPLACE: "marketplace",
 } as const;
 
-export type FulfillmentType =
-  (typeof FULFILLMENT_TYPE)[keyof typeof FULFILLMENT_TYPE];
+export type FulfillmentType = (typeof FULFILLMENT_TYPE)[keyof typeof FULFILLMENT_TYPE];

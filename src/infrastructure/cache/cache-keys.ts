@@ -5,16 +5,22 @@ export const cacheKeys = {
   vendorProfile: (id: string) => `cache:${VERSION}:vendor:${id}:profile`,
   asset: (org: string, tag: string) => `cache:${VERSION}:org:${org}:asset:${tag}`,
   workOrder: (scope: string, id: string) => `cache:${VERSION}:scope:${scope}:work-order:${id}`,
-  workOrderList: (scope: string, hash: string) => `cache:${VERSION}:scope:${scope}:work-orders:list:${hash}`,
+  workOrderList: (scope: string, hash: string) =>
+    `cache:${VERSION}:scope:${scope}:work-orders:list:${hash}`,
   assetList: (scope: string, hash: string) => `cache:${VERSION}:scope:${scope}:assets:list:${hash}`,
-  invoiceList: (scope: string, hash: string) => `cache:${VERSION}:scope:${scope}:invoices:list:${hash}`,
+  invoiceList: (scope: string, hash: string) =>
+    `cache:${VERSION}:scope:${scope}:invoices:list:${hash}`,
   dashboard: (scope: string, hash: string) => `cache:${VERSION}:scope:${scope}:dashboard:${hash}`,
-  notificationPreferences: (userId: string) => `cache:${VERSION}:user:${userId}:notification-preferences`,
-  notifications: (userId: string, hash: string) => `cache:${VERSION}:user:${userId}:notifications:${hash}`,
-  unreadNotifications: (userId: string) => `cache:${VERSION}:user:${userId}:notifications:unread-count`,
+  notificationPreferences: (userId: string) =>
+    `cache:${VERSION}:user:${userId}:notification-preferences`,
+  notifications: (userId: string, hash: string) =>
+    `cache:${VERSION}:user:${userId}:notifications:${hash}`,
+  unreadNotifications: (userId: string) =>
+    `cache:${VERSION}:user:${userId}:notifications:unread-count`,
   search: (scope: string, hash: string) => `cache:${VERSION}:scope:${scope}:search:${hash}`,
   userSettings: (userId: string) => `cache:${VERSION}:user:${userId}:settings`,
-  organizationSettings: (organizationId: string) => `cache:${VERSION}:org:${organizationId}:settings`,
+  organizationSettings: (organizationId: string) =>
+    `cache:${VERSION}:org:${organizationId}:settings`,
   vendorSettings: (vendorId: string) => `cache:${VERSION}:vendor:${vendorId}:settings`,
 };
 

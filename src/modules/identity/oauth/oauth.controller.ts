@@ -7,15 +7,14 @@ import { ValidationException, BusinessException } from "@/shared/errors/index.js
 import { oauthConfig } from "@/config/oauth.config.js";
 import { buildSessionMetadata } from "@/shared/utils/session.js";
 import { setAuthCookies } from "@/config/cookie.config.js";
-import { createOAuthState, verifyOAuthState, saveOAuthState, consumeOAuthState } from "./oauth.utils.js";
 import {
-  oauthRegisterOrgDataParser,
-  oauthRegisterVendorDataParser,
-} from "../auth.schema.js";
-import type {
-  OAuthRegisterOrgDto,
-  OAuthRegisterVendorDto,
-} from "../auth.schema.js";
+  createOAuthState,
+  verifyOAuthState,
+  saveOAuthState,
+  consumeOAuthState,
+} from "./oauth.utils.js";
+import { oauthRegisterOrgDataParser, oauthRegisterVendorDataParser } from "../auth.schema.js";
+import type { OAuthRegisterOrgDto, OAuthRegisterVendorDto } from "../auth.schema.js";
 import type { OAuthAction } from "./oauth.types.js";
 import type { AuthProvider } from "@/shared/constants/auth-providers.js";
 import type { AuthResponse } from "../auth.types.js";
@@ -53,7 +52,10 @@ export class OAuthController {
     const provider = req.params.provider;
 
     let action: OAuthAction = "login";
-    if (req.query.action && ["login", "register-org", "register-vendor", "accept-invitation"].includes(req.query.action)) {
+    if (
+      req.query.action &&
+      ["login", "register-org", "register-vendor", "accept-invitation"].includes(req.query.action)
+    ) {
       action = req.query.action as OAuthAction;
     }
 
@@ -78,9 +80,7 @@ export class OAuthController {
         }
 
         const parser =
-          action === "register-org"
-            ? oauthRegisterOrgDataParser
-            : oauthRegisterVendorDataParser;
+          action === "register-org" ? oauthRegisterOrgDataParser : oauthRegisterVendorDataParser;
 
         const result = parser.safeParse(parsedInput);
 
@@ -163,11 +163,7 @@ export class OAuthController {
 
     switch (payload.action) {
       case "login":
-        authResponse = await this.authService.oauthLogin(
-          profile,
-          provider,
-          session,
-        );
+        authResponse = await this.authService.oauthLogin(profile, provider, session);
         break;
 
       case "register-org":

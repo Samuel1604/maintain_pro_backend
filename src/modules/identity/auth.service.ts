@@ -65,7 +65,8 @@ import { toObjectId } from "@/shared/validators/index.js";
  * 'otp'  — numeric OTP code, 10-minute TTL (enable when real mail provider is integrated).
  */
 // Production uses one-time links; tests retain OTP coverage for the legacy API.
-export const VERIFICATION_STRATEGY: "link" | "otp" = process.env.NODE_ENV === "test" ? "otp" : "link";
+export const VERIFICATION_STRATEGY: "link" | "otp" =
+  process.env.NODE_ENV === "test" ? "otp" : "link";
 
 export class AuthService {
   constructor(
@@ -107,10 +108,7 @@ export class AuthService {
         }),
       );
     } else {
-      const otp = await this.otpService.create(
-        userId,
-        OtpPurpose.EMAIL_VERIFICATION,
-      );
+      const otp = await this.otpService.create(userId, OtpPurpose.EMAIL_VERIFICATION);
       await this.eventBus.publish(
         new OtpRequestedEvent({
           userId,
@@ -149,7 +147,10 @@ export class AuthService {
       ),
     ]);
 
-    const authResponse = await this.sessionService.createAuthenticatedSession(provisionedUser, session);
+    const authResponse = await this.sessionService.createAuthenticatedSession(
+      provisionedUser,
+      session,
+    );
     return { success: true, message: "Organization registered successfully.", data: authResponse };
   }
 
@@ -186,9 +187,7 @@ export class AuthService {
   /**
    * Resend Verification OTP (OTP strategy — kept for future mail provider integration)
    */
-  async resendVerificationOtp(
-    email: string,
-  ): Promise<ApplicationResult<{ message: string }>> {
+  async resendVerificationOtp(email: string): Promise<ApplicationResult<{ message: string }>> {
     const user = await this.userReader.findByEmail(email);
     if (!user) throw new NotFoundException("User not found");
     if (user.isVerified) throw new ValidationException("Email already verified");
@@ -205,7 +204,11 @@ export class AuthService {
         otp,
       }),
     );
-    return { success: true, message: "Verification OTP sent successfully.", data: { message: "OTP sent successfully" } };
+    return {
+      success: true,
+      message: "Verification OTP sent successfully.",
+      data: { message: "OTP sent successfully" },
+    };
   }
 
   /**
@@ -230,7 +233,10 @@ export class AuthService {
       VerificationLinkPurpose.EMAIL_VERIFICATION,
     );
 
-    if (!allowed) throw new BusinessException("Too many regeneration requests. Please wait before trying again.");
+    if (!allowed)
+      throw new BusinessException(
+        "Too many regeneration requests. Please wait before trying again.",
+      );
 
     const verificationUrl = this.buildVerificationUrl(token, user.email);
     await this.eventBus.publish(
@@ -276,27 +282,24 @@ export class AuthService {
       }),
     );
 
-    return { success: true, message: "Email verified successfully.", data: { message: "Email verified successfully" } };
+    return {
+      success: true,
+      message: "Email verified successfully.",
+      data: { message: "Email verified successfully" },
+    };
   }
 
   /**
    * Verify Email
    */
-  async verifyEmail(
-    email: string,
-    otp: string,
-  ): Promise<ApplicationResult<{ message: string }>> {
+  async verifyEmail(email: string, otp: string): Promise<ApplicationResult<{ message: string }>> {
     const user = await this.userReader.findByEmail(email);
 
     if (!user) {
       throw new NotFoundException("User not found");
     }
 
-    const valid = await this.otpService.verify(
-      user.id,
-      OtpPurpose.EMAIL_VERIFICATION,
-      otp,
-    );
+    const valid = await this.otpService.verify(user.id, OtpPurpose.EMAIL_VERIFICATION, otp);
 
     if (!valid) {
       throw new ValidationException("Invalid or expired OTP");
@@ -342,10 +345,7 @@ export class AuthService {
 
     await this.invitationService.accept(invitation.id, user._id.toString());
 
-    const authResponse = await this.sessionService.createAuthenticatedSession(
-      user,
-      session,
-    );
+    const authResponse = await this.sessionService.createAuthenticatedSession(user, session);
 
     return {
       success: true,
@@ -359,10 +359,7 @@ export class AuthService {
   /**
    * Login
    */
-  async login(
-    data: LoginDto,
-    session: SessionMetadata,
-  ): Promise<ApplicationResult<AuthResponse>> {
+  async login(data: LoginDto, session: SessionMetadata): Promise<ApplicationResult<AuthResponse>> {
     const exists = await this.userReader.existsByEmail(data.email);
     if (!exists) throw new AuthenticationException("Invalid credentials");
 
@@ -405,7 +402,8 @@ export class AuthService {
     if (!user.isVerified && user.status === "pending_verification") {
       return {
         success: true,
-        message: "Email verification required. Please verify your email before accessing any other endpoint.",
+        message:
+          "Email verification required. Please verify your email before accessing any other endpoint.",
         data: authResponse,
       };
     }
@@ -426,16 +424,18 @@ export class AuthService {
 
     await this.lockoutService.isUnlocked(user);
     await this.userService.recordLogin(user._id.toString());
-    void this.eventBus.publish(
-      new UserLoggedInEvent({
-        userId: user._id.toString(),
-        email: user.email,
-        sessionId: authResponse.sessionId,
-        provider: "local",
-        ipAddress: session.ipAddress,
-        userAgent: session.userAgent,
-      }),
-    ).catch(() => undefined);
+    void this.eventBus
+      .publish(
+        new UserLoggedInEvent({
+          userId: user._id.toString(),
+          email: user.email,
+          sessionId: authResponse.sessionId,
+          provider: "local",
+          ipAddress: session.ipAddress,
+          userAgent: session.userAgent,
+        }),
+      )
+      .catch(() => undefined);
 
     return { success: true, message: "Login successful.", data: authResponse };
   }
@@ -486,20 +486,36 @@ export class AuthService {
     return authResponse;
   }
 
-  private async provisionHeadOffice(organizationId: string, user: { _id: { toString(): string }; email: string }, data: { organizationName: string; address: { street?: string; city?: string; state?: string; postalCode?: string; country?: string } }) {
-    const facility = await this.facilityRepository.create({
-      organizationId,
-      name: `${data.organizationName} Head Office`,
+  private async provisionHeadOffice(
+    organizationId: string,
+    user: { _id: { toString(): string }; email: string },
+    data: {
+      organizationName: string;
       address: {
-        street: data.address.street ?? data.organizationName,
-        city: data.address.city ?? "",
-        state: data.address.state ?? "",
-        ...(data.address.postalCode ? { postalCode: data.address.postalCode } : {}),
-        country: data.address.country ?? "",
+        street?: string;
+        city?: string;
+        state?: string;
+        postalCode?: string;
+        country?: string;
+      };
+    },
+  ) {
+    const facility = await this.facilityRepository.create(
+      {
+        organizationId,
+        name: `${data.organizationName} Head Office`,
+        address: {
+          street: data.address.street ?? data.organizationName,
+          city: data.address.city ?? "",
+          state: data.address.state ?? "",
+          ...(data.address.postalCode ? { postalCode: data.address.postalCode } : {}),
+          country: data.address.country ?? "",
+        },
+        latitude: 0,
+        longitude: 0,
       },
-      latitude: 0,
-      longitude: 0,
-    }, user._id.toString());
+      user._id.toString(),
+    );
     await this.locationRepository.create({
       organizationId: toObjectId(organizationId),
       facilityId: facility._id,
@@ -507,12 +523,20 @@ export class AuthService {
       type: "BUILDING",
       status: "active",
     });
-    await this.eventBus.publish(new FacilityCreatedEvent({
-      facilityId: facility._id.toString(), organizationId, name: facility.name,
-      address: facility.address, createdBy: user._id.toString(),
-    }));
+    await this.eventBus.publish(
+      new FacilityCreatedEvent({
+        facilityId: facility._id.toString(),
+        organizationId,
+        name: facility.name,
+        address: facility.address,
+        createdBy: user._id.toString(),
+      }),
+    );
     const updated = await this.userService.assignFacility(user._id.toString(), facility._id);
-    if (!updated) throw new NotFoundException("Organization administrator could not be assigned to the head office");
+    if (!updated)
+      throw new NotFoundException(
+        "Organization administrator could not be assigned to the head office",
+      );
     return updated;
   }
 
@@ -540,18 +564,18 @@ export class AuthService {
     );
 
     await this.eventBus.publish(
-  new VendorRegisteredEvent({
-    vendorId: vendor._id.toString(),
+      new VendorRegisteredEvent({
+        vendorId: vendor._id.toString(),
 
-    userId: user._id.toString(),
+        userId: user._id.toString(),
 
-    email: user.email,
+        email: user.email,
 
-    vendorName: vendor.name,
+        vendorName: vendor.name,
 
-    provider,
-  }),
-);
+        provider,
+      }),
+    );
 
     return this.sessionService.createAuthenticatedSession(user, session);
   }
@@ -573,16 +597,9 @@ export class AuthService {
       throw new ConflictException("Account already exists");
     }
 
-    const user = await this.userService.createOAuthInvitedUser(
-      invitation,
-      profile,
-      provider,
-    );
+    const user = await this.userService.createOAuthInvitedUser(invitation, profile, provider);
 
-    await this.invitationService.accept(
-      invitation._id.toString(),
-      user._id.toString(),
-    );
+    await this.invitationService.accept(invitation._id.toString(), user._id.toString());
 
     return this.sessionService.createAuthenticatedSession(user, session);
   }
@@ -595,7 +612,8 @@ export class AuthService {
     provider: AuthProvider,
     session: SessionMetadata,
   ): Promise<AuthResponse> {
-    if (!profile.emailVerified) throw new AuthorizationException("OAuth provider email is not verified");
+    if (!profile.emailVerified)
+      throw new AuthorizationException("OAuth provider email is not verified");
     const user = await this.userService.findAndLinkProvider(
       profile.email,
       provider,
@@ -604,26 +622,23 @@ export class AuthService {
 
     if (!user) {
       await this.eventBus.publish(
-      new UserLoginFailedEvent({
-        email: profile.email,
-        provider,
-        reason: "user_not_found",
-        ipAddress: session.ipAddress,
-        userAgent: session.userAgent,
-      }),
-    );
+        new UserLoginFailedEvent({
+          email: profile.email,
+          provider,
+          reason: "user_not_found",
+          ipAddress: session.ipAddress,
+          userAgent: session.userAgent,
+        }),
+      );
 
-    throw new NotFoundException("Account not found");
+      throw new NotFoundException("Account not found");
     }
 
     await this.lockoutService.isNotLocked(user);
 
     await this.lockoutService.isUnlocked(user);
 
-    const authResponse = await this.sessionService.createAuthenticatedSession(
-      user,
-      session,
-    );
+    const authResponse = await this.sessionService.createAuthenticatedSession(user, session);
 
     await this.userService.recordLogin(user._id.toString());
 
@@ -640,7 +655,6 @@ export class AuthService {
 
     return authResponse;
   }
-
 
   async getCurrentUser(userId: string) {
     return this.userReader.findById(userId);

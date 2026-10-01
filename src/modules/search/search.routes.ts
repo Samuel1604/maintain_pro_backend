@@ -5,6 +5,10 @@ import { Asset } from "@/modules/assets/asset.model.js";
 import { Facility } from "@/modules/facilities/facility.model.js";
 import { Vendor } from "@/modules/vendors/vendor.model.js";
 import { OrganizationVendorRelationship } from "@/modules/organizations/vendor-relationships/organization-vendor.model.js";
+import { Location } from "@/modules/locations/location.model.js";
+import { ServiceRequest } from "@/modules/service-requests/request.model.js";
+import { PMPlan } from "@/modules/preventive-maintenance/pm.model.js";
+import { InventoryItem } from "@/modules/inventory/inventory-item.model.js";
 import { RedisCache } from "@/infrastructure/cache/redis.cache.js";
 import { cacheKeys, cacheTtlSeconds } from "@/infrastructure/cache/cache-keys.js";
 import { cacheHash } from "@/shared/utils/cache-hash.js";
@@ -24,34 +28,158 @@ router.get("/", async (req, res) => {
   if (!query) return res.ok([], "Search results retrieved");
   const pattern = { $regex: escapeRegex(query), $options: "i" };
   const organizationId = req.user.organizationId;
-  const key = cacheKeys.search(organizationId ?? req.user.vendorId ?? req.user.userId, cacheHash({ query, limit }));
+  const key = cacheKeys.search(
+    organizationId ?? req.user.vendorId ?? req.user.userId,
+    cacheHash({ query, limit }),
+  );
   const cached = await searchCache.get<unknown[]>(key);
   if (cached) return res.ok(cached, "Search results retrieved");
-  const [workOrders, assets, facilities, vendors] = organizationId
+  const [
+    workOrders,
+    assets,
+    facilities,
+    vendors,
+    locations,
+    serviceRequests,
+    pmPlans,
+    inventoryItems,
+  ] = organizationId
     ? await Promise.all([
-      WorkOrder.find({ organizationId, $or: [{ title: pattern }, { description: pattern }] }).limit(limit).lean(),
-      Asset.find({ organizationId, $or: [{ assetTag: pattern }, { name: pattern }, { serialNumber: pattern }] }).limit(limit).lean(),
-      Facility.find({ organizationId, name: pattern }).limit(limit).lean(),
-      Vendor.find({ name: pattern }).limit(limit).lean(),
-    ])
+        WorkOrder.find({ organizationId, $or: [{ title: pattern }, { description: pattern }] })
+          .limit(limit)
+          .lean(),
+        Asset.find({
+          organizationId,
+          $or: [{ assetTag: pattern }, { name: pattern }, { serialNumber: pattern }],
+        })
+          .limit(limit)
+          .lean(),
+        Facility.find({ organizationId, name: pattern }).limit(limit).lean(),
+        Vendor.find({ name: pattern }).limit(limit).lean(),
+        Location.find({
+          organizationId,
+          $or: [{ name: pattern }, { code: pattern }, { description: pattern }],
+        })
+          .limit(limit)
+          .lean(),
+        ServiceRequest.find({
+          organizationId,
+          $or: [{ title: pattern }, { description: pattern }, { serviceCategory: pattern }],
+        })
+          .limit(limit)
+          .lean(),
+        PMPlan.find({
+          organizationId,
+          $or: [{ title: pattern }, { description: pattern }, { maintenanceType: pattern }],
+        })
+          .limit(limit)
+          .lean(),
+        InventoryItem.find({
+          organizationId,
+          $or: [{ name: pattern }, { sku: pattern }, { description: pattern }],
+        })
+          .limit(limit)
+          .lean(),
+      ])
     : req.user.vendorId
       ? [
-        await WorkOrder.find({ assignedVendorId: req.user.vendorId, $or: [{ title: pattern }, { description: pattern }] }).limit(limit).lean(),
-        [],
-        [],
-        [],
-      ]
-      : [[], [], [], []];
+          await WorkOrder.find({
+            assignedVendorId: req.user.vendorId,
+            $or: [{ title: pattern }, { description: pattern }],
+          })
+            .limit(limit)
+            .lean(),
+          [],
+          [],
+          [],
+        ]
+      : [[], [], [], [], [], [], [], []];
   const vendorIds = vendors.map((vendor) => vendor._id);
-  const relationships = organizationId && vendorIds.length > 0
-    ? await OrganizationVendorRelationship.find({ organizationId, vendorId: { $in: vendorIds } }).lean()
-    : [];
-  const relationshipByVendor = new Map(relationships.map((relationship) => [relationship.vendorId.toString(), relationship.status]));
+  const relationships =
+    organizationId && vendorIds.length > 0
+      ? await OrganizationVendorRelationship.find({
+          organizationId,
+          vendorId: { $in: vendorIds },
+        }).lean()
+      : [];
+  const relationshipByVendor = new Map(
+    relationships.map((relationship) => [relationship.vendorId.toString(), relationship.status]),
+  );
   const results = [
-    ...workOrders.map((item) => ({ id: item._id.toString(), title: item.title, category: "Work Orders", type: "work-orders", segment: `work-orders/${item._id}`, badge: item.status, desc: item.description })),
-    ...assets.map((item) => ({ id: item.assetTag, title: item.name, category: "Assets", type: "assets", segment: `assets/${encodeURIComponent(item.assetTag)}`, badge: item.status, desc: item.description ?? item.serialNumber ?? "" })),
-    ...facilities.map((item) => ({ id: item._id.toString(), title: item.name, category: "Facilities", type: "facilities", segment: `facilities/${item._id}`, badge: item.status, desc: item.description ?? "" })),
-    ...vendors.filter((item) => relationshipByVendor.has(item._id.toString())).map((item) => ({ id: item._id.toString(), title: item.name, category: "Vendors", type: "vendors", segment: "vendors", badge: relationshipByVendor.get(item._id.toString()) ?? item.status, desc: item.serviceCategories?.join(" • ") ?? "" })),
+    ...workOrders.map((item) => ({
+      id: item._id.toString(),
+      title: item.title,
+      category: "Work Orders",
+      type: "work-orders",
+      segment: `work-orders/${item._id}`,
+      badge: item.status,
+      desc: item.description,
+    })),
+    ...assets.map((item) => ({
+      id: item.assetTag,
+      title: item.name,
+      category: "Assets",
+      type: "assets",
+      segment: `assets/${encodeURIComponent(item.assetTag)}`,
+      badge: item.status,
+      desc: item.description ?? item.serialNumber ?? "",
+    })),
+    ...facilities.map((item) => ({
+      id: item._id.toString(),
+      title: item.name,
+      category: "Facilities",
+      type: "facilities",
+      segment: `facilities/${item._id}`,
+      badge: item.status,
+      desc: item.description ?? "",
+    })),
+    ...vendors
+      .filter((item) => relationshipByVendor.has(item._id.toString()))
+      .map((item) => ({
+        id: item._id.toString(),
+        title: item.name,
+        category: "Vendors",
+        type: "vendors",
+        segment: "vendors",
+        badge: relationshipByVendor.get(item._id.toString()) ?? item.status,
+        desc: item.serviceCategories?.join(" • ") ?? "",
+      })),
+    ...locations.map((item) => ({
+      id: item._id.toString(),
+      title: item.name,
+      category: "Locations",
+      type: "locations",
+      segment: `locations/${item._id}`,
+      badge: item.status,
+      desc: item.description ?? item.code ?? "",
+    })),
+    ...serviceRequests.map((item) => ({
+      id: item._id.toString(),
+      title: item.title,
+      category: "Service Requests",
+      type: "service-requests",
+      segment: `service-requests/${item._id}`,
+      badge: item.status,
+      desc: item.description ?? item.serviceCategory,
+    })),
+    ...pmPlans.map((item) => ({
+      id: item._id.toString(),
+      title: item.title,
+      category: "PM Schedules",
+      type: "preventive-maintenance",
+      segment: `preventive-maintenance/${item._id}`,
+      badge: item.status,
+      desc: item.description ?? item.maintenanceType,
+    })),
+    ...inventoryItems.map((item) => ({
+      id: item._id.toString(),
+      title: item.name,
+      category: "Inventory",
+      type: "inventory",
+      segment: "inventory",
+      badge: item.status,
+      desc: item.description ?? item.sku,
+    })),
   ];
   await searchCache.set(key, results, cacheTtlSeconds.search);
   return res.ok(results, "Search results retrieved");

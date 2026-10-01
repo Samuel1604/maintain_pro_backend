@@ -26,14 +26,17 @@ export class QueueWorkerRegistry {
     const worker = this.workers.get(job.name) as QueueWorker<T> | undefined;
 
     if (!worker) {
-      this.logger.warn("[QueueWorkerRegistry] No worker registered. Job failed and will be retried.", {
-        jobName: job.name,
-        eventId: job.eventId,
-        eventName: job.eventName ?? job.name,
-        jobId: job.jobId,
-        correlationId: job.correlationId,
-        causationId: job.causationId,
-      });
+      this.logger.warn(
+        "[QueueWorkerRegistry] No worker registered. Job failed and will be retried.",
+        {
+          jobName: job.name,
+          eventId: job.eventId,
+          eventName: job.eventName ?? job.name,
+          jobId: job.jobId,
+          correlationId: job.correlationId,
+          causationId: job.causationId,
+        },
+      );
       throw new Error(`No worker registered for queue job: ${job.name}`);
     }
 

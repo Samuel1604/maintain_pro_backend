@@ -2,10 +2,7 @@ import amqp, { type ChannelModel, type ConfirmChannel } from "amqplib";
 import type { IntegrationEvent } from "@/infrastructure/events/bus/integration-event.js";
 import type { SerializedIntegrationEvent } from "@/infrastructure/events/bus/serialized-integration-event.js";
 import type { IntegrationEventPublisher } from "../integration-event-publisher.interface.js";
-import {
-  IntegrationEventBrokerUnavailable,
-  IntegrationEventPublishFailed,
-} from "../exceptions.js";
+import { IntegrationEventBrokerUnavailable, IntegrationEventPublishFailed } from "../exceptions.js";
 import type { Logger } from "@/infrastructure/logging/logger.interface.js";
 import { getRabbitMqUrl, getRabbitMqExchange } from "./connection.js";
 
@@ -173,12 +170,18 @@ export class RabbitMqIntegrationEventPublisher implements IntegrationEventPublis
   }
 
   private mapError(error: unknown): Error {
-    if (error instanceof IntegrationEventBrokerUnavailable || error instanceof IntegrationEventPublishFailed) {
+    if (
+      error instanceof IntegrationEventBrokerUnavailable ||
+      error instanceof IntegrationEventPublishFailed
+    ) {
       return error;
     }
 
     const message = error instanceof Error ? error.message : String(error);
-    const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : undefined;
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? (error as { code?: string }).code
+        : undefined;
 
     if (
       code === "ECONNREFUSED" ||

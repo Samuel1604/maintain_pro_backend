@@ -73,29 +73,29 @@ const vendorSchema = new Schema<IVendor>(
     plan: {
       type: String,
       enum: ["free", "starter", "professional"],
-      default: "free"
+      default: "free",
     },
 
     subscriptionStatus: {
       type: String,
-      enum: ["trial", "active", "past_due", "cancelled" ]
+      enum: ["trial", "active", "past_due", "cancelled"],
     },
     applicationLimit: {
       type: Number,
-      default: 1
+      default: 1,
     },
     averageRating: {
       type: Number,
-      default: 0
+      default: 0,
     },
     completedJobs: {
       type: Number,
-      default: 0
+      default: 0,
     },
     verificationBadge: {
       type: String,
-      enum: ["none", "verified", "premium"]
-    }
+      enum: ["none", "verified", "premium"],
+    },
   },
   {
     timestamps: true,

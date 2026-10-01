@@ -59,7 +59,10 @@ export class RedisService {
       return result === "OK";
     } catch (err) {
       if (!this.fallbackAllowed()) throw err;
-      console.warn(`⚠️ Redis setIfAbsent failed for key '${key}', using local store fallback:`, err);
+      console.warn(
+        `⚠️ Redis setIfAbsent failed for key '${key}', using local store fallback:`,
+        err,
+      );
       const existing = this.localEntry(key);
       if (existing) return false;
       RedisService.localStore.set(key, { value, expiresAt: Date.now() + ttl * 1000 });
@@ -124,15 +127,22 @@ export class RedisService {
     if (this.disabled) {
       let removed = 0;
       for (const key of RedisService.localStore.keys()) {
-        if (key.startsWith(pattern.replace(/\*$/, ""))) { RedisService.localStore.delete(key); removed += 1; }
+        if (key.startsWith(pattern.replace(/\*$/, ""))) {
+          RedisService.localStore.delete(key);
+          removed += 1;
+        }
       }
       return removed;
     }
     try {
       const keys: string[] = [];
-      for await (const key of redis.scanStream({ match: pattern, count: 100 })) keys.push(...(Array.isArray(key) ? key : [key]));
+      for await (const key of redis.scanStream({ match: pattern, count: 100 }))
+        keys.push(...(Array.isArray(key) ? key : [key]));
       return keys.length ? await redis.del(...keys) : 0;
-    } catch (error) { if (!this.fallbackAllowed()) throw error; return 0; }
+    } catch (error) {
+      if (!this.fallbackAllowed()) throw error;
+      return 0;
+    }
   }
 
   /**

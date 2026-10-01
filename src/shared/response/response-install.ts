@@ -52,11 +52,7 @@ export function attachResponseHelpers(res: Response): void {
   };
 }
 
-export const responseEnhancer = (
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-): void => {
+export const responseEnhancer = (_req: Request, res: Response, next: NextFunction): void => {
   attachResponseHelpers(res);
   next();
 };

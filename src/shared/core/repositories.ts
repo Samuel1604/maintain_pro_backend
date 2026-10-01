@@ -3,7 +3,6 @@ import { SessionRepository } from "@/modules/auth/session/session.repository.js"
 import { AuthLogRepository } from "@/modules/auth/auth-log/auth-log.repository.js";
 import { AuditLogRepository } from "@/modules/audit/audit.repository.js";
 
-
 export const repositories = {
   user: new UserRepository(),
   session: new SessionRepository(),

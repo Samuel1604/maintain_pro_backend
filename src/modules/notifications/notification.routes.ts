@@ -1,6 +1,17 @@
 import { Router } from "express";
 import { authMiddleware } from "@/shared/middleware/authenticate.js";
-import { listNotifications, unreadCount, markRead, markAllRead, getPreferences, updatePreferences, listEscalationRules, createEscalationRule, updateEscalationRule, deleteEscalationRule } from "./notification.controller.js";
+import {
+  listNotifications,
+  unreadCount,
+  markRead,
+  markAllRead,
+  getPreferences,
+  updatePreferences,
+  listEscalationRules,
+  createEscalationRule,
+  updateEscalationRule,
+  deleteEscalationRule,
+} from "./notification.controller.js";
 
 const router = Router();
 router.use(authMiddleware);

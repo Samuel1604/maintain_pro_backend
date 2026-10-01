@@ -42,10 +42,7 @@ export function isValidDate(value: string): boolean {
 /**
  * Compares two dates/timestamps for equality.
  */
-export function isSameDate(
-  left?: Date | string | null,
-  right?: Date | string | null,
-): boolean {
+export function isSameDate(left?: Date | string | null, right?: Date | string | null): boolean {
   if (!left || !right) {
     return left === right;
   }
@@ -65,9 +62,12 @@ export function isSameDate(
  */
 export const dateSchema = z.union([
   z.date(),
-  z.string().refine((val) => isValidDate(val), {
-    message: "Invalid date string",
-  }).transform((val) => toDate(val)),
+  z
+    .string()
+    .refine((val) => isValidDate(val), {
+      message: "Invalid date string",
+    })
+    .transform((val) => toDate(val)),
 ]);
 
 /**

@@ -36,10 +36,7 @@ export class MockPaymentProvider implements PaymentProviderGateway {
     };
   }
 
-  parseWebhookEvent(
-    rawBody: Buffer,
-    signatureHeader: string | undefined,
-  ): PaymentWebhookEvent {
+  parseWebhookEvent(rawBody: Buffer, signatureHeader: string | undefined): PaymentWebhookEvent {
     const expected = this.sign(rawBody);
     const payload = JSON.parse(rawBody.toString("utf8")) as {
       providerCheckoutId: string;
@@ -50,7 +47,10 @@ export class MockPaymentProvider implements PaymentProviderGateway {
     // Accept the canonical JSON representation as a compatibility fallback
     // for adapters that parse and re-serialize request bodies before verify.
     const canonicalExpected = this.sign(Buffer.from(JSON.stringify(payload)));
-    if (!signatureHeader || (signatureHeader !== expected && signatureHeader !== canonicalExpected)) {
+    if (
+      !signatureHeader ||
+      (signatureHeader !== expected && signatureHeader !== canonicalExpected)
+    ) {
       throw new PaymentProviderError("Invalid mock webhook signature.");
     }
 

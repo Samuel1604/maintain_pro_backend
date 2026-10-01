@@ -44,7 +44,15 @@ export class NotificationPolicyService {
       const existing = await this.repository.findByIdempotencyKey(params.idempotencyKey);
       if (existing) return existing;
     }
-    const rendered = resolveNotificationTemplate({ templateId: params.templateId ?? `notification.${params.type}`, type: params.type, priority: params.priority, title: params.title, message: params.message, resourceType: params.resourceType, resourceId: params.resourceId });
+    const rendered = resolveNotificationTemplate({
+      templateId: params.templateId ?? `notification.${params.type}`,
+      type: params.type,
+      priority: params.priority,
+      title: params.title,
+      message: params.message,
+      resourceType: params.resourceType,
+      resourceId: params.resourceId,
+    });
     const notification = await this.repository.create({
       recipientId: toObjectId(params.recipientId),
       ...(params.actorId && { actorId: toObjectId(params.actorId) }),
@@ -63,9 +71,20 @@ export class NotificationPolicyService {
     });
     await this.invalidateCaches(params.recipientId);
 
-    await eventPublisher.publish(new BusinessFactEvent("NotificationCreated", {
-      recipientId: notification.recipientId.toString(),
-    }, { organizationId: params.organizationId, actorId: params.actorId, aggregateType: "notification", aggregateId: notification._id.toString() }));
+    await eventPublisher.publish(
+      new BusinessFactEvent(
+        "NotificationCreated",
+        {
+          recipientId: notification.recipientId.toString(),
+        },
+        {
+          organizationId: params.organizationId,
+          actorId: params.actorId,
+          aggregateType: "notification",
+          aggregateId: notification._id.toString(),
+        },
+      ),
+    );
 
     if (params.sendPush !== false) {
       await this.pushProvider.sendToUser(params.recipientId, {

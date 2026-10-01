@@ -15,6 +15,9 @@ export const createWorkOrderSchema = z
     dueDate: z.coerce.date().optional(),
     fulfillmentType: z.enum(["internal", "marketplace"]),
     technicianId: objectId.optional(),
+    serviceRequestId: objectId.optional(),
+    preventiveMaintenanceOccurrenceId: objectId.optional(),
+    sourceType: z.enum(["manual", "service_request", "preventive_maintenance"]).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.fulfillmentType === "internal" && !data.technicianId) {
@@ -38,18 +41,20 @@ export const updateProgressSchema = z.object({
   status: z.enum(["in_progress", "pending_completion"]),
 });
 
-export const transitionWorkOrderSchema = z.object({
-  status: z.enum(["in_progress", "on_hold", "pending_completion"]),
-  reason: z.string().trim().min(3).optional(),
-}).superRefine((data, ctx) => {
-  if (data.status === "on_hold" && !data.reason) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["reason"],
-      message: "reason is required when placing a work order on hold",
-    });
-  }
-});
+export const transitionWorkOrderSchema = z
+  .object({
+    status: z.enum(["in_progress", "on_hold", "pending_completion"]),
+    reason: z.string().trim().min(3).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === "on_hold" && !data.reason) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["reason"],
+        message: "reason is required when placing a work order on hold",
+      });
+    }
+  });
 
 export const assignWorkOrderSchema = z.object({
   technicianId: objectId,
@@ -80,6 +85,9 @@ export type UpdateWorkOrderInput = z.infer<typeof updateWorkOrderSchema>;
 export const vendorAcceptSchema = z.object({ proposedSchedule: z.coerce.date().optional() });
 export const vendorRejectSchema = z.object({ reason: z.string().trim().min(3) });
 export const completionInvoiceSchema = z.object({
-  invoiceNumber: z.string().trim().min(1), amount: z.number().min(0),
-  currency: z.string().trim().min(3).max(3).optional(), notes: z.string().optional(), dueDate: z.coerce.date().optional(),
+  invoiceNumber: z.string().trim().min(1),
+  amount: z.number().min(0),
+  currency: z.string().trim().min(3).max(3).optional(),
+  notes: z.string().optional(),
+  dueDate: z.coerce.date().optional(),
 });

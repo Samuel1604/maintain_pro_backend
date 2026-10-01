@@ -54,7 +54,13 @@ export async function createTestApp(options: TestAppOptions = {}): Promise<Expre
 
   app.use(responseEnhancer);
   app.use(helmet());
-  app.use(express.json({ verify: (req, _res, buffer) => { (req as Request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer); } }));
+  app.use(
+    express.json({
+      verify: (req, _res, buffer) => {
+        (req as Request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer);
+      },
+    }),
+  );
   app.use(cors(corsOptions));
   app.use(morgan("dev"));
   app.use(cookieParser());

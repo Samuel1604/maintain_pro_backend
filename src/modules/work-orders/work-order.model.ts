@@ -10,6 +10,8 @@ export interface IWorkOrder extends Document {
   organizationId: Types.ObjectId;
   facilityId: Types.ObjectId;
   serviceRequestId?: Types.ObjectId;
+  preventiveMaintenanceOccurrenceId?: Types.ObjectId;
+  sourceType: "manual" | "service_request" | "preventive_maintenance";
   assetId: Types.ObjectId;
   locationId?: Types.ObjectId;
   title: string;
@@ -58,6 +60,13 @@ const workOrderSchema = new Schema<IWorkOrder>(
     serviceRequestId: {
       type: Schema.Types.ObjectId,
       ref: "ServiceRequest",
+    },
+    preventiveMaintenanceOccurrenceId: { type: Schema.Types.ObjectId, ref: "PMOccurrence" },
+    sourceType: {
+      type: String,
+      enum: ["manual", "service_request", "preventive_maintenance"],
+      default: "manual",
+      required: true,
     },
     assetId: {
       type: Schema.Types.ObjectId,
@@ -117,7 +126,7 @@ const workOrderSchema = new Schema<IWorkOrder>(
     },
     approvedAt: Date,
     completedAt: Date,
-  rejectionReason: String,
+    rejectionReason: String,
     approvalNotes: String,
     reviewedBy: {
       type: Schema.Types.ObjectId,
@@ -129,12 +138,14 @@ const workOrderSchema = new Schema<IWorkOrder>(
       ref: "User",
       required: true,
     },
-    statusHistory: [{
-      status: { type: String, required: true },
-      changedAt: { type: Date, default: Date.now },
-      changedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-      reason: String,
-    }],
+    statusHistory: [
+      {
+        status: { type: String, required: true },
+        changedAt: { type: Date, default: Date.now },
+        changedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        reason: String,
+      },
+    ],
   },
   {
     timestamps: true,

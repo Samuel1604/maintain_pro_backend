@@ -6,7 +6,11 @@ export interface IUserSettings extends Document {
   timezone: string;
   dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
   timeFormat: "12h" | "24h";
-  accessibility: { reducedMotion: boolean; highContrast: boolean; screenReaderAnnouncements: boolean };
+  accessibility: {
+    reducedMotion: boolean;
+    highContrast: boolean;
+    screenReaderAnnouncements: boolean;
+  };
   createdAt: Date;
   updatedAt: Date;
 }

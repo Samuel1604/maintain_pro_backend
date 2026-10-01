@@ -18,7 +18,7 @@ describe("idempotency middleware", () => {
       body: { title: "Duplicate-sensitive mutation" },
       headers: { cookie: "accessToken=session" },
       ip: "127.0.0.1",
-      header: (name: string) => name === "Idempotency-Key" ? "operation-1" : undefined,
+      header: (name: string) => (name === "Idempotency-Key" ? "operation-1" : undefined),
     } as never;
 
     await expect(idempotency(request, {} as never, vi.fn())).rejects.toBe(redisError);

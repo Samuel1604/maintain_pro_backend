@@ -15,7 +15,6 @@ import {
   vendorLogoSchema,
 } from "@/shared/validators/index.js";
 
-
 export const updateVendorSchema = z.object({
   vendorName: vendorNameSchema.optional(),
 
@@ -50,7 +49,6 @@ export const listVendorsQuerySchema = z.object({
 
 export type ListVendorsQueryDto = z.infer<typeof listVendorsQuerySchema>;
 
-
 export const updateVendorProfileSchema = z.object({
   vendorName: vendorNameSchema.optional(),
 
@@ -64,28 +62,17 @@ export const updateVendorProfileSchema = z.object({
 
   logo: vendorLogoSchema.optional(),
 
-  serviceCategories: z
-    .array(serviceCategorySchema)
-    .optional(),
+  serviceCategories: z.array(serviceCategorySchema).optional(),
 
-  serviceAreas: z
-    .array(objectIdSchema)
-    .optional(),
+  serviceAreas: z.array(objectIdSchema).optional(),
 
-  coverageRadiusKm:
-    coverageRadiusSchema.optional(),
+  coverageRadiusKm: coverageRadiusSchema.optional(),
 
-  latitude:
-    latitudeSchema.optional(),
+  latitude: latitudeSchema.optional(),
 
-  longitude:
-    longitudeSchema.optional(),
+  longitude: longitudeSchema.optional(),
 
-  certifications: z
-    .array(certificationSchema)
-    .optional(),
+  certifications: z.array(certificationSchema).optional(),
 });
 
-export type UpdateVendorProfileInput = z.infer<
-  typeof updateVendorProfileSchema
->;
+export type UpdateVendorProfileInput = z.infer<typeof updateVendorProfileSchema>;

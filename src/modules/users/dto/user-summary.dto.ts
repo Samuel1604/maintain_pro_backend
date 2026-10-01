@@ -1,5 +1,5 @@
 import type { AccountStatus } from "@/shared/constants/account-status.js";
-import type {UserRole} from "@/shared/constants/roles.js";
+import type { UserRole } from "@/shared/constants/roles.js";
 
 export interface UserSummary {
   id: string;

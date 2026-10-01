@@ -8,7 +8,9 @@ export interface SerializedDomainEvent<TPayload = unknown> {
   metadata?: DomainEventMetadata;
 }
 
-export function serializeDomainEvent<TEvent extends DomainEvent>(event: TEvent): SerializedDomainEvent {
+export function serializeDomainEvent<TEvent extends DomainEvent>(
+  event: TEvent,
+): SerializedDomainEvent {
   return {
     eventId: event.eventId,
     name: event.name,
@@ -30,6 +32,12 @@ export function serializeDomainEvent<TEvent extends DomainEvent>(event: TEvent):
 
 export class RehydratedDomainEvent<TPayload = unknown> extends DomainEvent<TPayload> {
   constructor(serialized: SerializedDomainEvent<TPayload>) {
-    super(serialized.name, serialized.payload, new Date(serialized.occurredAt), serialized.eventId, serialized.metadata);
+    super(
+      serialized.name,
+      serialized.payload,
+      new Date(serialized.occurredAt),
+      serialized.eventId,
+      serialized.metadata,
+    );
   }
 }

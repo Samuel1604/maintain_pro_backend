@@ -103,10 +103,7 @@ export class StripeProvider implements PaymentProviderGateway {
     }
   }
 
-  parseWebhookEvent(
-    rawBody: Buffer,
-    signatureHeader: string | undefined,
-  ): PaymentWebhookEvent {
+  parseWebhookEvent(rawBody: Buffer, signatureHeader: string | undefined): PaymentWebhookEvent {
     if (!signatureHeader) {
       throw new PaymentProviderError("Missing Stripe-Signature header.");
     }

@@ -31,7 +31,8 @@ export class ConsoleLogger implements Logger {
   }
 }
 
-const SENSITIVE_KEY = /(password|passcode|token|secret|cookie|authorization|api[-_]?key|cvv|card(number)?)/i;
+const SENSITIVE_KEY =
+  /(password|passcode|token|secret|cookie|authorization|api[-_]?key|cvv|card(number)?)/i;
 
 function redact(value: object): unknown {
   if (Array.isArray(value)) return value.map((item) => redactValue(item));

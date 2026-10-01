@@ -40,10 +40,7 @@ const organizationInviteRoles: UserRole[] = [
   ROLES.STAFF,
 ];
 
-const vendorInviteRoles: UserRole[] = [
-  ROLES.VENDOR_MANAGER,
-  ROLES.VENDOR_TECHNICIAN,
-];
+const vendorInviteRoles: UserRole[] = [ROLES.VENDOR_MANAGER, ROLES.VENDOR_TECHNICIAN];
 
 export class InvitationService {
   constructor(
@@ -74,10 +71,7 @@ export class InvitationService {
       throw new AuthorizationException("Forbidden");
     }
 
-    if (
-      actor.vendorId &&
-      invitation.vendorId?.toString() !== actor.vendorId.toString()
-    ) {
+    if (actor.vendorId && invitation.vendorId?.toString() !== actor.vendorId.toString()) {
       throw new AuthorizationException("Forbidden");
     }
   }
@@ -102,19 +96,12 @@ export class InvitationService {
     const pending = await this.repository.findPendingByEmail(dto.email);
 
     if (pending) {
-      throw new ConflictException(
-        "A pending invitation already exists for this email",
-      );
+      throw new ConflictException("A pending invitation already exists for this email");
     }
 
-    if (
-      actor.role === ROLES.ADMIN &&
-      organizationInviteRoles.includes(dto.role as UserRole)
-    ) {
+    if (actor.role === ROLES.ADMIN && organizationInviteRoles.includes(dto.role as UserRole)) {
       if (!inviter.organizationId) {
-        throw new AuthorizationException(
-          "Admin is not attached to an organization",
-        );
+        throw new AuthorizationException("Admin is not attached to an organization");
       }
 
       invitation = await this.repository.create({
@@ -136,9 +123,7 @@ export class InvitationService {
       vendorInviteRoles.includes(dto.role as UserRole)
     ) {
       if (!inviter.vendorId) {
-        throw new AuthorizationException(
-          "Vendor lead is not attached to a vendor",
-        );
+        throw new AuthorizationException("Vendor lead is not attached to a vendor");
       }
 
       invitation = await this.repository.create({
@@ -155,20 +140,12 @@ export class InvitationService {
         status: InvitationStatus.PENDING,
       });
     } else {
-      throw new AuthorizationException(
-        "This role cannot invite the requested user",
-      );
+      throw new AuthorizationException("This role cannot invite the requested user");
     }
     // Generates temporary password for immediate on-screen account creation
-    const temporaryPassword = crypto
-      .randomBytes(8)
-      .toString("base64url")
-      .slice(0, 12);
+    const temporaryPassword = crypto.randomBytes(8).toString("base64url").slice(0, 12);
     if (this.userService) {
-      await this.userService.createTempInvitedUser(
-        invitation,
-        temporaryPassword,
-      );
+      await this.userService.createTempInvitedUser(invitation, temporaryPassword);
     }
 
     let emailSent = false;
@@ -198,10 +175,7 @@ export class InvitationService {
       }),
     );
 
-    const baseUrl =
-      process.env.FRONTEND_URL ||
-      process.env.CLIENT_URL ||
-      "http://localhost:3000";
+    const baseUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || "http://localhost:3000";
     const invitationUrl = `${baseUrl}/accept-invitation?token=${token}`;
 
     return {
@@ -247,9 +221,7 @@ export class InvitationService {
     // 1. Guard: only admin (org) or vendor_lead (vendor) can send temp invites
     const allowedActorRoles: UserRole[] = [ROLES.ADMIN, ROLES.VENDOR_LEAD];
     if (!allowedActorRoles.includes(actor.role as UserRole)) {
-      throw new AuthorizationException(
-        "Only admins or vendor leads can send invitations.",
-      );
+      throw new AuthorizationException("Only admins or vendor leads can send invitations.");
     }
 
     const inviter = await this.userReader.getRequiredUser(actor.userId);
@@ -259,10 +231,7 @@ export class InvitationService {
     if (existingUser) throw new ConflictException("User already exists");
 
     const pending = await this.repository.findPendingByEmail(dto.email);
-    if (pending)
-      throw new ConflictException(
-        "A pending invitation already exists for this email",
-      );
+    if (pending) throw new ConflictException("A pending invitation already exists for this email");
 
     // 3. Determine membership scope and allowed roles (mirrors create() logic)
     const organizationInviteRoles: string[] = [
@@ -271,24 +240,16 @@ export class InvitationService {
       ROLES.FINANCE,
       ROLES.STAFF,
     ];
-    const vendorInviteRoles: string[] = [
-      ROLES.VENDOR_MANAGER,
-      ROLES.VENDOR_TECHNICIAN,
-    ];
+    const vendorInviteRoles: string[] = [ROLES.VENDOR_MANAGER, ROLES.VENDOR_TECHNICIAN];
 
     let invitation: IInvitation;
     const token = crypto.randomBytes(32).toString("hex");
     const tokenHash = hashToken(token);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
 
-    if (
-      actor.role === ROLES.ADMIN &&
-      organizationInviteRoles.includes(dto.role)
-    ) {
+    if (actor.role === ROLES.ADMIN && organizationInviteRoles.includes(dto.role)) {
       if (!inviter.organizationId)
-        throw new AuthorizationException(
-          "Admin is not attached to an organization",
-        );
+        throw new AuthorizationException("Admin is not attached to an organization");
       invitation = await this.repository.create({
         email: dto.email,
         firstName: dto.firstName,
@@ -307,9 +268,7 @@ export class InvitationService {
       vendorInviteRoles.includes(dto.role as UserRole)
     ) {
       if (!inviter.vendorId)
-        throw new AuthorizationException(
-          "Vendor lead is not attached to a vendor",
-        );
+        throw new AuthorizationException("Vendor lead is not attached to a vendor");
       invitation = await this.repository.create({
         email: dto.email,
         firstName: dto.firstName,
@@ -323,22 +282,15 @@ export class InvitationService {
         status: InvitationStatus.PENDING,
       });
     } else {
-      throw new AuthorizationException(
-        "This role cannot invite the requested user type.",
-      );
+      throw new AuthorizationException("This role cannot invite the requested user type.");
     }
 
     // 4. Generate secure temporary password
-    const temporaryPassword = crypto
-      .randomBytes(8)
-      .toString("base64url")
-      .slice(0, 12);
+    const temporaryPassword = crypto.randomBytes(8).toString("base64url").slice(0, 12);
 
     // 5. Create temp user via UserService (through injected interface — no model access)
     if (!this.userService) {
-      throw new BusinessException(
-        "UserService not available for temp invitation flow.",
-      );
+      throw new BusinessException("UserService not available for temp invitation flow.");
     }
     await this.userService.createTempInvitedUser(invitation, temporaryPassword);
 
@@ -489,21 +441,11 @@ export class InvitationService {
     const tokenHash = hashToken(token);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15-minute TTL
 
-    const updatedInvitation = await this.repository.resend(
-      invitationId,
-      tokenHash,
-      expiresAt,
-    );
+    const updatedInvitation = await this.repository.resend(invitationId, tokenHash, expiresAt);
 
-    const temporaryPassword = crypto
-      .randomBytes(8)
-      .toString("base64url")
-      .slice(0, 12);
+    const temporaryPassword = crypto.randomBytes(8).toString("base64url").slice(0, 12);
     if (this.userService) {
-      await this.userService.refreshTempInvitedUser(
-        invitation,
-        temporaryPassword,
-      );
+      await this.userService.refreshTempInvitedUser(invitation, temporaryPassword);
     }
 
     let emailSent = false;
@@ -528,10 +470,7 @@ export class InvitationService {
       },
     });
 
-    const baseUrl =
-      process.env.FRONTEND_URL ||
-      process.env.CLIENT_URL ||
-      "http://localhost:3000";
+    const baseUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || "http://localhost:3000";
     const invitationUrl = `${baseUrl}/accept-invitation?token=${token}`;
 
     return {

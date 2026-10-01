@@ -9,12 +9,7 @@ export const services: unknown = {
 
   auditLog: new AuditLogService(repositories.auditLog),
 
-  session: new SessionService(
-    repositories.session,
-    services.user,
-    AuthLogService,
-    AuditLogService,
-  ),
+  session: new SessionService(repositories.session, services.user, AuthLogService, AuditLogService),
 
   user: new UserService(),
 };

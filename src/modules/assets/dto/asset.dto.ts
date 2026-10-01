@@ -1,4 +1,10 @@
-import type { AssetStatus, AssetCriticality, AssetCategory, AssetOwnership, AssetCondition } from "../asset.types.js";
+import type {
+  AssetStatus,
+  AssetCriticality,
+  AssetCategory,
+  AssetOwnership,
+  AssetCondition,
+} from "../asset.types.js";
 
 export interface AssetResponse {
   id: string;
@@ -20,6 +26,7 @@ export interface AssetResponse {
   lastMaintenanceDate?: string;
   nextMaintenanceDate?: string;
   estimatedValue?: number;
+  currency?: string;
   notes?: string;
 
   organizationId?: string;

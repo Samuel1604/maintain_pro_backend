@@ -7,10 +7,7 @@ import { ROLES } from "@/shared/constants/roles.js";
 
 import type { AuthProvider } from "@/shared/constants/auth-providers.js";
 
-import type {
-  RegisterOrgDto,
-  RegisterVendorDto,
-} from "../identity/auth.schema.js";
+import type { RegisterOrgDto, RegisterVendorDto } from "../identity/auth.schema.js";
 
 import type { IInvitation } from "@/modules/invitations/invitation.types.js";
 import type { AcceptInvitationDto } from "../identity/dto/invitation.dto.js";
@@ -71,7 +68,10 @@ export class UserService {
     private readonly eventBus: EventBus,
   ) {}
 
-  async updateProfile(userId: string, updates: { firstName?: string; lastName?: string; phone?: string; avatar?: string }) {
+  async updateProfile(
+    userId: string,
+    updates: { firstName?: string; lastName?: string; phone?: string; avatar?: string },
+  ) {
     return this.repository.update(userId, { $set: updates });
   }
 
@@ -129,10 +129,7 @@ export class UserService {
     };
   }
 
-  private async updatePassword(
-    userId: string,
-    hashedPassword: string,
-  ): Promise<void> {
+  private async updatePassword(userId: string, hashedPassword: string): Promise<void> {
     await this.repository.update(userId, {
       password: hashedPassword,
 
@@ -238,10 +235,7 @@ export class UserService {
     return user;
   }
 
-  async createInvitedUser(
-    invitation: IInvitation,
-    dto: AcceptInvitationDto,
-  ): Promise<IUser> {
+  async createInvitedUser(invitation: IInvitation, dto: AcceptInvitationDto): Promise<IUser> {
     const passwordHash = await hashPassword(dto.password);
 
     const user = await this.repository.create({
@@ -269,10 +263,7 @@ export class UserService {
    * Used by the temp-invitation flow (admin/vendor lead sends invite with no
    * password input from inviter — credentials shown once in portal UI).
    */
-  async createTempInvitedUser(
-    invitation: IInvitation,
-    tempPassword: string,
-  ): Promise<IUser> {
+  async createTempInvitedUser(invitation: IInvitation, tempPassword: string): Promise<IUser> {
     const passwordHash = await hashPassword(tempPassword);
     const TEMP_TTL_MS = 15 * 60 * 1000;
 
@@ -306,10 +297,7 @@ export class UserService {
    * If no temp user exists yet (e.g. first resend after session restart),
    * creates one via createTempInvitedUser.
    */
-  async refreshTempInvitedUser(
-    invitation: IInvitation,
-    tempPassword: string,
-  ): Promise<IUser> {
+  async refreshTempInvitedUser(invitation: IInvitation, tempPassword: string): Promise<IUser> {
     const TEMP_TTL_MS = 15 * 60 * 1000;
     const existing = await this.repository.findOne({
       email: invitation.email.toLowerCase(),
@@ -342,9 +330,7 @@ export class UserService {
 
     provider: AuthProvider,
   ): Promise<IUser> {
-    const user = await this.repository.create(
-      this.buildOAuthUserData(profile, provider),
-    );
+    const user = await this.repository.create(this.buildOAuthUserData(profile, provider));
 
     await this.publishUserRegistered(user);
 
@@ -431,7 +417,12 @@ export class UserService {
 
     const updates: Record<string, string> = {};
 
-    const linkedProviderId = provider === "google" ? user.googleId : provider === "linkedin" ? user.linkedinId : user.appleId;
+    const linkedProviderId =
+      provider === "google"
+        ? user.googleId
+        : provider === "linkedin"
+          ? user.linkedinId
+          : user.appleId;
     if (linkedProviderId && linkedProviderId !== providerId) return null;
     if (provider === "google" && !user.googleId) updates.googleId = providerId;
     if (provider === "linkedin" && !user.linkedinId) updates.linkedinId = providerId;
@@ -519,10 +510,7 @@ export class UserService {
       throw new BusinessException("Password login unavailable");
     }
 
-    const currentMatches = await comparePassword(
-      currentPassword,
-      user.password,
-    );
+    const currentMatches = await comparePassword(currentPassword, user.password);
 
     if (!currentMatches) {
       throw new ValidationException("Current password is incorrect");
@@ -584,11 +572,7 @@ export class UserService {
   }
 
   async requestResetPassword(email: string, ipAddress: string) {
-    const rateLimit = await this.rateLimitService.hit(
-      `forgot-password:${ipAddress}`,
-      5,
-      60 * 15,
-    );
+    const rateLimit = await this.rateLimitService.hit(`forgot-password:${ipAddress}`, 5, 60 * 15);
 
     const emailLimit = await this.rateLimitService.hit(
       `forgot-password-email:${email}`,
@@ -597,9 +581,7 @@ export class UserService {
     );
 
     if (!rateLimit.allowed) {
-      throw new BusinessException(
-        `Too many requests. Try again in ${rateLimit.ttl} seconds.`,
-      );
+      throw new BusinessException(`Too many requests. Try again in ${rateLimit.ttl} seconds.`);
     }
 
     if (!emailLimit.allowed) {
@@ -662,9 +644,7 @@ export class UserService {
     );
 
     if (!rateLimit.allowed) {
-      throw new BusinessException(
-        `Too many requests. Try again in ${rateLimit.ttl} seconds.`,
-      );
+      throw new BusinessException(`Too many requests. Try again in ${rateLimit.ttl} seconds.`);
     }
 
     if (!emailLimit.allowed) {

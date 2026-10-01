@@ -14,7 +14,12 @@ export interface IVendorApplication extends Document {
 
 const vendorApplicationSchema = new Schema<IVendorApplication>(
   {
-    organizationId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+    organizationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+      index: true,
+    },
     workOrderId: {
       type: Schema.Types.ObjectId,
       ref: "WorkOrder",
@@ -42,10 +47,7 @@ const vendorApplicationSchema = new Schema<IVendorApplication>(
   },
 );
 
-vendorApplicationSchema.index(
-  { workOrderId: 1, vendorId: 1 },
-  { unique: true },
-);
+vendorApplicationSchema.index({ workOrderId: 1, vendorId: 1 }, { unique: true });
 
 export const VendorApplication = model<IVendorApplication>(
   "VendorApplication",

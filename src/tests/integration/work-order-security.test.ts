@@ -17,15 +17,22 @@ import { UserFactory } from "@/tests/factories/user.factory.js";
 import { AppContainer } from "@/container/app.container.js";
 import { ROLES } from "@/shared/constants/roles.js";
 
-function accessCookie(token: string) { return [`accessToken=${token}`]; }
+function accessCookie(token: string) {
+  return [`accessToken=${token}`];
+}
 
 async function csrfAgent(app: Awaited<ReturnType<typeof createTestApp>>, token: string) {
   const health = await request(app).get("/api/v1/health");
   const raw = health.headers["set-cookie"];
   const cookies = raw ? (Array.isArray(raw) ? raw : [raw]) : [];
-  const csrf = cookies.find((v: string) => v.startsWith("csrfToken="))?.match(/csrfToken=([^;]+)/)?.[1];
+  const csrf = cookies
+    .find((v: string) => v.startsWith("csrfToken="))
+    ?.match(/csrfToken=([^;]+)/)?.[1];
   if (!csrf) throw new Error("CSRF cookie not issued");
-  return request.agent(app).set("Cookie", [...accessCookie(token), `csrfToken=${csrf}`]).set("X-CSRF-Token", csrf);
+  return request
+    .agent(app)
+    .set("Cookie", [...accessCookie(token), `csrfToken=${csrf}`])
+    .set("X-CSRF-Token", csrf);
 }
 
 describe("Work Order Vendor Scoping", () => {
@@ -38,7 +45,16 @@ describe("Work Order Vendor Scoping", () => {
     const vendorLead = await loginAsVendorLead({ vendorId: vendor._id });
 
     // Create a work order and assign it to the vendor
-    const facility = await adminClient.post("/api/v1/facilities").send({ name: "Test Facility", address: { street: "1 St", city: "Lagos", state: "LA", postalCode: "100001", country: "NG" } });
+    const facility = await adminClient.post("/api/v1/facilities").send({
+      name: "Test Facility",
+      address: {
+        street: "1 St",
+        city: "Lagos",
+        state: "LA",
+        postalCode: "100001",
+        country: "NG",
+      },
+    });
     const workOrder = await WorkOrder.create({
       organizationId: admin.user.organizationId!,
       facilityId: facility.body.data?.id ?? new Types.ObjectId(),
@@ -99,7 +115,10 @@ describe("Work Order Vendor Scoping", () => {
     });
 
     const container = new AppContainer();
-    const techLogin = await container.authService.login({ email: techUser.email, password: rawPassword }, { ipAddress: "127.0.0.1", userAgent: "Vitest" });
+    const techLogin = await container.authService.login(
+      { email: techUser.email, password: rawPassword },
+      { ipAddress: "127.0.0.1", userAgent: "Vitest" },
+    );
     const techToken = techLogin.data!.accessToken;
 
     const workOrder = await WorkOrder.create({
@@ -127,7 +146,10 @@ describe("Work Order Vendor Scoping", () => {
       vendorId: vendor._id,
       isVerified: true,
     });
-    const otherLogin = await container.authService.login({ email: otherTech.email, password: otherPwd }, { ipAddress: "127.0.0.1", userAgent: "Vitest" });
+    const otherLogin = await container.authService.login(
+      { email: otherTech.email, password: otherPwd },
+      { ipAddress: "127.0.0.1", userAgent: "Vitest" },
+    );
     const otherClient = await csrfAgent(app, otherLogin.data!.accessToken);
     const notMyWO = await otherClient.get(`/api/v1/work-orders/${workOrder._id}`);
     expect(notMyWO.status).toBe(404);

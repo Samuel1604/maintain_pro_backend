@@ -2,9 +2,7 @@ import { z } from "zod";
 
 import { InvitationStatus } from "@/modules/invitations/invitation.types.js";
 
-export const invitationStatusSchema = z.enum(
-  Object.values(InvitationStatus),
-);
+export const invitationStatusSchema = z.enum(Object.values(InvitationStatus));
 
 export const invitationTokenSchema = z
   .string()

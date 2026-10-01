@@ -1,6 +1,10 @@
 import crypto from "node:crypto";
 import { InvitationRepository } from "@/modules/invitations/invitation.repository.js";
-import { InvitationStatus, InvitationType, type IInvitation } from "@/modules/invitations/invitation.types.js";
+import {
+  InvitationStatus,
+  InvitationType,
+  type IInvitation,
+} from "@/modules/invitations/invitation.types.js";
 import { ROLES, type UserRole } from "@/shared/constants/roles.js";
 import { hashToken } from "@/shared/utils/token-hash.js";
 import { toObjectId } from "@/shared/validators/index.js";
@@ -18,7 +22,9 @@ export interface CreateInvitationOptions {
 export class InvitationFactory {
   private static repository = new InvitationRepository();
 
-  public static async create(options: CreateInvitationOptions = {}): Promise<{ invitation: IInvitation; rawToken: string }> {
+  public static async create(
+    options: CreateInvitationOptions = {},
+  ): Promise<{ invitation: IInvitation; rawToken: string }> {
     const randomSuffix = Math.floor(Math.random() * 10000);
     const rawToken = crypto.randomBytes(32).toString("hex");
     const tokenHash = hashToken(rawToken);

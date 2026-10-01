@@ -1,10 +1,5 @@
 import { Schema, model, type Document, type Types } from "mongoose";
-export type VendorRelationshipStatus =
-  | "pending"
-  | "active"
-  | "suspended"
-  | "inactive"
-  | "removed";
+export type VendorRelationshipStatus = "pending" | "active" | "suspended" | "inactive" | "removed";
 export interface IVendorOrganization extends Document {
   organizationId: Types.ObjectId;
   vendorId: Types.ObjectId;

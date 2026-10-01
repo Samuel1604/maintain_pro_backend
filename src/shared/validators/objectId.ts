@@ -19,16 +19,13 @@ export const isSameObjectId = (
   return left.toString() === right.toString();
 };
 
-export const isValidObjectId = (id: string): boolean =>
-  Types.ObjectId.isValid(id);
+export const isValidObjectId = (id: string): boolean => Types.ObjectId.isValid(id);
 
 export const objectIdSchema = z.string().trim().refine(Types.ObjectId.isValid, {
   message: "Invalid ObjectId",
 });
 
-export const toObjectIdString = (
-  id?: Types.ObjectId | string | null,
-): string | undefined => {
+export const toObjectIdString = (id?: Types.ObjectId | string | null): string | undefined => {
   if (!id) return undefined;
 
   return id.toString();

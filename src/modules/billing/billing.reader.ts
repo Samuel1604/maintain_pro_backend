@@ -19,9 +19,7 @@ export class BillingReader {
     return billingMapper.toSubscriptionResponse(doc);
   }
 
-  async findSubscription(
-    subscriptionId: string,
-  ): Promise<SubscriptionResponse | null> {
+  async findSubscription(subscriptionId: string): Promise<SubscriptionResponse | null> {
     const doc = await this.repository.findById(subscriptionId);
     if (!doc) return null;
     return billingMapper.toSubscriptionResponse(doc);

@@ -90,10 +90,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/billing", billingRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/organizations", organizationRoutes);
-app.use(
-  "/api/v1/organizations/me/marketplace/geographic-policies",
-  geographicPolicyRoutes,
-);
+app.use("/api/v1/organizations/me/marketplace/geographic-policies", geographicPolicyRoutes);
 app.use("/api/v1/facilities", facilityRoutes);
 app.use("/api/v1/locations", locationRoutes);
 app.use("/api/v1/uploads", uploadRoutes);

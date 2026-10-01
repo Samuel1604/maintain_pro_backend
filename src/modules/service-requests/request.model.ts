@@ -96,7 +96,9 @@ const serviceRequestSchema = new Schema<IServiceRequest>(
       ref: "WorkOrder",
       index: true,
     },
-    rating: { type: Number, min: 1, max: 5 }, feedback: { type: String, maxlength: 2000 }, ratedAt: Date,
+    rating: { type: Number, min: 1, max: 5 },
+    feedback: { type: String, maxlength: 2000 },
+    ratedAt: Date,
     attachmentUploadIds: [{ type: Schema.Types.ObjectId, ref: "Upload" }],
   },
   {
@@ -106,7 +108,4 @@ const serviceRequestSchema = new Schema<IServiceRequest>(
 
 serviceRequestSchema.index({ organizationId: 1, createdAt: -1, status: 1 });
 
-export const ServiceRequest = model<IServiceRequest>(
-  "ServiceRequest",
-  serviceRequestSchema,
-);
+export const ServiceRequest = model<IServiceRequest>("ServiceRequest", serviceRequestSchema);

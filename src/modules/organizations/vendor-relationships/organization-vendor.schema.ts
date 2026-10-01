@@ -4,13 +4,9 @@ export const vendorListSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().trim().optional(),
-  status: z
-    .enum(["pending", "active", "suspended", "inactive", "removed"])
-    .optional(),
+  status: z.enum(["pending", "active", "suspended", "inactive", "removed"]).optional(),
   serviceCategory: z.string().trim().optional(),
-  sort: z
-    .enum(["createdAt", "-createdAt", "name", "-name"])
-    .default("-createdAt"),
+  sort: z.enum(["createdAt", "-createdAt", "name", "-name"]).default("-createdAt"),
 });
 export const vendorStatusSchema = z.object({
   status: z.enum(["pending", "active", "suspended", "inactive", "removed"]),

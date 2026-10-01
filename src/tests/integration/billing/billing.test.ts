@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import { createTestApp } from "@/tests/helpers/app.js";
-import { loginAsOrganizationAdmin, loginAsVendorLead, createAuthenticatedUser } from "@/tests/helpers/auth.js";
+import {
+  loginAsOrganizationAdmin,
+  loginAsVendorLead,
+  createAuthenticatedUser,
+} from "@/tests/helpers/auth.js";
 import { ROLES } from "@/shared/constants/roles.js";
 import { MockPaymentProvider } from "@/modules/billing/providers/mock.provider.js";
 
@@ -174,9 +178,7 @@ describe("checkout → webhook activation", () => {
 
     const providerCheckoutId = `mock_checkout_${checkout.body.data.paymentId}`;
     const mockProvider = new MockPaymentProvider();
-    const payload = Buffer.from(
-      JSON.stringify({ providerCheckoutId, outcome: "succeeded" }),
-    );
+    const payload = Buffer.from(JSON.stringify({ providerCheckoutId, outcome: "succeeded" }));
     const signature = mockProvider.sign(payload);
 
     const webhook = await request(app)
@@ -350,17 +352,21 @@ describe("idempotency", () => {
       .send({ provider: "mock" });
 
     const provider = new MockPaymentProvider();
-    const payload = Buffer.from(JSON.stringify({
-      providerCheckoutId: `mock_checkout_${checkout.body.data.paymentId}`,
-      outcome: "succeeded",
-    }));
+    const payload = Buffer.from(
+      JSON.stringify({
+        providerCheckoutId: `mock_checkout_${checkout.body.data.paymentId}`,
+        outcome: "succeeded",
+      }),
+    );
     const signature = provider.sign(payload);
     const deliveries = await Promise.all(
-      Array.from({ length: 5 }, () => request(app)
-        .post("/api/v1/billing/webhooks/mock")
-        .set("x-mock-signature", signature)
-        .set("Content-Type", "application/json")
-        .send(payload)),
+      Array.from({ length: 5 }, () =>
+        request(app)
+          .post("/api/v1/billing/webhooks/mock")
+          .set("x-mock-signature", signature)
+          .set("Content-Type", "application/json")
+          .send(payload),
+      ),
     );
 
     expect(deliveries.every((delivery) => delivery.status === 200)).toBe(true);

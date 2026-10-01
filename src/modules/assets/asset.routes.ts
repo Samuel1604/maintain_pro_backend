@@ -7,7 +7,10 @@ import { createAsset, updateAsset } from "./asset.schema.js";
 import { ROLES } from "@/shared/constants/roles.js";
 import multer from "multer";
 
-const importUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const importUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 const router = Router();
 const controller = new AssetController();
@@ -17,11 +20,32 @@ const controller = new AssetController();
  */
 router.use(authMiddleware);
 
-router.post("/import", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER), importUpload.single("file"), controller.import);
-router.get("/:assetTag/qr", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF), controller.qr);
-router.get("/:assetTag/qr.png", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF), controller.qrImage);
-router.get("/:assetTag/pdf", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF), controller.pdf);
-router.get("/:assetTag/history", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF), controller.history);
+router.post(
+  "/import",
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER),
+  importUpload.single("file"),
+  controller.import,
+);
+router.get(
+  "/:assetTag/qr",
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF),
+  controller.qr,
+);
+router.get(
+  "/:assetTag/qr.png",
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF),
+  controller.qrImage,
+);
+router.get(
+  "/:assetTag/pdf",
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF),
+  controller.pdf,
+);
+router.get(
+  "/:assetTag/history",
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF),
+  controller.history,
+);
 
 /**
  * Create Asset
@@ -38,13 +62,7 @@ router.post(
  */
 router.get(
   "/",
-  authorize(
-    ROLES.ADMIN,
-    ROLES.FACILITY_MANAGER,
-    ROLES.TECHNICIAN,
-    ROLES.FINANCE,
-    ROLES.STAFF,
-  ),
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF),
   controller.list,
 );
 
@@ -66,10 +84,6 @@ router.patch(
 /**
  * Delete asset
  */
-router.delete(
-  "/:assetTag",
-  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER),
-  controller.delete,
-);
+router.delete("/:assetTag", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER), controller.delete);
 
 export default router;

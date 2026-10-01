@@ -17,11 +17,7 @@ describe("subscription ownership reads", () => {
     await expect(service.findSubscription("subscription-1", actor)).rejects.toThrow(
       "Subscription not found.",
     );
-    expect(findByIdForOwner).toHaveBeenCalledWith(
-      "subscription-1",
-      "org-1",
-      "organization",
-    );
+    expect(findByIdForOwner).toHaveBeenCalledWith("subscription-1", "org-1", "organization");
   });
 
   it("uses the vendor owner boundary for vendor actors", async () => {
@@ -37,11 +33,7 @@ describe("subscription ownership reads", () => {
     await expect(service.findSubscription("subscription-1", actor)).rejects.toThrow(
       "Subscription not found.",
     );
-    expect(findByIdForOwner).toHaveBeenCalledWith(
-      "subscription-1",
-      "vendor-1",
-      "vendor",
-    );
+    expect(findByIdForOwner).toHaveBeenCalledWith("subscription-1", "vendor-1", "vendor");
   });
 
   it("rejects mutation ownership checks for a different organization", async () => {

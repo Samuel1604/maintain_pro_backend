@@ -1,10 +1,7 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import { createTestApp } from "@/tests/helpers/app.js";
-import {
-  loginAsOrganizationAdmin,
-  createAuthenticatedUser,
-} from "@/tests/helpers/auth.js";
+import { loginAsOrganizationAdmin, createAuthenticatedUser } from "@/tests/helpers/auth.js";
 import { UserFactory } from "@/tests/factories/user.factory.js";
 import { OrganizationFactory } from "@/tests/factories/organization.factory.js";
 import { ROLES } from "@/shared/constants/roles.js";
@@ -55,7 +52,6 @@ describe("GET /api/v1/organizations/me", () => {
     const res = await request(app)
       .get("/api/v1/organizations/me")
       .set("Cookie", [`accessToken=${accessToken}`]);
-
 
     // There is no route parameter to smuggle another org's id through —
     // the endpoint only ever resolves the organization from the caller's

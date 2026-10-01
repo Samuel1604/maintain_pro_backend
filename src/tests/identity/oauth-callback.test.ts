@@ -10,10 +10,7 @@ describe("OAuth callback validation", () => {
 
   it("rejects a callback with the wrong browser nonce before provider exchange", async () => {
     const verify = vi.fn();
-    const controller = new OAuthController(
-      { verify } as never,
-      {} as never,
-    );
+    const controller = new OAuthController({ verify } as never, {} as never);
     const state = createOAuthState({ nonce: "expected-nonce", action: "login" });
     const next = vi.fn();
 

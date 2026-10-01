@@ -30,7 +30,11 @@ export class HealthService {
   }
 
   private async redisHealth(): Promise<DependencyHealth> {
-    if (["true", "1", "yes"].includes(process.env.REDIS_DISABLE_CONNECTION?.trim().toLowerCase() ?? "")) {
+    if (
+      ["true", "1", "yes"].includes(
+        process.env.REDIS_DISABLE_CONNECTION?.trim().toLowerCase() ?? "",
+      )
+    ) {
       return { status: "disabled" };
     }
     const started = Date.now();

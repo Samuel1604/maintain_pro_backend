@@ -88,10 +88,7 @@ export class FlutterwaveProvider implements PaymentProviderGateway {
     }
   }
 
-  parseWebhookEvent(
-    rawBody: Buffer,
-    signatureHeader: string | undefined,
-  ): PaymentWebhookEvent {
+  parseWebhookEvent(rawBody: Buffer, signatureHeader: string | undefined): PaymentWebhookEvent {
     // Flutterwave's webhook check is a plain shared-secret header
     // comparison (verif-hash) rather than an HMAC over the body.
     if (!signatureHeader || signatureHeader !== this.webhookSecretHash) {

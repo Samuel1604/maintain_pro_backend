@@ -16,7 +16,6 @@ import {
   getOrganizationVendorPerformance,
 } from "./organization-vendor.controller.js";
 
-
 const router = Router();
 router.use(authMiddleware);
 
@@ -24,8 +23,12 @@ const internal = [ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.FINANCE];
 
 router.get("/", authorize(...internal), listOrganizationVendors);
 router.get("/marketplace", authorize(...internal), discoverMarketplaceVendors);
-router.patch("/relationships/:organizationId", authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER), requireVerifiedEmail, respondToVendorRelationship);
-
+router.patch(
+  "/relationships/:organizationId",
+  authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER),
+  requireVerifiedEmail,
+  respondToVendorRelationship,
+);
 
 router.post(
   "/:vendorId/request",
@@ -41,11 +44,7 @@ router.patch(
   requireVerifiedEmail,
   changeOrganizationVendorStatus,
 );
-router.get(
-  "/facilities/:facilityId",
-  authorize(...internal),
-  listFacilityVendors,
-);
+router.get("/facilities/:facilityId", authorize(...internal), listFacilityVendors);
 router.post(
   "/facilities/:facilityId/vendors/:vendorId",
   authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER),

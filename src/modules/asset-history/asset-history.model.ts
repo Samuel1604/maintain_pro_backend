@@ -1,8 +1,5 @@
 import { Schema, model, type Document, type Types } from "mongoose";
-import {
-  ASSET_HISTORY_EVENTS,
-  type AssetHistoryEvent,
-} from "./asset-history.types.js";
+import { ASSET_HISTORY_EVENTS, type AssetHistoryEvent } from "./asset-history.types.js";
 export interface IAssetHistoryEntry extends Document {
   organizationId: Types.ObjectId;
   assetId: Types.ObjectId;
@@ -46,7 +43,4 @@ const schema = new Schema<IAssetHistoryEntry>(
   { timestamps: true },
 );
 schema.index({ organizationId: 1, assetId: 1, occurredAt: -1 });
-export const AssetHistoryEntry = model<IAssetHistoryEntry>(
-  "AssetHistoryEntry",
-  schema,
-);
+export const AssetHistoryEntry = model<IAssetHistoryEntry>("AssetHistoryEntry", schema);

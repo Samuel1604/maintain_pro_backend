@@ -39,7 +39,8 @@ export class UserRepository {
     provider: Exclude<AuthProvider, "local">,
     providerId: string,
   ): Promise<IUser | null> {
-    const field = provider === "google" ? "googleId" : provider === "linkedin" ? "linkedinId" : "appleId";
+    const field =
+      provider === "google" ? "googleId" : provider === "linkedin" ? "linkedinId" : "appleId";
     return User.findOne({ [field]: providerId });
   }
 
@@ -89,7 +90,6 @@ export class UserRepository {
   //     },
   //   );
   // }
-
 
   // async unlockAccount(userId: string): Promise<void> {
   //   await User.findByIdAndUpdate(
@@ -168,10 +168,7 @@ export class UserRepository {
     }).limit(1000);
   }
 
-  async findByOrganizationAndRole(
-    organizationId: string,
-    role: IUser["role"],
-  ): Promise<IUser[]> {
+  async findByOrganizationAndRole(organizationId: string, role: IUser["role"]): Promise<IUser[]> {
     return User.find({
       organizationId,
       role,

@@ -64,7 +64,11 @@ function configuredConcurrency(name: QueueName, fallback: number): number {
   return Math.min(100, Math.floor(value));
 }
 
-function createQueueConfig(name: QueueName, concurrency: number, limiter?: { max: number; duration: number }): QueueRuntimeConfig {
+function createQueueConfig(
+  name: QueueName,
+  concurrency: number,
+  limiter?: { max: number; duration: number },
+): QueueRuntimeConfig {
   return {
     name,
     concurrency: configuredConcurrency(name, concurrency),

@@ -35,11 +35,7 @@ const CSRF_EXEMPT_PATHS = new Set([
  * (safe or not) so that by the time the client needs to make its first
  * mutating call, the cookie is already in place.
  */
-export function ensureCsrfCookie(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export function ensureCsrfCookie(req: Request, res: Response, next: NextFunction) {
   if (!req.cookies?.[CSRF_COOKIE_NAME]) {
     res.cookie(CSRF_COOKIE_NAME, generateCsrfToken(), csrfCookieOptions);
   }
@@ -53,11 +49,7 @@ export function ensureCsrfCookie(
  * can force the browser to send the cookie automatically but has no
  * way to read it, so it can't reproduce a matching header value.
  */
-export function csrfProtection(
-  req: Request,
-  _res: Response,
-  next: NextFunction,
-) {
+export function csrfProtection(req: Request, _res: Response, next: NextFunction) {
   const isPaymentWebhook = req.path.startsWith("/api/v1/billing/webhooks/");
   if (SAFE_METHODS.has(req.method) || CSRF_EXEMPT_PATHS.has(req.path) || isPaymentWebhook) {
     return next();

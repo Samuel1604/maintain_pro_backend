@@ -26,13 +26,7 @@ router.post(
 
 router.get(
   "/",
-  authorize(
-    ROLES.ADMIN,
-    ROLES.FACILITY_MANAGER,
-    ROLES.TECHNICIAN,
-    ROLES.FINANCE,
-    ROLES.STAFF,
-  ),
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF),
   listFacilities,
 );
 
@@ -44,17 +38,15 @@ router.get(
 
 router.get(
   "/:facilityId",
-  authorize(
-    ROLES.ADMIN,
-    ROLES.FACILITY_MANAGER,
-    ROLES.TECHNICIAN,
-    ROLES.FINANCE,
-    ROLES.STAFF,
-  ),
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF),
   getFacility,
 );
 
-router.get("/:facilityId/relationships", authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF), getFacilityRelationships);
+router.get(
+  "/:facilityId/relationships",
+  authorize(ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.TECHNICIAN, ROLES.FINANCE, ROLES.STAFF),
+  getFacilityRelationships,
+);
 
 router.patch(
   "/:facilityId",

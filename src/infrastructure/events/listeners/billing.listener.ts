@@ -27,37 +27,67 @@ export class BillingListener implements EventHandler<DomainEvent> {
       switch (event.name) {
         case BillingEvents.SUBSCRIPTION_CREATED: {
           const payload = event.payload as SubscriptionCreatedPayload;
-          await this.notifyOwner(payload.ownerType, payload.ownerId, `Subscription created`, `Your ${payload.ownerType} subscription (${payload.plan}) was created.`);
+          await this.notifyOwner(
+            payload.ownerType,
+            payload.ownerId,
+            `Subscription created`,
+            `Your ${payload.ownerType} subscription (${payload.plan}) was created.`,
+          );
           break;
         }
 
         case BillingEvents.SUBSCRIPTION_ACTIVATED: {
           const payload = event.payload as SubscriptionActivatedPayload;
-          await this.notifyOwner(payload.ownerType, payload.ownerId, `Subscription activated`, `Your subscription (${payload.plan}) is now active and starts at ${payload.startsAt}.`);
+          await this.notifyOwner(
+            payload.ownerType,
+            payload.ownerId,
+            `Subscription activated`,
+            `Your subscription (${payload.plan}) is now active and starts at ${payload.startsAt}.`,
+          );
           break;
         }
 
         case BillingEvents.SUBSCRIPTION_UPGRADED: {
           const payload = event.payload as SubscriptionUpgradedPayload;
-          await this.notifyOwner(payload.ownerType, payload.ownerId, `Subscription upgraded`, `Your subscription was upgraded from ${payload.fromPlan} to ${payload.toPlan}.`);
+          await this.notifyOwner(
+            payload.ownerType,
+            payload.ownerId,
+            `Subscription upgraded`,
+            `Your subscription was upgraded from ${payload.fromPlan} to ${payload.toPlan}.`,
+          );
           break;
         }
 
         case BillingEvents.SUBSCRIPTION_DOWNGRADED: {
           const payload = event.payload as SubscriptionDowngradedPayload;
-          await this.notifyOwner(payload.ownerType, payload.ownerId, `Subscription downgraded`, `Your subscription was downgraded from ${payload.fromPlan} to ${payload.toPlan}.`);
+          await this.notifyOwner(
+            payload.ownerType,
+            payload.ownerId,
+            `Subscription downgraded`,
+            `Your subscription was downgraded from ${payload.fromPlan} to ${payload.toPlan}.`,
+          );
           break;
         }
 
         case BillingEvents.SUBSCRIPTION_CANCELLED: {
           const payload = event.payload as SubscriptionCancelledPayload;
-          await this.notifyOwner(payload.ownerType, payload.ownerId, `Subscription cancelled`, `Your subscription (${payload.plan}) was cancelled at ${payload.cancelledAt}.`);
+          await this.notifyOwner(
+            payload.ownerType,
+            payload.ownerId,
+            `Subscription cancelled`,
+            `Your subscription (${payload.plan}) was cancelled at ${payload.cancelledAt}.`,
+          );
           break;
         }
 
         case BillingEvents.SUBSCRIPTION_EXPIRED: {
           const payload = event.payload as SubscriptionExpiredPayload;
-          await this.notifyOwner(payload.ownerType, payload.ownerId, `Subscription expired`, `Your subscription (${payload.plan}) expired at ${payload.expiredAt}.`);
+          await this.notifyOwner(
+            payload.ownerType,
+            payload.ownerId,
+            `Subscription expired`,
+            `Your subscription (${payload.plan}) expired at ${payload.expiredAt}.`,
+          );
           break;
         }
 
@@ -65,7 +95,10 @@ export class BillingListener implements EventHandler<DomainEvent> {
           return;
       }
     } catch (err) {
-      this.logger.error("BillingListener failed to handle event", { name: event.name, error: String(err) });
+      this.logger.error("BillingListener failed to handle event", {
+        name: event.name,
+        error: String(err),
+      });
     }
   }
 
@@ -92,7 +125,11 @@ export class BillingListener implements EventHandler<DomainEvent> {
       });
       this.logger.info("Billing notification sent", { ownerType, ownerId, subject });
     } catch (err) {
-      this.logger.error("Failed to notify billing owner", { ownerType, ownerId, error: String(err) });
+      this.logger.error("Failed to notify billing owner", {
+        ownerType,
+        ownerId,
+        error: String(err),
+      });
     }
   }
 }

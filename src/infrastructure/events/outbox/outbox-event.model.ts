@@ -17,19 +17,28 @@ export interface OutboxEventDocument extends Document {
   leaseUntil?: Date;
 }
 
-const schema = new Schema<OutboxEventDocument>({
-  eventId: { type: String, required: true, unique: true },
-  eventType: { type: String, required: true, index: true },
-  aggregateId: Schema.Types.Mixed,
-  aggregateType: String,
-  payload: { type: Schema.Types.Mixed, required: true },
-  status: { type: String, enum: ["pending", "processing", "published", "dead_letter"], required: true, default: "pending", index: true },
-  attempts: { type: Number, required: true, default: 0 },
-  availableAt: { type: Date, required: true, default: Date.now, index: true },
-  processedAt: Date,
-  lastError: String,
-  leaseUntil: Date,
-}, { timestamps: { createdAt: true, updatedAt: false } });
+const schema = new Schema<OutboxEventDocument>(
+  {
+    eventId: { type: String, required: true, unique: true },
+    eventType: { type: String, required: true, index: true },
+    aggregateId: Schema.Types.Mixed,
+    aggregateType: String,
+    payload: { type: Schema.Types.Mixed, required: true },
+    status: {
+      type: String,
+      enum: ["pending", "processing", "published", "dead_letter"],
+      required: true,
+      default: "pending",
+      index: true,
+    },
+    attempts: { type: Number, required: true, default: 0 },
+    availableAt: { type: Date, required: true, default: Date.now, index: true },
+    processedAt: Date,
+    lastError: String,
+    leaseUntil: Date,
+  },
+  { timestamps: { createdAt: true, updatedAt: false } },
+);
 
 schema.index({ status: 1, availableAt: 1 });
 schema.index({ status: 1, leaseUntil: 1 });

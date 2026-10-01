@@ -1,7 +1,6 @@
 import { Schema, model } from "mongoose";
 import type { IOrganization } from "./organization.types.js";
 
-
 const organizationSchema = new Schema<IOrganization>(
   {
     name: {
@@ -62,7 +61,4 @@ const organizationSchema = new Schema<IOrganization>(
   },
 );
 
-export const Organization = model<IOrganization>(
-  "Organization",
-  organizationSchema,
-);
+export const Organization = model<IOrganization>("Organization", organizationSchema);

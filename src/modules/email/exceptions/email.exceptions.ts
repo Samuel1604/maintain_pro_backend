@@ -25,7 +25,10 @@ export class InvalidRecipient extends EmailModuleException {
 }
 
 export class ConfigurationError extends EmailModuleException {
-  constructor(message = "Email provider configuration is invalid or incomplete.", details?: unknown) {
+  constructor(
+    message = "Email provider configuration is invalid or incomplete.",
+    details?: unknown,
+  ) {
     super(message, 500, "EMAIL_CONFIG_ERROR", details);
   }
 }

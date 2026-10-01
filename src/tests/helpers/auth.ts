@@ -1,8 +1,5 @@
 import type { IUser } from "@/modules/users/user.types.js";
-import {
-  UserFactory,
-  type CreateUserOptions,
-} from "../factories/user.factory.js";
+import { UserFactory, type CreateUserOptions } from "../factories/user.factory.js";
 import { OrganizationFactory } from "../factories/organization.factory.js";
 import { AppContainer } from "@/container/app.container.js";
 import type { AuthResponse } from "@/modules/identity/auth.types.js";
@@ -70,8 +67,7 @@ export async function loginAsOrganizationAdmin(
   options: Omit<CreateUserOptions, "role" | "isVerified"> = {},
   container: AppContainer = new AppContainer(),
 ): Promise<AuthenticatedUserResult> {
-  const { user, rawPassword } =
-    await UserFactory.createVerifiedOrganizationAdmin(options);
+  const { user, rawPassword } = await UserFactory.createVerifiedOrganizationAdmin(options);
 
   const loginResult = await container.authService.login(
     {
@@ -138,9 +134,7 @@ export async function loginAsInvitedUser(
   } = {},
   container: AppContainer = new AppContainer(),
 ): Promise<AuthenticatedUserResult> {
-  const email =
-    invitationOptions.email ??
-    `invited-${Math.floor(Math.random() * 10000)}@test.com`;
+  const email = invitationOptions.email ?? `invited-${Math.floor(Math.random() * 10000)}@test.com`;
   const rawPassword = "Password123!";
 
   const inviter = await UserFactory.createVerifiedOrganizationAdmin();

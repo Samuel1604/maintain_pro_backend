@@ -70,10 +70,7 @@ describe("UserService.requestResetPassword", () => {
 
     // ipLimit allows 5 requests per 15 minutes.
     for (let i = 0; i < 5; i++) {
-      await container.userService.requestResetPassword(
-        `user-${i}@test.com`,
-        ip,
-      );
+      await container.userService.requestResetPassword(`user-${i}@test.com`, ip);
     }
 
     await expect(
@@ -88,11 +85,7 @@ describe("UserService.resetPassword", () => {
     const { user } = await UserFactory.create();
 
     await expect(
-      container.userService.resetPassword(
-        user.email,
-        "000000",
-        "NewPassword123!",
-      ),
+      container.userService.resetPassword(user.email, "000000", "NewPassword123!"),
     ).rejects.toBeInstanceOf(ValidationException);
   });
 
@@ -100,11 +93,7 @@ describe("UserService.resetPassword", () => {
     const container = new AppContainer();
 
     await expect(
-      container.userService.resetPassword(
-        "no-such-account@test.com",
-        "000000",
-        "NewPassword123!",
-      ),
+      container.userService.resetPassword("no-such-account@test.com", "000000", "NewPassword123!"),
     ).rejects.toBeInstanceOf(ValidationException);
   });
 
@@ -113,10 +102,7 @@ describe("UserService.resetPassword", () => {
     const { user, rawPassword } = await UserFactory.create();
     const publishSpy = vi.spyOn(container.eventBus, "publish");
 
-    await container.userService.requestResetPassword(
-      user.email,
-      sessionMeta.ipAddress,
-    );
+    await container.userService.requestResetPassword(user.email, sessionMeta.ipAddress);
     const resetCall = publishSpy.mock.calls.find(
       ([event]) => event instanceof PasswordResetRequestedEvent,
     );
@@ -132,21 +118,14 @@ describe("UserService.resetPassword", () => {
     // The OTP is single-use — a second reset attempt with the same code
     // must fail even with a correct email.
     await expect(
-      container.userService.resetPassword(
-        user.email,
-        otp,
-        "AnotherPassword123!",
-      ),
+      container.userService.resetPassword(user.email, otp, "AnotherPassword123!"),
     ).rejects.toBeInstanceOf(ValidationException);
 
     // The old password no longer authenticates; the account was also
     // unlocked as part of the reset (defensive, in case it had been
     // locked out prior to the reset).
     await expect(
-      container.authService.login(
-        { email: user.email, password: rawPassword },
-        sessionMeta,
-      ),
+      container.authService.login({ email: user.email, password: rawPassword }, sessionMeta),
     ).rejects.toBeInstanceOf(Error);
 
     // The new password authenticates successfully.

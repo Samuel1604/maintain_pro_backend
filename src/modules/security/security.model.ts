@@ -1,9 +1,5 @@
 import { Schema, model } from "mongoose";
-import {
-  SecurityAlertStatus,
-  SecurityAlertType,
-  type ISecurityAlert,
-} from "./security.types.js";
+import { SecurityAlertStatus, SecurityAlertType, type ISecurityAlert } from "./security.types.js";
 
 const securityAlertSchema = new Schema<ISecurityAlert>(
   {
@@ -52,7 +48,4 @@ securityAlertSchema.index({
   status: 1,
 });
 
-export const SecurityAlert = model<ISecurityAlert>(
-  "SecurityAlert",
-  securityAlertSchema,
-);
+export const SecurityAlert = model<ISecurityAlert>("SecurityAlert", securityAlertSchema);

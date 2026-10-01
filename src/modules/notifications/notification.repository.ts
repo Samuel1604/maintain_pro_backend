@@ -11,7 +11,17 @@ export class NotificationRepository {
     return Notification.findById(toObjectId(id));
   }
 
-  async findByRecipient(recipientId: string, options: { organizationId?: string; page?: number; limit?: number; unread?: boolean; type?: string; priority?: string } = {}): Promise<{ data: INotification[]; total: number }> {
+  async findByRecipient(
+    recipientId: string,
+    options: {
+      organizationId?: string;
+      page?: number;
+      limit?: number;
+      unread?: boolean;
+      type?: string;
+      priority?: string;
+    } = {},
+  ): Promise<{ data: INotification[]; total: number }> {
     const filter: Record<string, unknown> = { recipientId: toObjectId(recipientId) };
     if (options.organizationId) filter.organizationId = toObjectId(options.organizationId);
     if (options.unread !== undefined) filter.isRead = !options.unread;
@@ -20,7 +30,10 @@ export class NotificationRepository {
     const page = options.page ?? 1;
     const limit = options.limit ?? 20;
     const [data, total] = await Promise.all([
-      Notification.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit),
+      Notification.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
       Notification.countDocuments(filter),
     ]);
     return { data, total };

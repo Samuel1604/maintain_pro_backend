@@ -1,2 +1,51 @@
 import { PMPlan } from "./pm.model.js";
-export class PMRepository { create(data: Record<string, unknown>) { return PMPlan.create(data); } findById(id: string) { return PMPlan.findById(id); } findByOrganization(organizationId: string, options: { filter?: Record<string, unknown>; sort?: Record<string, 1 | -1>; skip?: number; limit?: number } = {}) { return PMPlan.find({ organizationId, ...(options.filter ?? {}) }).sort(options.sort ?? { occurrenceDate: 1 }).skip(options.skip ?? 0).limit(options.limit ?? 20); } count(organizationId: string, filter: Record<string, unknown>) { return PMPlan.countDocuments({ organizationId, ...filter }); } findByOccurrence(organizationId: string, assetId: string, occurrenceDate: Date) { return PMPlan.findOne({ organizationId, assetId, occurrenceDate }); } update(id: string, organizationId: string, data: Record<string, unknown>) { return PMPlan.findOneAndUpdate({ _id: id, organizationId }, data, { new: true }); } }
+
+export class PMRepository {
+  create(data: Record<string, unknown>) {
+    return PMPlan.create(data);
+  }
+  findDuplicate(input: {
+    organizationId: string;
+    facilityId: string;
+    locationId: string;
+    assetId: string;
+    title: string;
+    plannedDate: Date;
+  }) {
+    return PMPlan.findOne({
+      organizationId: input.organizationId,
+      facilityId: input.facilityId,
+      locationId: input.locationId,
+      assetId: input.assetId,
+      title: input.title,
+      plannedDate: input.plannedDate,
+      status: { $ne: "cancelled" },
+    });
+  }
+  findById(id: string) {
+    return PMPlan.findById(id);
+  }
+  findByOrganization(
+    organizationId: string,
+    options: {
+      filter?: Record<string, unknown>;
+      sort?: Record<string, 1 | -1>;
+      skip?: number;
+      limit?: number;
+    } = {},
+  ) {
+    return PMPlan.find({ organizationId, ...(options.filter ?? {}) })
+      .sort(options.sort ?? { occurrenceDate: 1 })
+      .skip(options.skip ?? 0)
+      .limit(options.limit ?? 20);
+  }
+  count(organizationId: string, filter: Record<string, unknown>) {
+    return PMPlan.countDocuments({ organizationId, ...filter });
+  }
+  findByOccurrence(organizationId: string, assetId: string, occurrenceDate: Date) {
+    return PMPlan.findOne({ organizationId, assetId, occurrenceDate });
+  }
+  update(id: string, organizationId: string, data: Record<string, unknown>) {
+    return PMPlan.findOneAndUpdate({ _id: id, organizationId }, data, { new: true });
+  }
+}

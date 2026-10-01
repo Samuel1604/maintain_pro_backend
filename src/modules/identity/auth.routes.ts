@@ -1,10 +1,5 @@
 import { Router } from "express";
-import {
-  authService,
-  oauthService,
-  userService,
-  sessionService,
-} from "@/container/index.js";
+import { authService, oauthService, userService, sessionService } from "@/container/index.js";
 import { authMiddleware } from "@/shared/middleware/authenticate.js";
 import {
   authLimiter,
@@ -15,13 +10,12 @@ import {
   securityMutationLimiter,
 } from "@/shared/middleware/rate-limit.js";
 import { validate } from "@/shared/middleware/validate.js";
-import {
-  loginSchema,
-  registerOrgSchema,
-  registerVendorSchema,
-} from "./auth.schema.js";
+import { loginSchema, registerOrgSchema, registerVendorSchema } from "./auth.schema.js";
 import { resendOtpSchema, verifyOtpSchema } from "./otp/otp.schema.js";
-import { verifyLinkSchema, regenerateVerificationSchema } from "./verification-link/verification-link.schema.js";
+import {
+  verifyLinkSchema,
+  regenerateVerificationSchema,
+} from "./verification-link/verification-link.schema.js";
 import {
   changeEmailSchema,
   changePasswordSchema,
@@ -66,18 +60,8 @@ router.post("/login", authLimiter, validate(loginSchema), authController.login);
 router.post("/refresh", refreshLimiter, sessionController.refresh);
 router.post("/logout", authMiddleware, securityMutationLimiter, sessionController.logout);
 router.post("/logout-all", authMiddleware, securityMutationLimiter, sessionController.logoutAll);
-router.post(
-  "/verify-otp",
-  otpVerifyLimiter,
-  validate(verifyOtpSchema),
-  authController.verifyEmail,
-);
-router.post(
-  "/resend-otp",
-  otpRateLimit,
-  validate(resendOtpSchema),
-  authController.resendOtp,
-);
+router.post("/verify-otp", otpVerifyLimiter, validate(verifyOtpSchema), authController.verifyEmail);
+router.post("/resend-otp", otpRateLimit, validate(resendOtpSchema), authController.resendOtp);
 
 // ─── Link-based Verification (default strategy) ──────────────────────────────
 router.post(

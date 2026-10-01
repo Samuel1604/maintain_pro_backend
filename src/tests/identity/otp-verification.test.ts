@@ -1,10 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { AppContainer } from "@/container/app.container.js";
 import { UserFactory } from "@/tests/factories/user.factory.js";
-import {
-  OtpRequestedEvent,
-  EmailVerifiedEvent,
-} from "@/modules/identity/events/index.js";
+import { OtpRequestedEvent, EmailVerifiedEvent } from "@/modules/identity/events/index.js";
 import { OtpPurpose } from "@/modules/identity/otp/otp.types.js";
 import { ValidationException, BusinessException } from "@/shared/errors/index.js";
 
@@ -34,9 +31,7 @@ async function registerUnverifiedOrgAdmin(container: AppContainer) {
 
   await container.authService.registerOrganization(payload, sessionMeta);
 
-  const otpCall = publishSpy.mock.calls.find(
-    ([event]) => event instanceof OtpRequestedEvent,
-  );
+  const otpCall = publishSpy.mock.calls.find(([event]) => event instanceof OtpRequestedEvent);
   const otp = (otpCall![0] as OtpRequestedEvent).payload.otp!;
 
   publishSpy.mockRestore();
@@ -68,9 +63,9 @@ describe("AuthService.verifyEmail", () => {
     const container = new AppContainer();
     const { email } = await registerUnverifiedOrgAdmin(container);
 
-    await expect(
-      container.authService.verifyEmail(email, "000000"),
-    ).rejects.toBeInstanceOf(ValidationException);
+    await expect(container.authService.verifyEmail(email, "000000")).rejects.toBeInstanceOf(
+      ValidationException,
+    );
 
     const user = await container.userReader.findByEmail(email);
     expect(user!.isVerified).toBe(false);
@@ -82,9 +77,9 @@ describe("AuthService.verifyEmail", () => {
 
     await container.authService.verifyEmail(email, otp);
 
-    await expect(
-      container.authService.verifyEmail(email, otp),
-    ).rejects.toBeInstanceOf(ValidationException);
+    await expect(container.authService.verifyEmail(email, otp)).rejects.toBeInstanceOf(
+      ValidationException,
+    );
   });
 });
 
@@ -93,9 +88,9 @@ describe("AuthService.resendVerificationOtp", () => {
     const container = new AppContainer();
     const { user } = await UserFactory.create({ isVerified: true });
 
-    await expect(
-      container.authService.resendVerificationOtp(user.email),
-    ).rejects.toBeInstanceOf(ValidationException);
+    await expect(container.authService.resendVerificationOtp(user.email)).rejects.toBeInstanceOf(
+      ValidationException,
+    );
   });
 
   /**
@@ -116,9 +111,9 @@ describe("AuthService.resendVerificationOtp", () => {
     await container.authService.resendVerificationOtp(user.email);
     await container.authService.resendVerificationOtp(user.email);
 
-    await expect(
-      container.authService.resendVerificationOtp(user.email),
-    ).rejects.toBeInstanceOf(BusinessException);
+    await expect(container.authService.resendVerificationOtp(user.email)).rejects.toBeInstanceOf(
+      BusinessException,
+    );
   });
 
   it("issues a fresh OTP that verifies successfully, invalidating verification via the old one", async () => {
@@ -128,17 +123,15 @@ describe("AuthService.resendVerificationOtp", () => {
     const publishSpy = vi.spyOn(container.eventBus, "publish");
     await container.authService.resendVerificationOtp(email);
 
-    const otpCall = publishSpy.mock.calls.find(
-      ([event]) => event instanceof OtpRequestedEvent,
-    );
+    const otpCall = publishSpy.mock.calls.find(([event]) => event instanceof OtpRequestedEvent);
     const secondOtp = (otpCall![0] as OtpRequestedEvent).payload.otp!;
 
     expect(secondOtp).not.toBe(firstOtp);
 
     // The old code is no longer valid once a new one has been issued.
-    await expect(
-      container.authService.verifyEmail(email, firstOtp),
-    ).rejects.toBeInstanceOf(ValidationException);
+    await expect(container.authService.verifyEmail(email, firstOtp)).rejects.toBeInstanceOf(
+      ValidationException,
+    );
 
     // The new code works.
     const result = await container.authService.verifyEmail(email, secondOtp);
@@ -157,11 +150,7 @@ describe("OtpPurpose isolation", () => {
     const { email, otp } = await registerUnverifiedOrgAdmin(container);
     const user = await container.userReader.findByEmail(email);
 
-    const valid = await container.otpService.verify(
-      user!.id,
-      OtpPurpose.PASSWORD_RESET,
-      otp,
-    );
+    const valid = await container.otpService.verify(user!.id, OtpPurpose.PASSWORD_RESET, otp);
 
     expect(valid).toBe(false);
   });

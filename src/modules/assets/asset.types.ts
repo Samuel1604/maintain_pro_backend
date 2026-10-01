@@ -33,6 +33,7 @@ export enum AssetCondition {
 }
 
 export interface CreateAssetDto {
+  facilityId?: string;
   locationId: string;
   assetTag: string;
   name: string;
@@ -51,6 +52,7 @@ export interface CreateAssetDto {
   lastMaintenanceDate?: Date;
   nextMaintenanceDate?: Date;
   estimatedValue?: number;
+  currency?: string;
   notes?: string;
 }
 
@@ -73,6 +75,7 @@ export interface UpdateAssetDto {
   lastMaintenanceDate?: Date;
   nextMaintenanceDate?: Date;
   estimatedValue?: number;
+  currency?: string;
   notes?: string;
 }
 

@@ -16,11 +16,7 @@ export const phoneSchema = z
 
 export const avatarSchema = z.url("Invalid avatar URL").optional();
 
-export const bioSchema = z
-  .string()
-  .trim()
-  .max(500, "Bio cannot exceed 500 characters")
-  .optional();
+export const bioSchema = z.string().trim().max(500, "Bio cannot exceed 500 characters").optional();
 
 export const firstNameSchema = nameSchema;
 export const lastNameSchema = nameSchema;

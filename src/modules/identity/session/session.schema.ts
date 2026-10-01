@@ -6,6 +6,4 @@ export const revokeSessionParamsSchema = z.object({
   }),
 });
 
-export type RevokeSessionParamsDto = z.infer<
-  typeof revokeSessionParamsSchema
->["params"];
+export type RevokeSessionParamsDto = z.infer<typeof revokeSessionParamsSchema>["params"];

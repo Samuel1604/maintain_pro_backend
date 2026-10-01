@@ -20,16 +20,26 @@ export interface RealtimeEventEnvelope {
 export class RealtimePublisher {
   private io?: Server;
 
-  attach(io: Server): void { this.io = io; }
-  close(): void { this.io?.close(); this.io = undefined; }
+  attach(io: Server): void {
+    this.io = io;
+  }
+  close(): void {
+    this.io?.close();
+    this.io = undefined;
+  }
 
   publish(event: DomainEvent): void {
     if (!this.io || !isRealtimeEvent(event.name)) return;
     const payload = identifiers(event);
     const envelope: RealtimeEventEnvelope = {
-      version: 1, eventId: event.eventId, name: event.name,
-      occurredAt: event.occurredAt.toISOString(), payload,
-      ...(event.aggregateType && event.aggregateId ? { aggregate: { type: event.aggregateType, id: event.aggregateId } } : {}),
+      version: 1,
+      eventId: event.eventId,
+      name: event.name,
+      occurredAt: event.occurredAt.toISOString(),
+      payload,
+      ...(event.aggregateType && event.aggregateId
+        ? { aggregate: { type: event.aggregateType, id: event.aggregateId } }
+        : {}),
     };
 
     const rooms = new Set<string>();
@@ -44,26 +54,66 @@ export class RealtimePublisher {
 }
 
 const REALTIME_EVENTS = new Set([
-  "WorkOrderCreated", "WorkOrderAssigned", "WorkOrderStatusChanged",
-  "ServiceRequestCreated", "ServiceRequestApproved", "ServiceRequestRejected",
-  "NotificationCreated", "PreventiveMaintenanceUpdated",
-  "VendorApplicationSubmitted", "VendorApplicationStatusChanged",
-  "PreventiveMaintenancePlanCreated", "PreventiveMaintenancePlanUpdated", "PreventiveMaintenancePlanCancelled",
-  "PreventiveMaintenanceOccurrenceCreated", "PreventiveMaintenanceOccurrenceApproved",
-  "PreventiveMaintenanceOccurrenceRejected", "PreventiveMaintenanceOccurrenceCancelled",
-  "PreventiveMaintenanceOccurrenceAssignmentChanged", "PreventiveMaintenanceOccurrenceLinkedToWorkOrder",
-  "InventoryItemCreated", "InventoryItemUpdated", "InventoryItemDeactivated",
-  "StockReceived", "StockReserved", "StockReservationReleased", "StockIssued",
-  "StockConsumed", "StockReturned", "StockAdjusted", "StockTransferred", "LowStockDetected",
+  "WorkOrderCreated",
+  "WorkOrderAssigned",
+  "WorkOrderStatusChanged",
+  "ServiceRequestCreated",
+  "ServiceRequestApproved",
+  "ServiceRequestRejected",
+  "NotificationCreated",
+  "PreventiveMaintenanceUpdated",
+  "VendorApplicationSubmitted",
+  "VendorApplicationStatusChanged",
+  "PreventiveMaintenancePlanCreated",
+  "PreventiveMaintenancePlanUpdated",
+  "PreventiveMaintenancePlanCancelled",
+  "PreventiveMaintenanceOccurrenceCreated",
+  "PreventiveMaintenanceOccurrenceApproved",
+  "PreventiveMaintenanceOccurrenceRejected",
+  "PreventiveMaintenanceOccurrenceCancelled",
+  "PreventiveMaintenanceOccurrenceAssignmentChanged",
+  "PreventiveMaintenanceOccurrenceLinkedToWorkOrder",
+  "InventoryItemCreated",
+  "InventoryItemUpdated",
+  "InventoryItemDeactivated",
+  "StockReceived",
+  "StockReserved",
+  "StockReservationReleased",
+  "StockIssued",
+  "StockConsumed",
+  "StockReturned",
+  "StockAdjusted",
+  "StockTransferred",
+  "LowStockDetected",
 ]);
 
-function isRealtimeEvent(name: string): boolean { return REALTIME_EVENTS.has(name); }
+function isRealtimeEvent(name: string): boolean {
+  return REALTIME_EVENTS.has(name);
+}
 
 function identifiers(event: DomainEvent): Record<string, string> {
-  const source = event.payload && typeof event.payload === "object" ? event.payload as Record<string, unknown> : {};
-  const safeKeys = ["recipientId", "facilityId", "vendorId", "assignedVendorId", "assignedTechnicianId", "workOrderId", "serviceRequestId", "preventiveMaintenanceId", "planId", "occurrenceId", "entityId", "itemId", "applicationId"];
+  const source =
+    event.payload && typeof event.payload === "object"
+      ? (event.payload as Record<string, unknown>)
+      : {};
+  const safeKeys = [
+    "recipientId",
+    "facilityId",
+    "vendorId",
+    "assignedVendorId",
+    "assignedTechnicianId",
+    "workOrderId",
+    "serviceRequestId",
+    "preventiveMaintenanceId",
+    "planId",
+    "occurrenceId",
+    "entityId",
+    "itemId",
+    "applicationId",
+  ];
   const result: Record<string, string> = {};
-  for (const key of safeKeys) if (typeof source[key] === "string") result[key] = source[key] as string;
+  for (const key of safeKeys)
+    if (typeof source[key] === "string") result[key] = source[key] as string;
   if (event.aggregateId) result.aggregateId = event.aggregateId;
   return result;
 }

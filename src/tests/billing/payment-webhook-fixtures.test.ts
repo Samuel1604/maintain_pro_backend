@@ -15,10 +15,12 @@ function hmac(algorithm: "sha256" | "sha512", secret: string, payload: Buffer): 
 describe("sandbox payment webhook fixtures", () => {
   it("accepts a signed Paystack charge.success payload", () => {
     const provider = new PaystackProvider({ secretKey: PAYSTACK_SECRET });
-    const payload = Buffer.from(JSON.stringify({
-      event: "charge.success",
-      data: { reference: "paystack_ref_123", id: 99123 },
-    }));
+    const payload = Buffer.from(
+      JSON.stringify({
+        event: "charge.success",
+        data: { reference: "paystack_ref_123", id: 99123 },
+      }),
+    );
 
     const event = provider.parseWebhookEvent(payload, hmac("sha512", PAYSTACK_SECRET, payload));
 
@@ -31,10 +33,12 @@ describe("sandbox payment webhook fixtures", () => {
 
   it("rejects a tampered Paystack payload", () => {
     const provider = new PaystackProvider({ secretKey: PAYSTACK_SECRET });
-    const payload = Buffer.from(JSON.stringify({
-      event: "charge.success",
-      data: { reference: "paystack_ref_123", id: 99123 },
-    }));
+    const payload = Buffer.from(
+      JSON.stringify({
+        event: "charge.success",
+        data: { reference: "paystack_ref_123", id: 99123 },
+      }),
+    );
 
     expect(() => provider.parseWebhookEvent(payload, "0".repeat(128))).toThrow(
       "Invalid Paystack webhook signature.",
@@ -46,13 +50,19 @@ describe("sandbox payment webhook fixtures", () => {
       secretKey: "sk_test_fixture",
       webhookSecret: STRIPE_SECRET,
     });
-    const payload = Buffer.from(JSON.stringify({
-      id: "evt_fixture_123",
-      type: "checkout.session.completed",
-      data: { object: { id: "cs_test_123", payment_intent: "pi_test_123" } },
-    }));
+    const payload = Buffer.from(
+      JSON.stringify({
+        id: "evt_fixture_123",
+        type: "checkout.session.completed",
+        data: { object: { id: "cs_test_123", payment_intent: "pi_test_123" } },
+      }),
+    );
     const timestamp = Math.floor(Date.now() / 1000);
-    const signature = hmac("sha256", STRIPE_SECRET, Buffer.from(`${timestamp}.${payload.toString("utf8")}`));
+    const signature = hmac(
+      "sha256",
+      STRIPE_SECRET,
+      Buffer.from(`${timestamp}.${payload.toString("utf8")}`),
+    );
 
     const event = provider.parseWebhookEvent(payload, `t=${timestamp},v1=${signature}`);
 
@@ -68,12 +78,18 @@ describe("sandbox payment webhook fixtures", () => {
       secretKey: "sk_test_fixture",
       webhookSecret: STRIPE_SECRET,
     });
-    const payload = Buffer.from(JSON.stringify({
-      type: "checkout.session.completed",
-      data: { object: { id: "cs_test_123" } },
-    }));
+    const payload = Buffer.from(
+      JSON.stringify({
+        type: "checkout.session.completed",
+        data: { object: { id: "cs_test_123" } },
+      }),
+    );
     const timestamp = Math.floor(Date.now() / 1000) - 301;
-    const signature = hmac("sha256", STRIPE_SECRET, Buffer.from(`${timestamp}.${payload.toString("utf8")}`));
+    const signature = hmac(
+      "sha256",
+      STRIPE_SECRET,
+      Buffer.from(`${timestamp}.${payload.toString("utf8")}`),
+    );
 
     expect(() => provider.parseWebhookEvent(payload, `t=${timestamp},v1=${signature}`)).toThrow(
       "Stripe webhook timestamp outside tolerance.",
@@ -85,10 +101,12 @@ describe("sandbox payment webhook fixtures", () => {
       secretKey: "FLWSECK_TEST-fixture",
       webhookSecretHash: FLUTTERWAVE_HASH,
     });
-    const payload = Buffer.from(JSON.stringify({
-      event: "charge.completed",
-      data: { status: "successful", id: 777, tx_ref: "flw_ref_777" },
-    }));
+    const payload = Buffer.from(
+      JSON.stringify({
+        event: "charge.completed",
+        data: { status: "successful", id: 777, tx_ref: "flw_ref_777" },
+      }),
+    );
 
     const event = provider.parseWebhookEvent(payload, FLUTTERWAVE_HASH);
 
@@ -104,10 +122,12 @@ describe("sandbox payment webhook fixtures", () => {
       secretKey: "FLWSECK_TEST-fixture",
       webhookSecretHash: FLUTTERWAVE_HASH,
     });
-    const payload = Buffer.from(JSON.stringify({
-      event: "charge.completed",
-      data: { status: "successful", id: 777, tx_ref: "flw_ref_777" },
-    }));
+    const payload = Buffer.from(
+      JSON.stringify({
+        event: "charge.completed",
+        data: { status: "successful", id: 777, tx_ref: "flw_ref_777" },
+      }),
+    );
 
     expect(() => provider.parseWebhookEvent(payload, "wrong-hash")).toThrow(
       "Invalid Flutterwave verif-hash header.",

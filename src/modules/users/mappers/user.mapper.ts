@@ -52,8 +52,7 @@ export const userMapper = {
   },
 };
 
-export const toAuthenticatedUser = (user: IUser) =>
-  userMapper.toAuthenticatedUser(user);
+export const toAuthenticatedUser = (user: IUser) => userMapper.toAuthenticatedUser(user);
 export const toUserSummary = (user: IUser) => userMapper.toUserSummary(user);
 export const toUserProfile = (user: IUser, organizationSlug?: string, vendorSlug?: string) =>
   userMapper.toUserProfile(user, organizationSlug, vendorSlug);

@@ -36,11 +36,7 @@ export interface IVendor extends Document {
   // Subscription
   plan: "free" | "starter" | "professional";
 
-  subscriptionStatus:
-    | "trial"
-    | "active"
-    | "past_due"
-    | "cancelled";
+  subscriptionStatus: "trial" | "active" | "past_due" | "cancelled";
 
   applicationLimit: number;
 
@@ -52,16 +48,10 @@ export interface IVendor extends Document {
   // Verification
   isVerified: boolean;
 
-  verificationBadge:
-    | "none"
-    | "verified"
-    | "premium";
+  verificationBadge: "none" | "verified" | "premium";
 
   // Status
-  status:
-    | "active"
-    | "inactive"
-    | "suspended";
+  status: "active" | "inactive" | "suspended";
 
   createdAt: Date;
   updatedAt: Date;

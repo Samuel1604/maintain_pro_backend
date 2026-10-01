@@ -3,10 +3,7 @@ import type { ApplicationResult } from "@/shared/application-result/index.js";
 import type { UpdateVendorProfileInput } from "./vendor.schema.js";
 import type { VendorProfile } from "./dto/vendor.dto.js";
 import { toVendorProfile } from "./dto/vendor.mapper.js";
-import {
-  AuthorizationException,
-  NotFoundException,
-} from "@/shared/errors/index.js";
+import { AuthorizationException, NotFoundException } from "@/shared/errors/index.js";
 import { WorkOrder } from "@/modules/work-orders/work-order.model.js";
 import { RedisCache } from "@/infrastructure/cache/redis.cache.js";
 import { cacheKeys, cacheTtlSeconds } from "@/infrastructure/cache/cache-keys.js";
@@ -98,7 +95,13 @@ export class VendorService {
       WorkOrder.countDocuments({ assignedVendorId: actor.vendorId, status: "in_progress" }),
       WorkOrder.countDocuments({ assignedVendorId: actor.vendorId, status: "assigned" }),
     ]);
-    return { total, completed, inProgress, assigned, completionRate: total ? Math.round((completed / total) * 100) : 0 };
+    return {
+      total,
+      completed,
+      inProgress,
+      assigned,
+      completionRate: total ? Math.round((completed / total) * 100) : 0,
+    };
   }
 
   async delete(vendorId: string) {

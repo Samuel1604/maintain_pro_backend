@@ -204,7 +204,7 @@ event identity.
 Queue concurrency can be configured with `<QUEUE_NAME>_CONCURRENCY` variables,
 for example `EMAIL_CONCURRENCY` and `DOMAIN_EVENTS_CONCURRENCY`; values must be
 positive and are capped at 100. BullMQ priority values follow `1 = critical`,
-`5 = normal`, and `10 = low`. Email and AI queues have provider-oriented rate
+`5 = normal`, and `10 = low`. Email queues have provider-oriented rate
 limits configured in `queue.config.ts`.
 
 ## Locks, timeouts, and stalled jobs

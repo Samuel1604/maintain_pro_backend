@@ -1,13 +1,13 @@
 import type { UserRole } from "@/shared/constants/roles.js";
 
 export interface AuthenticatedUser {
-    id: string;
+  id: string;
 
-    role: UserRole;
+  role: UserRole;
 
-    organizationId?: string;
+  organizationId?: string;
 
-    vendorId?: string;
+  vendorId?: string;
 
-    facilityId?: string;
+  facilityId?: string;
 }

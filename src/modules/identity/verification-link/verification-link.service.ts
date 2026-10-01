@@ -60,11 +60,7 @@ export class VerificationLinkService {
    * Verifies a token and returns true on success.
    * Deletes the token atomically on success (single-use guarantee).
    */
-  async verify(
-    userId: string,
-    purpose: VerificationLinkPurpose,
-    token: string,
-  ): Promise<boolean> {
+  async verify(userId: string, purpose: VerificationLinkPurpose, token: string): Promise<boolean> {
     const key = this.tokenKey(purpose, userId);
     const storedHash = await this.redis.get(key);
 

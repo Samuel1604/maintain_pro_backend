@@ -10,10 +10,7 @@ import type { Types } from "mongoose";
 
 import { toUserProfile, toUserSummary } from "./mappers/user.mapper.js";
 
-import {
-  NotFoundException,
-  AuthorizationException,
-} from "@/shared/errors/index.js";
+import { NotFoundException, AuthorizationException } from "@/shared/errors/index.js";
 
 import { ROLES } from "@/shared/constants/roles.js";
 
@@ -33,7 +30,9 @@ const vendorReaderRoles: Partial<UserRole[]> = [ROLES.VENDOR_LEAD, ROLES.VENDOR_
 export class UserReader {
   constructor(private readonly repository: UserRepository) {}
 
-  private async resolveOrganizationSlug(organizationId: Types.ObjectId | undefined): Promise<string | undefined> {
+  private async resolveOrganizationSlug(
+    organizationId: Types.ObjectId | undefined,
+  ): Promise<string | undefined> {
     if (!organizationId) return undefined;
     const org = await Organization.findById(organizationId);
     if (!org) return undefined;
@@ -46,7 +45,9 @@ export class UserReader {
     return org.slug;
   }
 
-  private async resolveVendorSlug(vendorId: Types.ObjectId | undefined): Promise<string | undefined> {
+  private async resolveVendorSlug(
+    vendorId: Types.ObjectId | undefined,
+  ): Promise<string | undefined> {
     if (!vendorId) return undefined;
     const vend = await Vendor.findById(vendorId);
     if (!vend) return undefined;
@@ -112,8 +113,6 @@ export class UserReader {
     return user;
   }
 
-
-
   /**
    * Current authenticated user profile.
    */
@@ -151,14 +150,10 @@ export class UserReader {
 
     if (organizationReaderRoles.includes(actor.role)) {
       if (!user.organizationId) {
-        throw new AuthorizationException(
-          "User is not attached to an organization",
-        );
+        throw new AuthorizationException("User is not attached to an organization");
       }
 
-      const users = await this.repository.findOrganizationUsers(
-        user.organizationId.toString(),
-      );
+      const users = await this.repository.findOrganizationUsers(user.organizationId.toString());
 
       return users.map(toUserSummary);
     }
@@ -168,14 +163,11 @@ export class UserReader {
         throw new AuthorizationException("User is not attached to a vendor");
       }
 
-      const users = await this.repository.findVendorUsers(
-        user.vendorId.toString(),
-      );
+      const users = await this.repository.findVendorUsers(user.vendorId.toString());
 
       return users.map(toUserSummary);
     }
 
     throw new AuthorizationException("This role cannot list account users");
   }
-
 }

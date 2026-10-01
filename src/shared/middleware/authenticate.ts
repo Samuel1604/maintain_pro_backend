@@ -8,11 +8,7 @@ const authCache = new RedisService();
 const AUTH_CACHE_TTL = 45;
 
 /** Authenticates the caller; verified-email checks are added by route policy. */
-export const authMiddleware = async (
-  req: Request,
-  _res: Response,
-  next: NextFunction,
-) => {
+export const authMiddleware = async (req: Request, _res: Response, next: NextFunction) => {
   try {
     const cookieToken = req.cookies?.accessToken as string | undefined;
 
@@ -22,9 +18,7 @@ export const authMiddleware = async (
       const authHeader = req.headers.authorization;
 
       if (!authHeader) {
-        throw new AuthenticationException(
-          "Authentication required",
-        );
+        throw new AuthenticationException("Authentication required");
       }
 
       const [scheme, headerToken] = authHeader.split(" ");
@@ -55,9 +49,15 @@ export const authMiddleware = async (
 
     const authContext = {
       isVerified: user.isVerified,
-      ...((decoded.organizationId || user.organizationId) && { organizationId: decoded.organizationId ?? user.organizationId?.toString() }),
-      ...((decoded.vendorId || user.vendorId) && { vendorId: decoded.vendorId ?? user.vendorId?.toString() }),
-      ...((decoded.facilityId || user.facilityId) && { facilityId: decoded.facilityId ?? user.facilityId?.toString() }),
+      ...((decoded.organizationId || user.organizationId) && {
+        organizationId: decoded.organizationId ?? user.organizationId?.toString(),
+      }),
+      ...((decoded.vendorId || user.vendorId) && {
+        vendorId: decoded.vendorId ?? user.vendorId?.toString(),
+      }),
+      ...((decoded.facilityId || user.facilityId) && {
+        facilityId: decoded.facilityId ?? user.facilityId?.toString(),
+      }),
     };
     void authCache.set(cacheKey, authContext, AUTH_CACHE_TTL).catch(() => undefined);
     req.user = {

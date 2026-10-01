@@ -5,10 +5,7 @@ export class AssetRepository {
     return Asset.create(data);
   }
 
-  async findByOrganization(
-    organizationId: string,
-    pagination?: { limit?: number; skip?: number },
-  ) {
+  async findByOrganization(organizationId: string, pagination?: { limit?: number; skip?: number }) {
     return Asset.find({ organizationId })
       .sort({ createdAt: -1 })
       .limit(pagination?.limit ?? 20)
@@ -26,23 +23,39 @@ export class AssetRepository {
       .skip(pagination?.skip ?? 0);
   }
 
-  async findPage(filter: Record<string, unknown>, sort: Record<string, 1 | -1>, skip: number, limit: number) {
+  async findPage(
+    filter: Record<string, unknown>,
+    sort: Record<string, 1 | -1>,
+    skip: number,
+    limit: number,
+  ) {
     return Asset.find(filter).sort(sort).skip(skip).limit(limit);
   }
-  async findCursorPage(filter: Record<string, unknown>, cursor: { createdAt: Date; id: string } | undefined, limit: number) {
-    const cursorFilter = cursor ? { ...filter, $or: [{ createdAt: { $lt: cursor.createdAt } }, { createdAt: cursor.createdAt, _id: { $lt: cursor.id } }] } : filter;
-    return Asset.find(cursorFilter).sort({ createdAt: -1, _id: -1 }).limit(limit + 1).lean();
+  async findCursorPage(
+    filter: Record<string, unknown>,
+    cursor: { createdAt: Date; id: string } | undefined,
+    limit: number,
+  ) {
+    const cursorFilter = cursor
+      ? {
+          ...filter,
+          $or: [
+            { createdAt: { $lt: cursor.createdAt } },
+            { createdAt: cursor.createdAt, _id: { $lt: cursor.id } },
+          ],
+        }
+      : filter;
+    return Asset.find(cursorFilter)
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit + 1)
+      .lean();
   }
 
   async count(filter: Record<string, unknown>) {
     return Asset.countDocuments(filter);
   }
 
-  async findByTag(
-    assetTag: string,
-    organizationId: string,
-    facilityId: string,
-  ) {
+  async findByTag(assetTag: string, organizationId: string, facilityId: string) {
     return Asset.findOne({
       assetTag,
       organizationId,
@@ -64,17 +77,17 @@ export class AssetRepository {
     facilityId: string,
     data: Partial<IAsset>,
   ) {
-    return Asset.findOneAndUpdate(
-      { assetTag, organizationId, facilityId },
-      data,
-      {
+    return Asset.findOneAndUpdate({ assetTag, organizationId, facilityId }, data, {
       returnDocument: "after",
-      },
-    );
+    });
   }
 
   async archive(assetTag: string, organizationId: string, facilityId: string) {
-    return Asset.findOneAndUpdate({ assetTag, organizationId, facilityId }, { status: "retired" }, { new: true });
+    return Asset.findOneAndUpdate(
+      { assetTag, organizationId, facilityId },
+      { status: "retired" },
+      { new: true },
+    );
   }
 
   async delete(id: string, organizationId: string, facilityId: string) {

@@ -7,7 +7,7 @@ export const createVendorApplicationSchema = z.object({
   note: z.string().trim().max(1000).optional(),
 });
 
-export type CreateVendorApplicationInput = z.infer<
-  typeof createVendorApplicationSchema
->;
-export const applicationStatusSchema = z.object({ status: z.enum(["under_review", "rejected", "awarded", "withdrawn"]) });
+export type CreateVendorApplicationInput = z.infer<typeof createVendorApplicationSchema>;
+export const applicationStatusSchema = z.object({
+  status: z.enum(["under_review", "rejected", "awarded", "withdrawn"]),
+});

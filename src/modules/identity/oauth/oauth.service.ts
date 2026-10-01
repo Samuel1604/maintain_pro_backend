@@ -52,14 +52,11 @@ export class OAuthService {
 
   async getGoogleProfile(accessToken: string): Promise<OAuthProfile> {
     try {
-      const response = await axios.get(
-        "https://openidconnect.googleapis.com/v1/userinfo",
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+      const response = await axios.get("https://openidconnect.googleapis.com/v1/userinfo", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
-      );
+      });
 
       const profile = response.data;
 

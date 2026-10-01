@@ -11,10 +11,7 @@ export class AppError extends Error {
   readonly details?: unknown;
   override readonly cause?: unknown;
 
-  constructor(
-    message: string,
-    options: AppErrorOptions | number = {},
-  ) {
+  constructor(message: string, options: AppErrorOptions | number = {}) {
     super(message);
 
     this.name = new.target.name;

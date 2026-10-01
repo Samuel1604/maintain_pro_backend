@@ -8,11 +8,7 @@ declare global {
       created<T>(data: T, options?: ResponseOptions | string): this;
       accepted<T>(data: T, options?: ResponseOptions | string): this;
       noContent(options?: ResponseOptions | string): this;
-      paginated<T>(
-        data: T[],
-        meta: PaginationMeta,
-        options?: ResponseOptions | string,
-      ): this;
+      paginated<T>(data: T[], meta: PaginationMeta, options?: ResponseOptions | string): this;
     }
   }
 }

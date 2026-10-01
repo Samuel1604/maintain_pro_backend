@@ -71,8 +71,6 @@ describe("LockoutService.isUnlocked", () => {
     const { user } = await UserFactory.create();
 
     // Should not throw, and should not need any DB write for a clean account.
-    await expect(
-      container.lockoutService.isUnlocked(user),
-    ).resolves.toBeUndefined();
+    await expect(container.lockoutService.isUnlocked(user)).resolves.toBeUndefined();
   });
 });

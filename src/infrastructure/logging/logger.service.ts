@@ -15,7 +15,7 @@ export class LoggerService {
     this.logger.error(message, metadata);
   }
 
-    debug(message: string, metadata?: unknown) {
+  debug(message: string, metadata?: unknown) {
     this.logger.debug?.(message, metadata);
   }
 }

@@ -7,7 +7,10 @@ import { UserFactory } from "@/tests/factories/user.factory.js";
 describe("work-order concurrency invariants", () => {
   it("persists only one work order for concurrent service-request conversion", async () => {
     const organization = await OrganizationFactory.create();
-    const { user } = await UserFactory.create({ organizationId: organization._id, isVerified: true });
+    const { user } = await UserFactory.create({
+      organizationId: organization._id,
+      isVerified: true,
+    });
     const serviceRequestId = new Types.ObjectId();
     const base = {
       organizationId: organization._id,

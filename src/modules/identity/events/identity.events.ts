@@ -52,5 +52,4 @@ export const IdentityEvents = {
   INVITATION_EXPIRED: "identity.invitation.expired",
 } as const;
 
-export type IdentityEventName =
-  (typeof IdentityEvents)[keyof typeof IdentityEvents];
+export type IdentityEventName = (typeof IdentityEvents)[keyof typeof IdentityEvents];

@@ -16,14 +16,21 @@ import { Facility } from "@/modules/facilities/facility.model.js";
 import { Location } from "@/modules/locations/location.model.js";
 import { Asset } from "@/modules/assets/asset.model.js";
 
-function accessCookie(token: string) { return [`accessToken=${token}`]; }
+function accessCookie(token: string) {
+  return [`accessToken=${token}`];
+}
 async function csrfAgent(app: Awaited<ReturnType<typeof createTestApp>>, token: string) {
   const health = await request(app).get("/api/v1/health");
   const raw = health.headers["set-cookie"];
   const cookies = raw ? (Array.isArray(raw) ? raw : [raw]) : [];
-  const csrf = cookies.find((v: string) => v.startsWith("csrfToken="))?.match(/csrfToken=([^;]+)/)?.[1];
+  const csrf = cookies
+    .find((v: string) => v.startsWith("csrfToken="))
+    ?.match(/csrfToken=([^;]+)/)?.[1];
   if (!csrf) throw new Error("CSRF cookie not issued");
-  return request.agent(app).set("Cookie", [...accessCookie(token), `csrfToken=${csrf}`]).set("X-CSRF-Token", csrf);
+  return request
+    .agent(app)
+    .set("Cookie", [...accessCookie(token), `csrfToken=${csrf}`])
+    .set("X-CSRF-Token", csrf);
 }
 
 describe("Service Request Attachments", () => {
@@ -39,8 +46,23 @@ describe("Service Request Attachments", () => {
       createdBy: admin.user._id,
       coordinates: { type: "Point", coordinates: [3.3792, 6.5244] },
     });
-    const location = await Location.create({ organizationId: admin.user.organizationId, facilityId: facility._id, name: "L1", type: "BUILDING" });
-    const asset = await Asset.create({ organizationId: admin.user.organizationId, facilityId: facility._id, locationId: location._id, assetTag: "ATT-001", name: "Test asset", purchaseDate: new Date(), installationDate: new Date(), estimatedValue: 1000, createdBy: admin.user._id });
+    const location = await Location.create({
+      organizationId: admin.user.organizationId,
+      facilityId: facility._id,
+      name: "L1",
+      type: "BUILDING",
+    });
+    const asset = await Asset.create({
+      organizationId: admin.user.organizationId,
+      facilityId: facility._id,
+      locationId: location._id,
+      assetTag: "ATT-001",
+      name: "Test asset",
+      purchaseDate: new Date(),
+      installationDate: new Date(),
+      estimatedValue: 1000,
+      createdBy: admin.user._id,
+    });
 
     // Upload that belongs to a different user
     const foreignUpload = await Upload.create({
@@ -84,8 +106,23 @@ describe("Service Request Attachments", () => {
       createdBy: admin.user._id,
       coordinates: { type: "Point", coordinates: [3.3792, 6.5244] },
     });
-    const location = await Location.create({ organizationId: admin.user.organizationId, facilityId: facility._id, name: "L2", type: "BUILDING" });
-    const asset = await Asset.create({ organizationId: admin.user.organizationId, facilityId: facility._id, locationId: location._id, assetTag: "ATT-002", name: "Test asset", purchaseDate: new Date(), installationDate: new Date(), estimatedValue: 1000, createdBy: admin.user._id });
+    const location = await Location.create({
+      organizationId: admin.user.organizationId,
+      facilityId: facility._id,
+      name: "L2",
+      type: "BUILDING",
+    });
+    const asset = await Asset.create({
+      organizationId: admin.user.organizationId,
+      facilityId: facility._id,
+      locationId: location._id,
+      assetTag: "ATT-002",
+      name: "Test asset",
+      purchaseDate: new Date(),
+      installationDate: new Date(),
+      estimatedValue: 1000,
+      createdBy: admin.user._id,
+    });
 
     // Valid upload owned by this actor
     const upload = await Upload.create({

@@ -25,17 +25,13 @@ export const approveServiceRequestSchema = z
     }
   });
 
-export type ApproveServiceRequestInput = z.infer<
-  typeof approveServiceRequestSchema
->;
+export type ApproveServiceRequestInput = z.infer<typeof approveServiceRequestSchema>;
 
 export const rejectServiceRequestSchema = z.object({
   rejectionReason: z.string().trim().min(3),
 });
 
-export type RejectServiceRequestInput = z.infer<
-  typeof rejectServiceRequestSchema
->;
+export type RejectServiceRequestInput = z.infer<typeof rejectServiceRequestSchema>;
 
 export const createServiceRequestSchema = z.object({
   organizationId: objectId,
@@ -50,16 +46,22 @@ export const createServiceRequestSchema = z.object({
   attachmentUploadIds: z.array(objectId).optional(),
 });
 
-export type CreateServiceRequestInput = z.infer<
-  typeof createServiceRequestSchema
->;
+export type CreateServiceRequestInput = z.infer<typeof createServiceRequestSchema>;
 
-export const serviceRequestListSchema = z.object({ page: z.coerce.number().int().positive().default(1), limit: z.coerce.number().int().positive().max(100).default(50), from: z.coerce.date().optional(), to: z.coerce.date().optional(), status: z.enum(["pending", "approved", "rejected"]).optional() });
+export const serviceRequestListSchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(50),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+  status: z.enum(["pending", "approved", "rejected"]).optional(),
+});
 
-export const updateServiceRequestSchema = z.object({
-  title: z.string().trim().min(2).optional(),
-  description: z.string().trim().min(5).optional(),
-  priority: z.enum(["low", "medium", "high", "critical"]).optional(),
-  serviceCategory: z.string().trim().min(2).optional(),
-}).strict();
+export const updateServiceRequestSchema = z
+  .object({
+    title: z.string().trim().min(2).optional(),
+    description: z.string().trim().min(5).optional(),
+    priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+    serviceCategory: z.string().trim().min(2).optional(),
+  })
+  .strict();
 export type UpdateServiceRequestInput = z.infer<typeof updateServiceRequestSchema>;

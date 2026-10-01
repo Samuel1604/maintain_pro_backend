@@ -8,9 +8,7 @@ export interface SendLoginNotificationPayload {
   userAgent?: string;
 }
 
-export class SendLoginNotificationJob
-  implements QueueJob<SendLoginNotificationPayload>
-{
+export class SendLoginNotificationJob implements QueueJob<SendLoginNotificationPayload> {
   public static readonly NAME = "identity.login-notification";
 
   public readonly name = SendLoginNotificationJob.NAME;

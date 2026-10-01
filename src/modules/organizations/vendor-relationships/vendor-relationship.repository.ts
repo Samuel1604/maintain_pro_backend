@@ -2,12 +2,7 @@ import { Types } from "mongoose";
 import { OrganizationVendorRelationship } from "./organization-vendor.model.js";
 import { FacilityVendor } from "./facility-vendor.model.js";
 export class VendorRelationshipRepository {
-  list(
-    organizationId: string,
-    filter: Record<string, unknown>,
-    skip: number,
-    limit: number,
-  ) {
+  list(organizationId: string, filter: Record<string, unknown>, skip: number, limit: number) {
     return OrganizationVendorRelationship.find({
       organizationId: new Types.ObjectId(organizationId),
       ...filter,
@@ -27,21 +22,20 @@ export class VendorRelationshipRepository {
     return OrganizationVendorRelationship.findOne({ organizationId, vendorId });
   }
   findByVendor(vendorId: string, organizationId?: string) {
-    return OrganizationVendorRelationship.find({ vendorId, ...(organizationId ? { organizationId } : {}) }).sort({ createdAt: -1 }).limit(100);
+    return OrganizationVendorRelationship.find({
+      vendorId,
+      ...(organizationId ? { organizationId } : {}),
+    })
+      .sort({ createdAt: -1 })
+      .limit(100);
   }
   create(data: Record<string, unknown>) {
     return OrganizationVendorRelationship.create(data);
   }
-  update(
-    organizationId: string,
-    vendorId: string,
-    data: Record<string, unknown>,
-  ) {
-    return OrganizationVendorRelationship.findOneAndUpdate(
-      { organizationId, vendorId },
-      data,
-      { new: true },
-    ).populate("vendorId");
+  update(organizationId: string, vendorId: string, data: Record<string, unknown>) {
+    return OrganizationVendorRelationship.findOneAndUpdate({ organizationId, vendorId }, data, {
+      new: true,
+    }).populate("vendorId");
   }
   facilityVendors(organizationId: string, facilityId: string) {
     return FacilityVendor.find({ organizationId, facilityId })

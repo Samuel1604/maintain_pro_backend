@@ -44,16 +44,9 @@ export class AppContainer {
   public readonly redisService = new RedisService();
   public readonly resend = new Resend(env.RESEND_API_KEY);
   public readonly authLogService = new AuthLogService(this.authLogRepository);
-  public readonly auditLogService = new AuditLogService(
-    this.auditLogRepository,
-  );
-  public readonly securityAlertService = new SecurityAlertService(
-    this.securityAlertRepository,
-  );
-  public readonly emailService = new EmailService(
-    this.redisService,
-    this.resend,
-  );
+  public readonly auditLogService = new AuditLogService(this.auditLogRepository);
+  public readonly securityAlertService = new SecurityAlertService(this.securityAlertRepository);
+  public readonly emailService = new EmailService(this.redisService, this.resend);
   public readonly oauthService = new OAuthService();
 
   private _sessionService!: SessionService;
@@ -70,10 +63,7 @@ export class AppContainer {
   public readonly invitationService: InvitationService;
   public readonly lockoutService: LockoutService;
   public readonly authService: AuthService;
-  public readonly vendorService = new VendorService(
-    this.vendorRepository,
-    this.auditLogService,
-  );
+  public readonly vendorService = new VendorService(this.vendorRepository, this.auditLogService);
   public readonly organizationService = new OrganizationService(
     this.organizationRepository,
     this.auditLogService,

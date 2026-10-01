@@ -23,7 +23,12 @@ export interface ISlaAgreement extends Document {
 
 const slaAgreementSchema = new Schema<ISlaAgreement>(
   {
-    organizationId: { type: Schema.Types.ObjectId, ref: "Organization", required: true, index: true },
+    organizationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+      index: true,
+    },
     vendorApplicationId: {
       type: Schema.Types.ObjectId,
       ref: "VendorApplication",
@@ -76,7 +81,4 @@ const slaAgreementSchema = new Schema<ISlaAgreement>(
   },
 );
 
-export const SlaAgreement = model<ISlaAgreement>(
-  "SlaAgreement",
-  slaAgreementSchema,
-);
+export const SlaAgreement = model<ISlaAgreement>("SlaAgreement", slaAgreementSchema);

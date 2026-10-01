@@ -17,5 +17,19 @@ export interface LocationResponse {
 }
 
 export function toLocationResponse(location: ILocation): LocationResponse {
-  return { id: location._id.toString(), organizationId: location.organizationId.toString(), facilityId: location.facilityId.toString(), parentId: location.parentId?.toString(), name: location.name, type: location.type, code: location.code, floor: location.floor, roomNumber: location.roomNumber, description: location.description, status: location.status, createdAt: location.createdAt.toISOString(), updatedAt: location.updatedAt.toISOString() };
+  return {
+    id: location._id.toString(),
+    organizationId: location.organizationId.toString(),
+    facilityId: location.facilityId.toString(),
+    parentId: location.parentId?.toString(),
+    name: location.name,
+    type: location.type,
+    code: location.code,
+    floor: location.floor,
+    roomNumber: location.roomNumber,
+    description: location.description,
+    status: location.status,
+    createdAt: location.createdAt.toISOString(),
+    updatedAt: location.updatedAt.toISOString(),
+  };
 }

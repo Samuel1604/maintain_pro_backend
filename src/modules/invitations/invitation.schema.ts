@@ -50,13 +50,11 @@ export const listInvitationsSchema = z.object({
 
 export type ListInvitationsDto = z.infer<typeof listInvitationsSchema>;
 
-
 export const invitationIdParamsSchema = z.object({
   id: objectIdSchema,
 });
 
 export type InvitationIdParamsDto = z.infer<typeof invitationIdParamsSchema>;
-
 
 export const validateInvitationSchema = z.object({
   token: z.string().trim().min(1),

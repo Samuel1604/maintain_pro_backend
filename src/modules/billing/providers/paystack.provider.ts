@@ -79,18 +79,12 @@ export class PaystackProvider implements PaymentProviderGateway {
     }
   }
 
-  parseWebhookEvent(
-    rawBody: Buffer,
-    signatureHeader: string | undefined,
-  ): PaymentWebhookEvent {
+  parseWebhookEvent(rawBody: Buffer, signatureHeader: string | undefined): PaymentWebhookEvent {
     if (!signatureHeader) {
       throw new PaymentProviderError("Missing x-paystack-signature header.");
     }
 
-    const expected = crypto
-      .createHmac("sha512", this.secretKey)
-      .update(rawBody)
-      .digest("hex");
+    const expected = crypto.createHmac("sha512", this.secretKey).update(rawBody).digest("hex");
 
     const signatureBuffer = Buffer.from(signatureHeader);
     const expectedBuffer = Buffer.from(expected);

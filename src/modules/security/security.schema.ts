@@ -63,6 +63,4 @@ export const verifyEmailChangeSchema = z.object({
   body: verifyEmailChangeBodySchema,
 });
 
-export type VerifyEmailChangeDto = z.infer<
-  typeof verifyEmailChangeBodySchema
->;
+export type VerifyEmailChangeDto = z.infer<typeof verifyEmailChangeBodySchema>;
