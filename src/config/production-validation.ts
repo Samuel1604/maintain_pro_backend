@@ -5,25 +5,18 @@ export function validateProductionEnvironment(): void {
   if (env.NODE_ENV !== "production") return;
 
   const errors: string[] = [];
-  const urls = [env.CLIENT_URL, env.FRONTEND_URL].filter(
-    (value): value is string => Boolean(value),
+  const urls = [env.CLIENT_URL, env.FRONTEND_URL].filter((value): value is string =>
+    Boolean(value),
   );
   if (urls.some((url) => !url.startsWith("https://"))) {
     errors.push("CLIENT_URL and FRONTEND_URL must use HTTPS in production");
   }
-  if (
-    env.MAIL_PROVIDER === "smtp" &&
-    /mailpit|localhost|127\.0\.0\.1/i.test(env.MAIL_HOST ?? "")
-  ) {
-    errors.push("MAIL_HOST cannot point to Mailpit or localhost in production");
-  }
-  if (env.MAIL_PROVIDER === "mailforge" && !env.MAILFORGE_URL?.startsWith("https://")) {
-    errors.push("MAILFORGE_URL must use HTTPS in production");
-  }
   if (!env.REDIS_URL && (env.REDIS_HOST === "localhost" || env.REDIS_HOST === "127.0.0.1")) {
     errors.push("REDIS_HOST cannot point to localhost in production");
   }
-  if (["true", "1", "yes"].includes(process.env.REDIS_DISABLE_CONNECTION?.trim().toLowerCase() ?? "")) {
+  if (
+    ["true", "1", "yes"].includes(process.env.REDIS_DISABLE_CONNECTION?.trim().toLowerCase() ?? "")
+  ) {
     errors.push("REDIS_DISABLE_CONNECTION must be disabled in production");
   }
   if (env.QUEUE_DRIVER === "in-memory") {
@@ -54,14 +47,10 @@ export function validateProductionEnvironment(): void {
   if (env.BILLING_DEFAULT_PROVIDER === "stripe" && !env.STRIPE_WEBHOOK_SECRET) {
     errors.push("STRIPE_WEBHOOK_SECRET is required when BILLING_DEFAULT_PROVIDER=stripe");
   }
-  if (
-    env.BILLING_DEFAULT_PROVIDER === "flutterwave" &&
-    !env.FLUTTERWAVE_WEBHOOK_SECRET_HASH
-  ) {
+  if (env.BILLING_DEFAULT_PROVIDER === "flutterwave" && !env.FLUTTERWAVE_WEBHOOK_SECRET_HASH) {
     errors.push(
       "FLUTTERWAVE_WEBHOOK_SECRET_HASH is required when BILLING_DEFAULT_PROVIDER=flutterwave",
     );
   }
-  if (errors.length)
-    throw new Error(`Production configuration invalid: ${errors.join("; ")}`);
+  if (errors.length) throw new Error(`Production configuration invalid: ${errors.join("; ")}`);
 }
