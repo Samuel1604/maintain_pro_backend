@@ -3,8 +3,8 @@ import type { InventoryStatus } from "./inventory.types.js";
 
 export interface IInventoryItem extends Document {
   organizationId: Types.ObjectId;
-  facilityId: Types.ObjectId;
-  locationId: Types.ObjectId;
+  facilityId?: Types.ObjectId;
+  locationId?: Types.ObjectId;
   sku: string;
   name: string;
   description?: string;
@@ -29,8 +29,8 @@ const schema = new Schema<IInventoryItem>(
       required: true,
       index: true,
     },
-    facilityId: { type: Schema.Types.ObjectId, ref: "Facility", required: true, index: true },
-    locationId: { type: Schema.Types.ObjectId, ref: "Location", required: true, index: true },
+    facilityId: { type: Schema.Types.ObjectId, ref: "Facility", index: true },
+    locationId: { type: Schema.Types.ObjectId, ref: "Location", index: true },
     sku: { type: String, required: true, trim: true, uppercase: true },
     name: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
