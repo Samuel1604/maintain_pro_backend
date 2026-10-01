@@ -60,7 +60,7 @@ describe("Inventory domain", () => {
     expect(item.status).toBe(201);
     const location = await client
       .post("/api/v1/inventory/locations")
-      .send({ name: "Central Store", code: "CENTRAL" });
+      .send({ name: "Central Store", code: "CENTRAL", facilityId: scope.facilityId });
     expect(location.status).toBe(201);
     const itemId = item.body.data.id;
     const locationId = location.body.data.id;
@@ -139,9 +139,10 @@ describe("Inventory domain", () => {
       unitOfMeasure: "piece",
       ...scope,
     });
-    const location = await client
-      .post("/api/v1/inventory/locations")
-      .send({ name: `Concurrent Store ${new Types.ObjectId().toString()}` });
+    const location = await client.post("/api/v1/inventory/locations").send({
+      name: `Concurrent Store ${new Types.ObjectId().toString()}`,
+      facilityId: scope.facilityId,
+    });
     const body = {
       itemId: item.body.data.id,
       stockLocationId: location.body.data.id,
@@ -175,9 +176,10 @@ describe("Inventory domain", () => {
       unitOfMeasure: "piece",
       ...scope,
     });
-    const location = await client
-      .post("/api/v1/inventory/locations")
-      .send({ name: `Reserve Race Store ${new Types.ObjectId().toString()}` });
+    const location = await client.post("/api/v1/inventory/locations").send({
+      name: `Reserve Race Store ${new Types.ObjectId().toString()}`,
+      facilityId: scope.facilityId,
+    });
     const body = { itemId: item.body.data.id, stockLocationId: location.body.data.id, quantity: 2 };
     expect(
       (await client.post("/api/v1/inventory/transactions/receive").send({ ...body, quantity: 10 }))
@@ -216,9 +218,10 @@ describe("Inventory domain", () => {
       unitOfMeasure: "piece",
       ...scope,
     });
-    const location = await client
-      .post("/api/v1/inventory/locations")
-      .send({ name: `Consume Race Store ${new Types.ObjectId().toString()}` });
+    const location = await client.post("/api/v1/inventory/locations").send({
+      name: `Consume Race Store ${new Types.ObjectId().toString()}`,
+      facilityId: scope.facilityId,
+    });
     const body = { itemId: item.body.data.id, stockLocationId: location.body.data.id };
     await client.post("/api/v1/inventory/transactions/receive").send({ ...body, quantity: 10 });
     const reservation = await client
