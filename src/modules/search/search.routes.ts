@@ -34,6 +34,15 @@ router.get("/", async (req, res) => {
   );
   const cached = await searchCache.get<unknown[]>(key);
   if (cached) return res.ok(cached, "Search results retrieved");
+  type WorkOrderRow = Awaited<ReturnType<typeof WorkOrder.find>>[number];
+  type AssetRow = Awaited<ReturnType<typeof Asset.find>>[number];
+  type FacilityRow = Awaited<ReturnType<typeof Facility.find>>[number];
+  type VendorRow = Awaited<ReturnType<typeof Vendor.find>>[number];
+  type LocationRow = Awaited<ReturnType<typeof Location.find>>[number];
+  type ServiceRequestRow = Awaited<ReturnType<typeof ServiceRequest.find>>[number];
+  type PMPlanRow = Awaited<ReturnType<typeof PMPlan.find>>[number];
+  type InventoryItemRow = Awaited<ReturnType<typeof InventoryItem.find>>[number];
+
   const [
     workOrders,
     assets,
@@ -43,57 +52,68 @@ router.get("/", async (req, res) => {
     serviceRequests,
     pmPlans,
     inventoryItems,
-  ] = organizationId
-    ? await Promise.all([
-        WorkOrder.find({ organizationId, $or: [{ title: pattern }, { description: pattern }] })
-          .limit(limit)
-          .lean(),
-        Asset.find({
-          organizationId,
-          $or: [{ assetTag: pattern }, { name: pattern }, { serialNumber: pattern }],
-        })
-          .limit(limit)
-          .lean(),
-        Facility.find({ organizationId, name: pattern }).limit(limit).lean(),
-        Vendor.find({ name: pattern }).limit(limit).lean(),
-        Location.find({
-          organizationId,
-          $or: [{ name: pattern }, { code: pattern }, { description: pattern }],
-        })
-          .limit(limit)
-          .lean(),
-        ServiceRequest.find({
-          organizationId,
-          $or: [{ title: pattern }, { description: pattern }, { serviceCategory: pattern }],
-        })
-          .limit(limit)
-          .lean(),
-        PMPlan.find({
-          organizationId,
-          $or: [{ title: pattern }, { description: pattern }, { maintenanceType: pattern }],
-        })
-          .limit(limit)
-          .lean(),
-        InventoryItem.find({
-          organizationId,
-          $or: [{ name: pattern }, { sku: pattern }, { description: pattern }],
-        })
-          .limit(limit)
-          .lean(),
-      ])
-    : req.user.vendorId
-      ? [
-          await WorkOrder.find({
-            assignedVendorId: req.user.vendorId,
-            $or: [{ title: pattern }, { description: pattern }],
+  ] = (
+    organizationId
+      ? await Promise.all([
+          WorkOrder.find({ organizationId, $or: [{ title: pattern }, { description: pattern }] })
+            .limit(limit)
+            .lean(),
+          Asset.find({
+            organizationId,
+            $or: [{ assetTag: pattern }, { name: pattern }, { serialNumber: pattern }],
           })
             .limit(limit)
             .lean(),
-          [],
-          [],
-          [],
-        ]
-      : [[], [], [], [], [], [], [], []];
+          Facility.find({ organizationId, name: pattern }).limit(limit).lean(),
+          Vendor.find({ name: pattern }).limit(limit).lean(),
+          Location.find({
+            organizationId,
+            $or: [{ name: pattern }, { code: pattern }, { description: pattern }],
+          })
+            .limit(limit)
+            .lean(),
+          ServiceRequest.find({
+            organizationId,
+            $or: [{ title: pattern }, { description: pattern }, { serviceCategory: pattern }],
+          })
+            .limit(limit)
+            .lean(),
+          PMPlan.find({
+            organizationId,
+            $or: [{ title: pattern }, { description: pattern }, { maintenanceType: pattern }],
+          })
+            .limit(limit)
+            .lean(),
+          InventoryItem.find({
+            organizationId,
+            $or: [{ name: pattern }, { sku: pattern }, { description: pattern }],
+          })
+            .limit(limit)
+            .lean(),
+        ])
+      : req.user.vendorId
+        ? [
+            await WorkOrder.find({
+              assignedVendorId: req.user.vendorId,
+              $or: [{ title: pattern }, { description: pattern }],
+            })
+              .limit(limit)
+              .lean(),
+            [],
+            [],
+            [],
+          ]
+        : [[], [], [], [], [], [], [], []]
+  ) as [
+    WorkOrderRow[],
+    AssetRow[],
+    FacilityRow[],
+    VendorRow[],
+    LocationRow[],
+    ServiceRequestRow[],
+    PMPlanRow[],
+    InventoryItemRow[],
+  ];
   const vendorIds = vendors.map((vendor) => vendor._id);
   const relationships =
     organizationId && vendorIds.length > 0

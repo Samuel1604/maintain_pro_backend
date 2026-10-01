@@ -8,6 +8,7 @@ import mongoose from "mongoose";
 import type { IInventoryTransaction } from "./inventory-transaction.model.js";
 import type { IStockBalance } from "./stock-balance.model.js";
 import type { ClientSession } from "mongoose";
+import { Types } from "mongoose";
 
 export class InventoryRepository {
   listItems(organizationId: string, search?: string, facilityId?: string) {
@@ -47,8 +48,15 @@ export class InventoryRepository {
     await InventoryCategory.bulkWrite(
       names.map((name) => ({
         updateOne: {
-          filter: { organizationId, name },
-          update: { $setOnInsert: { organizationId, name, createdBy, status: "active" } },
+          filter: { organizationId: new Types.ObjectId(organizationId), name },
+          update: {
+            $setOnInsert: {
+              organizationId: new Types.ObjectId(organizationId),
+              name,
+              createdBy: new Types.ObjectId(createdBy),
+              status: "active",
+            },
+          },
           upsert: true,
         },
       })),
