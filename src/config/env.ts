@@ -33,6 +33,7 @@ const envSchema = z.object({
   REDIS_URL: z
     .string()
     .optional()
+    .transform((value) => value?.trim())
     .refine((value) => {
       if (!value) return true;
       try {
