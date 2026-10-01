@@ -13,12 +13,16 @@ export interface ResendProviderOptions {
   apiKey?: string;
   defaultFromName?: string;
   defaultFromEmail?: string;
-  client?: Pick<Resend, "emails">;
+  client?: ResendClient;
 }
+
+type ResendClient = {
+  emails: Pick<Resend["emails"], "send">;
+};
 
 export class ResendProvider implements EmailProvider {
   public readonly providerName = "Resend";
-  private readonly client: Resend;
+  private readonly client: ResendClient;
   private readonly defaultFrom: Recipient;
 
   constructor(
