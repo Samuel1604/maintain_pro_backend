@@ -64,9 +64,7 @@ import { toObjectId } from "@/shared/validators/index.js";
  * 'link' — token embedded in URL, 5-minute TTL (default, used until mail provider integration).
  * 'otp'  — numeric OTP code, 10-minute TTL (enable when real mail provider is integrated).
  */
-// Production uses one-time links; tests retain OTP coverage for the legacy API.
-export const VERIFICATION_STRATEGY: "link" | "otp" =
-  process.env.NODE_ENV === "test" ? "otp" : "link";
+export const VERIFICATION_STRATEGY = "otp" as const;
 
 export class AuthService {
   constructor(
