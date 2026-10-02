@@ -86,36 +86,17 @@ export class AuthService {
     return `${baseUrl}/verify-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
   }
 
-  /**
-   * Dispatches verification credentials based on active VERIFICATION_STRATEGY.
-   * Enables seamless switching between OTP and Link verification.
-   */
+  /** Dispatches the email verification OTP. */
   private async publishVerificationCredential(userId: string, email: string): Promise<void> {
-    if (VERIFICATION_STRATEGY === "link") {
-      const token = await this.verificationLinkService.create(
+    const otp = await this.otpService.create(userId, OtpPurpose.EMAIL_VERIFICATION);
+    await this.eventBus.publish(
+      new OtpRequestedEvent({
         userId,
-        VerificationLinkPurpose.EMAIL_VERIFICATION,
-      );
-      const verificationUrl = this.buildVerificationUrl(token, email);
-      await this.eventBus.publish(
-        new VerificationLinkRequestedEvent({
-          userId,
-          email,
-          purpose: VerificationLinkPurpose.EMAIL_VERIFICATION,
-          verificationUrl,
-        }),
-      );
-    } else {
-      const otp = await this.otpService.create(userId, OtpPurpose.EMAIL_VERIFICATION);
-      await this.eventBus.publish(
-        new OtpRequestedEvent({
-          userId,
-          email,
-          purpose: OtpPurpose.EMAIL_VERIFICATION,
-          otp,
-        }),
-      );
-    }
+        email,
+        purpose: OtpPurpose.EMAIL_VERIFICATION,
+        otp,
+      }),
+    );
   }
 
   /**
