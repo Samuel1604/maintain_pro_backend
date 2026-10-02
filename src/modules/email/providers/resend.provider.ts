@@ -34,9 +34,14 @@ export class ResendProvider implements EmailProvider {
       throw new ConfigurationError("RESEND_API_KEY is not configured in environment variables.");
     }
 
-    const defaultFromEmail =
-      options.defaultFromEmail || process.env.MAIL_FROM_EMAIL || "noreply@maintainpro.samueldev.cv";
-    const defaultFromName = options.defaultFromName || process.env.MAIL_FROM_NAME || "MaintainPro";
+    const defaultFromEmail = options.defaultFromEmail || process.env.MAIL_FROM_EMAIL;
+    const defaultFromName = options.defaultFromName || process.env.MAIL_FROM_NAME;
+
+    if (!defaultFromEmail || !defaultFromName) {
+      throw new ConfigurationError(
+        "MAIL_FROM_NAME and MAIL_FROM_EMAIL must be configured in environment variables.",
+      );
+    }
 
     this.defaultFrom = {
       email: defaultFromEmail,

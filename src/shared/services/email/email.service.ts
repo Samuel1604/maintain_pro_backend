@@ -7,6 +7,7 @@ import {
 } from "./email.templates.js";
 
 import { RedisService } from "@/shared/services/redis.service.js";
+import { mailConfig } from "@/config/mail.config.js";
 
 export class EmailService {
   constructor(
@@ -16,7 +17,7 @@ export class EmailService {
 
   async send({ to, subject, html }: SendEmailOptions) {
     await this.resend.emails.send({
-      from: process.env.MAIL_FROM!,
+      from: mailConfig.from,
       to,
       subject,
       html,

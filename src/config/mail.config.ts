@@ -3,5 +3,5 @@ import { env } from "./env.js";
 export const mailConfig = {
   apiKey: env.RESEND_API_KEY,
 
-  from: "MaintainPro <noreply@maintainpro.com>",
+  from: `${env.MAIL_FROM_NAME} <${env.MAIL_FROM_EMAIL}>`,
 };
