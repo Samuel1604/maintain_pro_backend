@@ -379,6 +379,16 @@ export class AuthService {
     const authResponse = await this.sessionService.createAuthenticatedSession(user, session);
 
     if (!user.isVerified && user.status === "pending_verification") {
+      try {
+        await this.resendVerificationOtp(user.email);
+      } catch (error) {
+        // Do not prevent an unverified user from signing in because the resend
+        // limit has been reached; the modal still allows a later retry.
+        if (!(error instanceof BusinessException)) {
+          throw error;
+        }
+      }
+
       return {
         success: true,
         message:
