@@ -69,7 +69,10 @@ export class ResendProvider implements EmailProvider {
         ...(payload.html ? { html: payload.html } : { text: payload.text ?? "" }),
         ...(payload.replyTo && { replyTo: payload.replyTo.email }),
         ...(payload.tags && {
-          tags: payload.tags.map((tag) => ({ name: tag, value: tag })),
+          tags: payload.tags.map((tag) => {
+            const safeTag = this.normalizeTag(tag);
+            return { name: safeTag, value: safeTag };
+          }),
         }),
         ...(payload.attachments && {
           attachments: payload.attachments.map((attachment) => ({
@@ -170,6 +173,10 @@ export class ResendProvider implements EmailProvider {
 
   private formatAddress(recipient: Recipient): string {
     return recipient.name ? `${recipient.name} <${recipient.email}>` : recipient.email;
+  }
+
+  private normalizeTag(tag: string): string {
+    return tag.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 256);
   }
 
   private normalizeRecipients(to: Recipient | Recipient[] | string): Recipient[] {
