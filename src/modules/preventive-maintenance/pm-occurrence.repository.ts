@@ -44,6 +44,6 @@ export class PMOccurrenceRepository {
     return PMOccurrence.findOne({ preventiveMaintenanceId, scheduledAt });
   }
   update(id: string, organizationId: string, data: Record<string, unknown>) {
-    return PMOccurrence.findOneAndUpdate({ _id: id, organizationId }, data, { new: true });
+    return PMOccurrence.findOneAndUpdate({ _id: id, organizationId }, data, { returnDocument: "after" });
   }
 }

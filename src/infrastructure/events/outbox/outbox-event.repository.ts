@@ -32,7 +32,7 @@ export class OutboxEventRepository {
         ],
       },
       { $set: { status: "processing", leaseUntil }, $inc: { attempts: 1 } },
-      { sort: { availableAt: 1, createdAt: 1 }, new: true },
+      { sort: { availableAt: 1, createdAt: 1 }, returnDocument: "after" },
     );
   }
 

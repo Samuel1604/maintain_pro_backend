@@ -46,6 +46,6 @@ export class PMRepository {
     return PMPlan.findOne({ organizationId, assetId, occurrenceDate });
   }
   update(id: string, organizationId: string, data: Record<string, unknown>) {
-    return PMPlan.findOneAndUpdate({ _id: id, organizationId }, data, { new: true });
+    return PMPlan.findOneAndUpdate({ _id: id, organizationId }, data, { returnDocument: "after" });
   }
 }

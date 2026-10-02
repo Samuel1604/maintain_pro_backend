@@ -34,7 +34,7 @@ export class VendorRelationshipRepository {
   }
   update(organizationId: string, vendorId: string, data: Record<string, unknown>) {
     return OrganizationVendorRelationship.findOneAndUpdate({ organizationId, vendorId }, data, {
-      new: true,
+      returnDocument: "after",
     }).populate("vendorId");
   }
   facilityVendors(organizationId: string, facilityId: string) {

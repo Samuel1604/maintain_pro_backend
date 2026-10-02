@@ -90,7 +90,7 @@ router.patch(
         approvedAt: new Date(),
         externalPaymentReference: body.externalPaymentReference,
       },
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!invoice) throw new NotFoundException("Invoice not found");
     await invalidateInvoiceList(req.user.organizationId);
@@ -121,7 +121,7 @@ router.patch(
         paidAt: new Date(),
         externalPaymentReference: body.externalPaymentReference,
       },
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!invoice) throw new NotFoundException("Invoice not found");
     await invalidateInvoiceList(req.user.organizationId);

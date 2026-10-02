@@ -50,7 +50,7 @@ export class NotificationRepository {
     return Notification.findOneAndUpdate(
       { _id: toObjectId(id), recipientId: toObjectId(recipientId) },
       { isRead: true, readAt: new Date() },
-      { new: true },
+      { returnDocument: "after" },
     );
   }
 

@@ -97,7 +97,7 @@ export class MarketplaceGeographicPolicyService {
     const updated = await MarketplaceGeographicPolicy.findOneAndUpdate(
       { _id: id, organizationId },
       { ...input, updatedBy: new Types.ObjectId(actor.userId) },
-      { new: true },
+      { returnDocument: "after" },
     );
     return {
       success: true,
@@ -125,7 +125,7 @@ export class MarketplaceGeographicPolicyService {
     const updated = await MarketplaceGeographicPolicy.findOneAndUpdate(
       { _id: id, organizationId },
       { enabled, updatedBy: new Types.ObjectId(actor.userId) },
-      { new: true },
+      { returnDocument: "after" },
     );
     return {
       success: true,

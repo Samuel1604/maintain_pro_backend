@@ -39,7 +39,7 @@ export class ProcessedEventRepository {
           $set: { ...claimInput, status: "processing", startedAt: now, leaseUntil },
           $inc: { attempts: 1 },
         },
-        { new: true },
+        { returnDocument: "after" },
       ).lean();
       return Boolean(claimed);
     }

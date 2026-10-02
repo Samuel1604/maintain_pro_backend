@@ -16,7 +16,7 @@ export class UploadRepository {
   }
 
   async update(id: string, data: Partial<IUpload>): Promise<IUpload | null> {
-    return Upload.findByIdAndUpdate(toObjectId(id), data, { new: true });
+    return Upload.findByIdAndUpdate(toObjectId(id), data, { returnDocument: "after" });
   }
 
   async delete(id: string): Promise<boolean> {
@@ -25,6 +25,6 @@ export class UploadRepository {
   }
 
   updateStatus(id: string, status: IUpload["status"]) {
-    return Upload.findByIdAndUpdate(toObjectId(id), { status }, { new: true });
+    return Upload.findByIdAndUpdate(toObjectId(id), { status }, { returnDocument: "after" });
   }
 }

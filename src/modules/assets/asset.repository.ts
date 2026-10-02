@@ -86,7 +86,7 @@ export class AssetRepository {
     return Asset.findOneAndUpdate(
       { assetTag, organizationId, facilityId },
       { status: "retired" },
-      { new: true },
+      { returnDocument: "after" },
     );
   }
 

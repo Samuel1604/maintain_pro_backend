@@ -20,7 +20,7 @@ export class QuotationRepository {
     return Quotation.findById(id);
   }
   update(id: string, data: Record<string, unknown>) {
-    return Quotation.findByIdAndUpdate(id, data, { new: true });
+    return Quotation.findByIdAndUpdate(id, data, { returnDocument: "after" });
   }
   createRevision(data: Record<string, unknown>) {
     return QuotationRevision.create(data);

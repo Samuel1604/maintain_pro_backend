@@ -27,7 +27,7 @@ export class NotificationPreferenceService {
     const value = await NotificationPreference.findOneAndUpdate(
       { userId: actor.userId },
       { $set: input },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
+      { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
     ).lean();
     await this.cache.delete(cacheKeys.notificationPreferences(actor.userId));
     return value;
@@ -65,7 +65,7 @@ export class NotificationPreferenceService {
     const updated = await EscalationRule.findOneAndUpdate(
       { _id: id, organizationId: this.organization(actor) },
       input,
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!updated) throw new NotFoundException("Escalation rule not found");
     return updated;

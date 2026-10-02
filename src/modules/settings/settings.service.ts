@@ -31,7 +31,7 @@ export class SettingsService {
     const value = await UserSettings.findOneAndUpdate(
       { userId: actor.userId },
       { $set: input, userId: actor.userId },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
+      { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
     ).lean();
     await this.cache.delete(cacheKeys.userSettings(actor.userId));
     return value;
@@ -56,7 +56,7 @@ export class SettingsService {
     const value = await OrganizationSettings.findOneAndUpdate(
       { organizationId: actor.organizationId },
       { $set: input, organizationId: actor.organizationId },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
+      { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
     ).lean();
     await this.cache.delete(cacheKeys.organizationSettings(actor.organizationId!));
     return value;
@@ -81,7 +81,7 @@ export class SettingsService {
     const value = await VendorSettings.findOneAndUpdate(
       { vendorId: actor.vendorId },
       { $set: input, vendorId: actor.vendorId },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
+      { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
     ).lean();
     await this.cache.delete(cacheKeys.vendorSettings(actor.vendorId!));
     return value;

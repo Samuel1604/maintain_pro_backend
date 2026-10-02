@@ -15,6 +15,6 @@ export class SlaAgreementRepository {
     return SlaAgreement.findById(id);
   }
   update(id: string, data: Record<string, unknown>) {
-    return SlaAgreement.findByIdAndUpdate(id, data, { new: true });
+    return SlaAgreement.findByIdAndUpdate(id, data, { returnDocument: "after" });
   }
 }

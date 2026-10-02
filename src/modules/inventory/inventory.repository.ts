@@ -33,7 +33,7 @@ export class InventoryRepository {
     return InventoryItem.create(data);
   }
   updateItem(id: string, organizationId: string, data: Record<string, unknown>) {
-    return InventoryItem.findOneAndUpdate({ _id: id, organizationId }, data, { new: true });
+    return InventoryItem.findOneAndUpdate({ _id: id, organizationId }, data, { returnDocument: "after" });
   }
   async ensureDefaultCategories(organizationId: string, createdBy: string) {
     const names = [
@@ -85,7 +85,7 @@ export class InventoryRepository {
     return StockLocation.create(data);
   }
   updateLocation(id: string, organizationId: string, data: Record<string, unknown>) {
-    return StockLocation.findOneAndUpdate({ _id: id, organizationId }, data, { new: true });
+    return StockLocation.findOneAndUpdate({ _id: id, organizationId }, data, { returnDocument: "after" });
   }
   ensureBalance(
     organizationId: string,
@@ -96,7 +96,7 @@ export class InventoryRepository {
     return StockBalance.findOneAndUpdate(
       { organizationId, itemId, stockLocationId },
       { $setOnInsert: { quantity: 0, reservedQuantity: 0 } },
-      { upsert: true, new: true, ...(session ? { session } : {}) },
+      { upsert: true, returnDocument: "after", ...(session ? { session } : {}) },
     );
   }
   findBalances(
@@ -211,35 +211,35 @@ export class InventoryRepository {
     return StockBalance.findOneAndUpdate(
       { _id: id },
       { $inc: { quantity } },
-      { new: true, ...(session ? { session } : {}) },
+      { returnDocument: "after", ...(session ? { session } : {}) },
     );
   }
   decreaseAvailable(id: string, quantity: number, session?: ClientSession) {
     return StockBalance.findOneAndUpdate(
       { _id: id, $expr: { $gte: [{ $subtract: ["$quantity", "$reservedQuantity"] }, quantity] } },
       { $inc: { quantity: -quantity } },
-      { new: true, ...(session ? { session } : {}) },
+      { returnDocument: "after", ...(session ? { session } : {}) },
     );
   }
   reserveBalance(id: string, quantity: number, session?: ClientSession) {
     return StockBalance.findOneAndUpdate(
       { _id: id, $expr: { $gte: [{ $subtract: ["$quantity", "$reservedQuantity"] }, quantity] } },
       { $inc: { reservedQuantity: quantity } },
-      { new: true, ...(session ? { session } : {}) },
+      { returnDocument: "after", ...(session ? { session } : {}) },
     );
   }
   releaseBalance(id: string, quantity: number, session?: ClientSession) {
     return StockBalance.findOneAndUpdate(
       { _id: id, reservedQuantity: { $gte: quantity } },
       { $inc: { reservedQuantity: -quantity } },
-      { new: true, ...(session ? { session } : {}) },
+      { returnDocument: "after", ...(session ? { session } : {}) },
     );
   }
   consumeReserved(id: string, quantity: number, session?: ClientSession) {
     return StockBalance.findOneAndUpdate(
       { _id: id, quantity: { $gte: quantity }, reservedQuantity: { $gte: quantity } },
       { $inc: { quantity: -quantity, reservedQuantity: -quantity } },
-      { new: true, ...(session ? { session } : {}) },
+      { returnDocument: "after", ...(session ? { session } : {}) },
     );
   }
   createTransaction(data: Record<string, unknown>, session?: ClientSession) {
@@ -395,7 +395,7 @@ export class InventoryRepository {
     session?: ClientSession,
   ) {
     return InventoryReservation.findOneAndUpdate({ _id: id, organizationId }, data, {
-      new: true,
+      returnDocument: "after",
       ...(session ? { session } : {}),
     });
   }
@@ -711,7 +711,7 @@ export class InventoryRepository {
             $expr: { $gte: [{ $subtract: ["$quantity", "$reservedQuantity"] }, data.quantity] },
           },
           { $inc: { quantity: -data.quantity } },
-          { new: true, session },
+          { returnDocument: "after", session },
         );
         if (!source) throw new Error("INSUFFICIENT_STOCK");
         const destination = await StockBalance.findOneAndUpdate(
@@ -721,7 +721,7 @@ export class InventoryRepository {
             stockLocationId: data.destinationLocationId,
           },
           { $inc: { quantity: data.quantity } },
-          { new: true, session, upsert: true },
+          { returnDocument: "after", session, upsert: true },
         );
         if (!destination) throw new Error("TRANSFER_DESTINATION_FAILED");
         const created = await InventoryTransaction.create(

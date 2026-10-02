@@ -21,7 +21,7 @@ export class ContractAwardRepository {
     return ContractAward.find({ vendorId }).sort({ createdAt: -1 }).limit(100);
   }
   update(id: string, data: Record<string, unknown>) {
-    return ContractAward.findByIdAndUpdate(id, data, { new: true });
+    return ContractAward.findByIdAndUpdate(id, data, { returnDocument: "after" });
   }
   addWorkOrder(data: Record<string, unknown>) {
     return ContractAwardWorkOrder.create(data);
@@ -38,7 +38,7 @@ export class ContractAwardRepository {
     return ContractAwardWorkOrder.findOneAndUpdate(
       { contractAwardId: awardId, workOrderId, removedAt: { $exists: false } },
       { removedAt: new Date() },
-      { new: true },
+      { returnDocument: "after" },
     );
   }
 }

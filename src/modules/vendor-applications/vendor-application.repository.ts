@@ -17,7 +17,7 @@ export class VendorApplicationRepository {
     return VendorApplication.findOne({ workOrderId, vendorId });
   }
   update(id: string, data: Record<string, unknown>) {
-    return VendorApplication.findByIdAndUpdate(id, data, { new: true });
+    return VendorApplication.findByIdAndUpdate(id, data, { returnDocument: "after" });
   }
   findByVendor(vendorId: string) {
     return VendorApplication.find({ vendorId }).sort({ createdAt: -1 }).limit(100);

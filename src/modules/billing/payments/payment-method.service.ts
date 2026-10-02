@@ -18,7 +18,7 @@ export class PaymentMethodService {
         providerPaymentMethodId: input.providerPaymentMethodId,
       },
       { ...input, ownerType: owner.ownerType, ownerId: owner.ownerId, isDefault: true },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
+      { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
     );
     await PaymentMethod.updateMany(
       { ownerType: owner.ownerType, ownerId: owner.ownerId, _id: { $ne: existing?._id } },

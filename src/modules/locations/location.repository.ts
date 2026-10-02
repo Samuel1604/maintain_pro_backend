@@ -55,14 +55,14 @@ export class LocationRepository {
   }
 
   async update(id: string, data: Partial<ILocation>): Promise<ILocation | null> {
-    return Location.findByIdAndUpdate(toObjectId(id), data, { new: true });
+    return Location.findByIdAndUpdate(toObjectId(id), data, { returnDocument: "after" });
   }
 
   async delete(id: string): Promise<boolean> {
     const res = await Location.findByIdAndUpdate(
       toObjectId(id),
       { status: "inactive" },
-      { new: true },
+      { returnDocument: "after" },
     );
     return !!res;
   }
