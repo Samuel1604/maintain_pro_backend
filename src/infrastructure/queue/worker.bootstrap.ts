@@ -6,13 +6,21 @@ const DEFAULT_WORKER_QUEUES: QueueName[] = [
   QUEUE_NAMES.EVENTS,
   QUEUE_NAMES.EMAIL,
   QUEUE_NAMES.NOTIFICATION,
-  QUEUE_NAMES.AUDIT,
-  QUEUE_NAMES.ANALYTICS,
-  QUEUE_NAMES.MARKETPLACE,
-  QUEUE_NAMES.BILLING,
-  QUEUE_NAMES.AI,
-  QUEUE_NAMES.REPORTS,
 ];
+
+function configuredWorkerQueues(): QueueName[] {
+  const configured = process.env.WORKER_QUEUES
+    ?.split(",")
+    .map((queue) => queue.trim())
+    .filter(Boolean);
+
+  if (!configured?.length) return DEFAULT_WORKER_QUEUES;
+
+  const validQueues = new Set<string>(Object.values(QUEUE_NAMES));
+  const queues = configured.filter((queue): queue is QueueName => validQueues.has(queue));
+  if (!queues.length) return DEFAULT_WORKER_QUEUES;
+  return [...new Set(queues)];
+}
 
 export class QueueWorkerBootstrap {
   constructor(
@@ -20,7 +28,7 @@ export class QueueWorkerBootstrap {
     private readonly logger?: Logger,
   ) {}
 
-  start(queueNames: Array<QueueName | string> = DEFAULT_WORKER_QUEUES): void {
+  start(queueNames: Array<QueueName | string> = configuredWorkerQueues()): void {
     queueNames.forEach((queueName) => {
       this.consumer.start(queueName);
       this.logger?.info("[Queue] Worker started", { queue: queueName });
