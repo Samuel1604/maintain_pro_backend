@@ -421,6 +421,8 @@ export class AuthService {
           sessionId: authResponse.sessionId,
           provider: "local",
           ipAddress: session.ipAddress,
+          country: session.country,
+          state: session.state,
           userAgent: session.userAgent,
         }),
       )
@@ -638,6 +640,8 @@ export class AuthService {
         sessionId: authResponse.sessionId,
         provider,
         ipAddress: session.ipAddress,
+        country: session.country,
+        state: session.state,
         userAgent: session.userAgent,
       }),
     );

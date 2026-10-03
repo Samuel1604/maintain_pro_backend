@@ -12,6 +12,7 @@ export interface DeviceInfo {
   deviceType?: string;
 
   country?: string;
+  state?: string;
   city?: string;
   timezone?: string;
 }

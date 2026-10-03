@@ -35,6 +35,8 @@ export class QueueListener implements EventHandler<DomainEvent> {
             email: payload.email,
             sessionId: payload.sessionId,
             ipAddress: payload.ipAddress,
+            country: payload.country,
+            state: payload.state,
             userAgent: payload.userAgent,
           }),
         );

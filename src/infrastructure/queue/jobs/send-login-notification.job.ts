@@ -5,6 +5,8 @@ export interface SendLoginNotificationPayload {
   email: string;
   sessionId: string;
   ipAddress?: string;
+  country?: string;
+  state?: string;
   userAgent?: string;
 }
 

@@ -11,6 +11,39 @@ import { renderBrandedEmail } from "../utils/branded-email.js";
 import { EMAIL_TEMPLATES } from "../templates/email.templates.js";
 import type { EmailTemplateId } from "../templates/email.templates.js";
 
+function formatLoginDevice(userAgent?: string): string | undefined {
+  if (!userAgent) return undefined;
+
+  const browser = userAgent.includes("Edg/")
+    ? "Edge"
+    : userAgent.includes("OPR/") || userAgent.includes("Opera")
+      ? "Opera"
+      : userAgent.includes("Firefox/")
+        ? "Firefox"
+        : userAgent.includes("Chrome/")
+          ? "Chrome"
+          : userAgent.includes("Safari/")
+            ? "Safari"
+            : userAgent.includes("MSIE") || userAgent.includes("Trident/")
+              ? "Internet Explorer"
+              : "Web browser";
+
+  const operatingSystem =
+    userAgent.includes("iPhone") || userAgent.includes("iPad")
+      ? "iOS"
+      : userAgent.includes("Android")
+        ? "Android"
+        : userAgent.includes("Windows NT")
+          ? "Windows"
+          : userAgent.includes("Mac OS X")
+            ? "macOS"
+            : userAgent.includes("Linux")
+              ? "Linux"
+              : undefined;
+
+  return operatingSystem ? `${browser} on ${operatingSystem}` : browser;
+}
+
 export class EmailService {
   private readonly frontendUrl: string;
 
@@ -151,13 +184,18 @@ export class EmailService {
 
   async sendLoginNotificationEmail(payload: {
     email: string;
-    ipAddress?: string;
+    country?: string;
+    state?: string;
     userAgent?: string;
     correlationId?: string;
   }): Promise<SendEmailResult> {
+    const device = formatLoginDevice(payload.userAgent);
+    const location = [payload.state, payload.country].filter(Boolean).join(", ");
     const details = [
-      payload.ipAddress && `<p>IP address: <strong>${payload.ipAddress}</strong></p>`,
-      payload.userAgent && `<p>Device: <strong>${payload.userAgent}</strong></p>`,
+      location
+        ? `<p>Location: <strong>${location}</strong></p>`
+        : `<p>IP address: <strong>unknown</strong></p>`,
+      device && `<p>Device: <strong>${device}</strong></p>`,
     ]
       .filter(Boolean)
       .join("");
@@ -172,7 +210,7 @@ export class EmailService {
         variant: EMAIL_TEMPLATES.loginNotification.variant,
         body: `<p>A new login was detected on your MaintainPro account.</p>${details}<p>If this was not you, reset your password immediately.</p>`,
       }),
-      text: `A new login was detected on your MaintainPro account.${payload.ipAddress ? ` IP address: ${payload.ipAddress}.` : ""}`,
+      text: `A new login was detected on your MaintainPro account.${location ? ` Location: ${location}.` : " IP address: unknown."}${device ? ` Device: ${device}.` : ""}`,
     });
   }
 

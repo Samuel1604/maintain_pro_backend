@@ -78,6 +78,10 @@ export interface UserLoggedInPayload {
 
   ipAddress?: string;
 
+  country?: string;
+
+  state?: string;
+
   userAgent?: string;
 }
 

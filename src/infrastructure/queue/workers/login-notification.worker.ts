@@ -23,7 +23,7 @@ export class LoginNotificationWorker implements QueueWorker<SendLoginNotificatio
   ) {}
 
   async execute(job: QueueJob<SendLoginNotificationPayload>): Promise<void> {
-    const { email, ipAddress, userAgent } = job.payload;
+    const { email, country, state, userAgent } = job.payload;
 
     this.logger.info("[LoginNotificationWorker] Started", {
       jobName: job.name,
@@ -31,7 +31,7 @@ export class LoginNotificationWorker implements QueueWorker<SendLoginNotificatio
     });
 
     try {
-      await this.emailService.sendLoginNotificationEmail({ email, ipAddress, userAgent });
+      await this.emailService.sendLoginNotificationEmail({ email, country, state, userAgent });
 
       this.logger.info("[LoginNotificationWorker] Completed", {
         jobName: job.name,

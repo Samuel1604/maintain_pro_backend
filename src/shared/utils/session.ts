@@ -115,6 +115,8 @@ export async function buildSessionMetadata(req: Request): Promise<SessionMetadat
     ...(cloudflareTrusted && {
       country: firstHeader(req.headers["cf-ipcountry"]),
 
+      state: firstHeader(req.headers["cf-region"]),
+
       city: firstHeader(req.headers["cf-ipcity"]),
 
       timezone: firstHeader(req.headers["cf-timezone"]),
