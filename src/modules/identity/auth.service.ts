@@ -376,6 +376,10 @@ export class AuthService {
       await this.userService.activate(user._id.toString());
     }
 
+    const isKnownLogin = await this.sessionService.hasActiveLoginFingerprint(
+      user._id.toString(),
+      session,
+    );
     const authResponse = await this.sessionService.createAuthenticatedSession(user, session);
 
     if (!user.isVerified && user.status === "pending_verification") {
@@ -412,21 +416,27 @@ export class AuthService {
     }
 
     await this.lockoutService.isUnlocked(user);
+    const isKnownLogin = await this.sessionService.hasActiveLoginFingerprint(
+      user._id.toString(),
+      session,
+    );
     await this.userService.recordLogin(user._id.toString());
-    void this.eventBus
-      .publish(
-        new UserLoggedInEvent({
-          userId: user._id.toString(),
-          email: user.email,
-          sessionId: authResponse.sessionId,
-          provider: "local",
-          ipAddress: session.ipAddress,
-          country: session.country,
-          state: session.state,
-          userAgent: session.userAgent,
-        }),
-      )
-      .catch(() => undefined);
+    if (!isKnownLogin) {
+      void this.eventBus
+        .publish(
+          new UserLoggedInEvent({
+            userId: user._id.toString(),
+            email: user.email,
+            sessionId: authResponse.sessionId,
+            provider: "local",
+            ipAddress: session.ipAddress,
+            country: session.country,
+            state: session.state,
+            userAgent: session.userAgent,
+          }),
+        )
+        .catch(() => undefined);
+    }
 
     return { success: true, message: "Login successful.", data: authResponse };
   }
@@ -629,22 +639,28 @@ export class AuthService {
 
     await this.lockoutService.isUnlocked(user);
 
+    const isKnownLogin = await this.sessionService.hasActiveLoginFingerprint(
+      user._id.toString(),
+      session,
+    );
     const authResponse = await this.sessionService.createAuthenticatedSession(user, session);
 
     await this.userService.recordLogin(user._id.toString());
 
-    await this.eventBus.publish(
-      new UserLoggedInEvent({
-        userId: user._id.toString(),
-        email: user.email,
-        sessionId: authResponse.sessionId,
-        provider,
-        ipAddress: session.ipAddress,
-        country: session.country,
-        state: session.state,
-        userAgent: session.userAgent,
-      }),
-    );
+    if (!isKnownLogin) {
+      await this.eventBus.publish(
+        new UserLoggedInEvent({
+          userId: user._id.toString(),
+          email: user.email,
+          sessionId: authResponse.sessionId,
+          provider,
+          ipAddress: session.ipAddress,
+          country: session.country,
+          state: session.state,
+          userAgent: session.userAgent,
+        }),
+      );
+    }
 
     return authResponse;
   }

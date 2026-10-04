@@ -37,6 +37,7 @@ export interface IRefreshToken extends Document {
    * Geo
    */
   country?: string;
+  state?: string;
   city?: string;
   timezone?: string;
 
@@ -121,6 +122,7 @@ const refreshTokenSchema = new Schema<IRefreshToken>(
      * Geo
      */
     country: String,
+    state: String,
     city: String,
     timezone: String,
 

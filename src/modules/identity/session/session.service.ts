@@ -90,6 +90,13 @@ export class SessionService {
     };
   }
 
+  hasActiveLoginFingerprint(userId: string, session: SessionMetadata): Promise<boolean> {
+    return this.repository.hasActiveLoginFingerprint(userId, {
+      ipAddress: session.ipAddress,
+      userAgent: session.userAgent,
+    });
+  }
+
   // ================================
   // AUTH RESPONSE
   // ================================

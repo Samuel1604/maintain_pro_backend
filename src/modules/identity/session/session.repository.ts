@@ -41,6 +41,21 @@ export class SessionRepository {
       .lean();
   }
 
+  async hasActiveLoginFingerprint(
+    userId: string,
+    fingerprint: { ipAddress: string; userAgent: string },
+  ): Promise<boolean> {
+    const session = await Session.exists({
+      userId,
+      ipAddress: fingerprint.ipAddress,
+      userAgent: fingerprint.userAgent,
+      revokedAt: null,
+      expiresAt: { $gt: new Date() },
+    });
+
+    return Boolean(session);
+  }
+
   async findActiveByHash(tokenHash: string) {
     return Session.findOne({
       tokenHash,
