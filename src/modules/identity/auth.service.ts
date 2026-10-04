@@ -376,10 +376,6 @@ export class AuthService {
       await this.userService.activate(user._id.toString());
     }
 
-    const isKnownLogin = await this.sessionService.hasActiveLoginFingerprint(
-      user._id.toString(),
-      session,
-    );
     const authResponse = await this.sessionService.createAuthenticatedSession(user, session);
 
     if (!user.isVerified && user.status === "pending_verification") {
