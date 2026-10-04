@@ -321,8 +321,10 @@ export class AssetService {
         throw new NotFoundException("Location not found in your facility");
     }
 
+    const { locationId, ...assetData } = data;
     const updateData: Partial<IAsset> = {
-      ...data,
+      ...assetData,
+      ...(locationId ? { locationId: toObjectId(locationId) } : {}),
       ...(data.estimatedValue !== undefined
         ? {
             estimatedValueMinor: toMinorUnits(
@@ -338,7 +340,7 @@ export class AssetService {
       await this.cache.deleteByPattern(`${cacheKeys.tenantPrefix(organizationId)}assets:list:*`);
       await this.cache.deleteByPattern(`${cacheKeys.tenantPrefix(organizationId)}dashboard:*`);
       const event =
-        data.locationId && data.locationId !== asset.locationId.toString()
+        locationId && locationId !== asset.locationId.toString()
           ? ASSET_HISTORY_EVENTS.LOCATION_CHANGED
           : data.status && data.status !== asset.status
             ? ASSET_HISTORY_EVENTS.STATUS_CHANGED
