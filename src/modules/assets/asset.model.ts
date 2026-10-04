@@ -1,5 +1,6 @@
 import { Schema, model, Document, Types } from "mongoose";
 import * as Type from "./asset.types.js";
+import { toMinorUnits } from "@/shared/money/money.js";
 
 export interface IAsset extends Document {
   organizationId: Types.ObjectId;
@@ -140,6 +141,15 @@ const assetSchema = new Schema<IAsset>({
     ref: "User",
     required: true,
   },
+});
+
+// Preserve compatibility with older callers that still provide the legacy
+// major-unit value directly to the model. Service-layer writes already send
+// estimatedValueMinor, so this only fills the normalized field when needed.
+assetSchema.pre("validate", function () {
+  if (this.estimatedValueMinor == null && this.estimatedValue != null) {
+    this.estimatedValueMinor = toMinorUnits(String(this.estimatedValue), this.currency ?? "NGN");
+  }
 });
 
 assetSchema.index({ organizationId: 1, facilityId: 1, assetTag: 1 }, { unique: true });
