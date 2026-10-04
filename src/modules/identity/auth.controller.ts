@@ -20,6 +20,7 @@ import type {
   VerifyEmailChangeDto,
 } from "@/modules/security/security.schema.js";
 import type { AcceptInvitationDto } from "@/modules/invitations/invitation.schema.js";
+import { currencyFromCountry } from "@/shared/money/currency-from-country.js";
 
 export class AuthController {
   constructor(
@@ -152,7 +153,15 @@ export class AuthController {
   me = requestHandler<AuthRequest>(async (req, res) => {
     const user = await this.service.getCurrentUser(req.user.userId);
     if (!user) throw new AuthenticationException("User not found");
-    return res.ok(user, "User fetched successfully");
+    const session = await buildSessionMetadata(req);
+    return res.ok(
+      {
+        ...user,
+        detectedCountry: session.country,
+        displayCurrency: currencyFromCountry(session.country),
+      },
+      "User fetched successfully",
+    );
   });
 
   // ================================

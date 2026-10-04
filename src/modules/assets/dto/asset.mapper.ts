@@ -26,6 +26,9 @@ export const assetMapper = {
       lastMaintenanceDate: toIsoString(asset.lastMaintenanceDate),
       nextMaintenanceDate: toIsoString(asset.nextMaintenanceDate),
       estimatedValue: asset.estimatedValue,
+      estimatedValueMinor:
+        asset.estimatedValueMinor ??
+        (asset.estimatedValue !== undefined ? Math.round(asset.estimatedValue * 100) : undefined),
       currency: asset.currency ?? "NGN",
       notes: asset.notes,
 

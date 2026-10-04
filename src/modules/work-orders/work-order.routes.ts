@@ -43,6 +43,7 @@ import {
 } from "./work-order-support.model.js";
 import { Upload } from "@/modules/uploads/upload.model.js";
 import { z } from "zod";
+import { toMinorUnits } from "@/shared/money/money.js";
 import mongoose from "mongoose";
 import { WorkOrderService } from "./work-order.service.js";
 import { OutboxEventRepository } from "@/infrastructure/events/outbox/outbox-event.repository.js";
@@ -278,7 +279,8 @@ router.post(
               organizationId: workOrder.organizationId,
               vendorId: req.user.vendorId,
               workOrderId: workOrder._id,
-              currency: body.currency ?? "NGN",
+              currency: (body.currency ?? "NGN").toUpperCase(),
+              amountMinor: toMinorUnits(body.amount, body.currency ?? "NGN"),
               status: "submitted",
             },
           ],

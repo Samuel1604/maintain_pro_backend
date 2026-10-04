@@ -50,7 +50,7 @@ export class FlutterwaveProvider implements PaymentProviderGateway {
         `${FLUTTERWAVE_API_BASE}/payments`,
         {
           tx_ref: params.idempotencyKey,
-          amount: params.amount ?? 0,
+          amount: params.amountMinor ?? 0,
           currency: params.currency || "NGN",
           redirect_url: params.successUrl,
           meta: { paymentId: params.paymentId, plan: params.plan },

@@ -73,7 +73,6 @@ const envSchema = z.object({
   REDIS_TLS_REJECT_UNAUTHORIZED: z.string().optional().default("true"),
   QUEUE_DRIVER: z.enum(["bullmq", "in-memory"]).default("bullmq"),
   BILLING_DEFAULT_PROVIDER: z.enum(["mock", "stripe", "paystack", "flutterwave"]).default("mock"),
-
   // Public tunnel is opt-in. The command is intentionally provider-neutral so
   // ngrok can be replaced with cloudflared without changing server bootstrap.
   TUNNEL_PROVIDER: z.enum(["none", "ngrok", "cloudflare"]).default("none"),

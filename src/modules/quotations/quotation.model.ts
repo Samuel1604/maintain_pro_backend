@@ -16,6 +16,8 @@ export interface IQuotation extends Document {
   validUntil?: Date;
   laborCost: number;
   materialCost: number;
+  laborCostMinor: number;
+  materialCostMinor: number;
   estimatedDurationHours: number;
   notes?: string;
   status: QuotationStatus;
@@ -63,11 +65,13 @@ const quotationSchema = new Schema<IQuotation>(
       required: true,
       min: 0,
     },
+    laborCostMinor: { type: Number, required: true, min: 0 },
     materialCost: {
       type: Number,
       required: true,
       min: 0,
     },
+    materialCostMinor: { type: Number, required: true, min: 0 },
     estimatedDurationHours: {
       type: Number,
       required: true,

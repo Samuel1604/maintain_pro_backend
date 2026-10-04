@@ -9,6 +9,7 @@ export interface IInvoice extends Document {
   contractId?: Types.ObjectId;
   invoiceNumber: string;
   amount: number;
+  amountMinor?: number;
   currency: string;
   status: InvoiceStatus;
   submittedAt: Date;
@@ -31,6 +32,7 @@ const schema = new Schema<IInvoice>(
     contractId: { type: Schema.Types.ObjectId, ref: "Contract" },
     invoiceNumber: { type: String, required: true, trim: true },
     amount: { type: Number, required: true, min: 0 },
+    amountMinor: { type: Number, min: 0 },
     currency: { type: String, default: "NGN" },
     status: {
       type: String,

@@ -54,7 +54,7 @@ export class StripeProvider implements PaymentProviderGateway {
         mode: "subscription",
         "line_items[0][price_data][currency]": params.currency || "usd",
         "line_items[0][price_data][product_data][name]": `MaintainPro ${params.plan} plan`,
-        "line_items[0][price_data][unit_amount]": String(params.amount ?? 0),
+        "line_items[0][price_data][unit_amount]": String(params.amountMinor ?? 0),
         "line_items[0][quantity]": "1",
         success_url: params.successUrl || "https://maintainpro.com/billing/success",
         cancel_url: params.cancelUrl || "https://maintainpro.com/billing/cancel",

@@ -35,6 +35,7 @@ export interface IAsset extends Document {
   nextMaintenanceDate?: Date;
 
   estimatedValue?: number;
+  estimatedValueMinor?: number;
   currency?: string;
 
   notes?: string;
@@ -122,8 +123,9 @@ const assetSchema = new Schema<IAsset>({
   },
   estimatedValue: {
     type: Number,
-    required: true,
+    required: false,
   },
+  estimatedValueMinor: { type: Number, required: true, min: 0 },
   currency: {
     type: String,
     default: "NGN",

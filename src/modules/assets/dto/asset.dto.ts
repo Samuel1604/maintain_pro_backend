@@ -26,6 +26,7 @@ export interface AssetResponse {
   lastMaintenanceDate?: string;
   nextMaintenanceDate?: string;
   estimatedValue?: number;
+  estimatedValueMinor?: number;
   currency?: string;
   notes?: string;
 

@@ -4,7 +4,8 @@ export interface CheckoutParams {
   paymentId: string;
   idempotencyKey: string;
   plan: string;
-  amount?: number;
+  /** Integer amount in the provider's smallest currency unit. */
+  amountMinor?: number;
   currency?: string;
   successUrl?: string;
   cancelUrl?: string;

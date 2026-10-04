@@ -28,6 +28,7 @@ import type { PaymentProvider } from "./enums/payment-provider.enum.js";
 import type { Actor } from "@/shared/types/request.js";
 import { env } from "@/config/env.js";
 import { randomUUID } from "node:crypto";
+import { toMinorUnits } from "@/shared/money/money.js";
 import mongoose from "mongoose";
 import { OutboxEventRepository } from "@/infrastructure/events/outbox/outbox-event.repository.js";
 import { serializeDomainEvent } from "@/infrastructure/events/bus/serialized-domain-event.js";
@@ -202,18 +203,19 @@ export class BillingService {
     const provider = providerName || (subscription.provider as PaymentProvider) || "mock";
     const operationKey = idempotencyKey?.trim() || randomUUID();
 
-    // Calculate checkout amount in cents based on plan, ownerType, and billingCycle (with 20% annual discount)
+    // Calculate an integer USD minor-unit amount. Never use floating-point
+    // major units when creating a provider checkout.
     const ownerType = subscription.ownerType || "organization";
     const plan = subscription.plan;
     const cycle = subscription.billingCycle || "monthly";
 
     const baseMonthly = BILLING_CONFIG.PLAN_PRICES_USD_MONTHLY[ownerType]?.[plan] ?? 0;
-    const monthlyRate =
+    const baseMonthlyMinor = toMinorUnits(String(baseMonthly), "USD");
+    const discountedMonthlyMinor =
       cycle === "annual"
-        ? baseMonthly * (1 - BILLING_CONFIG.ANNUAL_DISCOUNT_PERCENT / 100)
-        : baseMonthly;
-    const totalDollars = cycle === "annual" ? monthlyRate * 12 : monthlyRate;
-    const amountCents = Math.round(totalDollars * 100);
+        ? Math.round((baseMonthlyMinor * (100 - BILLING_CONFIG.ANNUAL_DISCOUNT_PERCENT)) / 100)
+        : baseMonthlyMinor;
+    const amountMinor = cycle === "annual" ? discountedMonthlyMinor * 12 : discountedMonthlyMinor;
 
     const payment = await this.paymentRepository.create({
       subscriptionId: toObjectId(subscription._id.toString()),
@@ -224,6 +226,8 @@ export class BillingService {
       provider,
       status: "pending",
       idempotencyKey: operationKey,
+      amount: amountMinor,
+      currency: "USD",
     });
 
     const gateway = createPaymentProvider(provider);
@@ -233,8 +237,8 @@ export class BillingService {
         paymentId: payment._id.toString(),
         idempotencyKey: operationKey,
         plan: subscription.plan,
-        amount: amountCents,
-        currency: "usd",
+        amountMinor,
+        currency: "USD",
       });
     } catch (error) {
       // Do not leave an unusable pending payment that future requests would

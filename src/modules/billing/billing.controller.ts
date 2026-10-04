@@ -14,24 +14,39 @@ import { createSubscriptionSchema, changePlanSchema } from "./billing.schema.js"
 import { PaymentMethodService } from "./payments/payment-method.service.js";
 import { paymentMethodSchema } from "./payments/payment-method.schema.js";
 import { BILLING_CONFIG } from "./billing.config.js";
+import { buildSessionMetadata } from "@/shared/utils/session.js";
+import { currencyFromCountry } from "@/shared/money/currency-from-country.js";
+import { convertPublicPrice, publicPricingCurrency } from "./public-pricing.service.js";
 
 export const getPlanCatalog = requestHandler(async (req, res) => {
   const audience = req.query.audience === "vendor" ? "vendor" : "organization";
   const prices = BILLING_CONFIG.PLAN_PRICES_USD_MONTHLY[audience] ?? {};
   const trialPeriods = BILLING_CONFIG.PLAN_TRIAL_PERIOD_DAYS[audience] ?? {};
+  const session = await buildSessionMetadata(req);
+  const displayCurrency = currencyFromCountry(session.country);
+  const localized = await publicPricingCurrency(displayCurrency);
   const plans = Object.entries(prices)
     .filter(([plan]) => audience === "organization" || plan !== "enterprise")
     .map(([plan, monthlyPrice]) => ({
       id: plan,
-      monthlyPrice,
-      annualPrice: Math.round(monthlyPrice * (1 - BILLING_CONFIG.ANNUAL_DISCOUNT_PERCENT / 100)),
+      monthlyPrice: convertPublicPrice(monthlyPrice, localized.currency, localized.rate),
+      annualPrice: convertPublicPrice(
+        Math.round(monthlyPrice * (1 - BILLING_CONFIG.ANNUAL_DISCOUNT_PERCENT / 100)),
+        localized.currency,
+        localized.rate,
+      ),
       trialDays: trialPeriods[plan] ?? BILLING_CONFIG.TRIAL_PERIOD_DAYS,
     }));
 
   return res.ok(
     {
       audience,
-      currency: "USD",
+      currency: localized.currency,
+      baseCurrency: "USD",
+      displayCurrency: localized.currency,
+      exchangeRate: localized.rate,
+      rateDate: localized.rateDate,
+      detectedCountry: session.country,
       annualDiscountPercent: BILLING_CONFIG.ANNUAL_DISCOUNT_PERCENT,
       plans,
     },

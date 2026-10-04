@@ -14,6 +14,7 @@ import { QuotationRepository } from "./quotation.repository.js";
 import type { ApplicationResult } from "@/shared/application-result/index.js";
 import type { IQuotation } from "./quotation.model.js";
 import { ProcurementEventsService } from "@/modules/procurement/procurement-events.service.js";
+import { toMinorUnits } from "@/shared/money/money.js";
 
 type Actor = {
   userId: string;
@@ -42,7 +43,9 @@ export class QuotationService {
 
     const workOrder = await WorkOrder.findById(application.workOrderId).select("organizationId");
     if (!workOrder) throw new NotFoundException("Work order not found");
-    const subtotalMinor = Math.round((data.laborCost + data.materialCost) * 100);
+    const laborCostMinor = toMinorUnits(data.laborCost, "USD");
+    const materialCostMinor = toMinorUnits(data.materialCost, "USD");
+    const subtotalMinor = laborCostMinor + materialCostMinor;
 
     const quotation: Record<string, unknown> = {
       organizationId: workOrder.organizationId,
@@ -52,6 +55,8 @@ export class QuotationService {
       submittedBy: new Types.ObjectId(actor.userId),
       laborCost: data.laborCost,
       materialCost: data.materialCost,
+      laborCostMinor,
+      materialCostMinor,
       estimatedDurationHours: data.estimatedDurationHours,
       status: "submitted",
       quotationNumber: `Q-${Date.now()}-${Math.floor(Math.random() * 10000)}`,

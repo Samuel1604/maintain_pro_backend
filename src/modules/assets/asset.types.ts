@@ -52,6 +52,7 @@ export interface CreateAssetDto {
   lastMaintenanceDate?: Date;
   nextMaintenanceDate?: Date;
   estimatedValue?: number;
+  estimatedValueMinor?: number;
   currency?: string;
   notes?: string;
 }
@@ -75,6 +76,7 @@ export interface UpdateAssetDto {
   lastMaintenanceDate?: Date;
   nextMaintenanceDate?: Date;
   estimatedValue?: number;
+  estimatedValueMinor?: number;
   currency?: string;
   notes?: string;
 }

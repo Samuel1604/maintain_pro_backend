@@ -17,6 +17,7 @@ import { RedisCache } from "@/infrastructure/cache/redis.cache.js";
 import { cacheKeys, cacheTtlSeconds } from "@/infrastructure/cache/cache-keys.js";
 import { cacheHash } from "@/shared/utils/cache-hash.js";
 import { ROLES } from "@/shared/constants/roles.js";
+import { toMinorUnits } from "@/shared/money/money.js";
 
 const importRowSchema = z.object({
   assetTag: z.string().trim().min(1),
@@ -135,6 +136,7 @@ export class AssetService {
 
     const asset = await this.repository.create({
       ...assetData,
+      estimatedValueMinor: toMinorUnits(assetData.estimatedValue!, assetData.currency ?? "NGN"),
       organizationId: toObjectId(organizationId),
       facilityId: toObjectId(facilityId),
       locationId: toObjectId(assetData.locationId),
@@ -319,12 +321,18 @@ export class AssetService {
         throw new NotFoundException("Location not found in your facility");
     }
 
-    const updated = await this.repository.update(
-      assetTag,
-      organizationId,
-      facilityId,
-      data as Partial<IAsset>,
-    );
+    const updateData: Partial<IAsset> = {
+      ...data,
+      ...(data.estimatedValue !== undefined
+        ? {
+            estimatedValueMinor: toMinorUnits(
+              data.estimatedValue,
+              data.currency ?? asset.currency ?? "NGN",
+            ),
+          }
+        : {}),
+    };
+    const updated = await this.repository.update(assetTag, organizationId, facilityId, updateData);
     if (updated) {
       await this.cache.delete(cacheKeys.asset(organizationId, assetTag));
       await this.cache.deleteByPattern(`${cacheKeys.tenantPrefix(organizationId)}assets:list:*`);

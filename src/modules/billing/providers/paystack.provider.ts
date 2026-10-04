@@ -41,7 +41,7 @@ export class PaystackProvider implements PaymentProviderGateway {
       }>(
         `${PAYSTACK_API_BASE}/transaction/initialize`,
         {
-          amount: params.amount ?? 0,
+          amount: params.amountMinor ?? 0,
           currency: params.currency || "NGN",
           reference: params.idempotencyKey,
           callback_url: params.successUrl,
