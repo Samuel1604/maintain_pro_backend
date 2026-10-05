@@ -356,7 +356,6 @@ export class WorkOrderService {
         success: true,
         message: "No marketplace opportunities are available yet",
         data: [],
-        pagination: { page: 1, limit: 100, total: 0, pages: 0 },
       };
     }
     const organizationIds = relationships.map((relationship) => relationship.organizationId);
