@@ -26,6 +26,7 @@ export class VendorRelationshipRepository {
       vendorId,
       ...(organizationId ? { organizationId } : {}),
     })
+      .populate("organizationId", "name")
       .sort({ createdAt: -1 })
       .limit(100);
   }

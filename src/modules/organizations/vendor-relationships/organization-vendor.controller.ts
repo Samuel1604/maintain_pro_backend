@@ -47,6 +47,10 @@ export const respondToVendorRelationship = requestHandler<AuthRequest<{ organiza
     return res.ok(result.data, result.message);
   },
 );
+export const listIncomingVendorRelationships = requestHandler<AuthRequest>(async (req, res) => {
+  const result = await service.incomingRelationships(req.user);
+  return res.ok(result, "Incoming vendor relationship requests retrieved successfully");
+});
 export const listFacilityVendors = requestHandler<AuthRequest<{ facilityId: string }>>(
   async (req, res) => {
     const result = await service.facilityVendors(req.params.facilityId, req.user);

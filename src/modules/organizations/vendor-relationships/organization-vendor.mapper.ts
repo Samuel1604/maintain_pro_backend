@@ -30,9 +30,13 @@ export function toOrganizationVendorResponse(
 export function toVendorRelationshipResponse(
   item: IVendorOrganization,
 ): VendorRelationshipResponse {
+  const organization = item.organizationId as unknown as {
+    _id?: { toString(): string };
+    name?: string;
+  };
   return {
     vendorId: item.vendorId.toString(),
-    organizationId: item.organizationId.toString(),
+    organizationId: (organization?._id ?? item.organizationId).toString(),
     status: item.status,
     createdBy: item.createdBy.toString(),
     activatedBy: item.activatedBy?.toString(),
@@ -41,5 +45,6 @@ export function toVendorRelationshipResponse(
     suspendedAt: item.suspendedAt?.toISOString(),
     removedBy: item.removedBy?.toString(),
     removedAt: item.removedAt?.toISOString(),
+    ...(organization?.name ? { organizationName: organization.name } : {}),
   };
 }

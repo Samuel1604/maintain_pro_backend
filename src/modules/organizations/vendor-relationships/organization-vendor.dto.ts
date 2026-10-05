@@ -26,4 +26,5 @@ export interface VendorRelationshipResponse {
   suspendedAt?: string;
   removedBy?: string;
   removedAt?: string;
+  organizationName?: string;
 }

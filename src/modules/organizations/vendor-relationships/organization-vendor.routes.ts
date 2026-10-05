@@ -13,6 +13,7 @@ import {
   associateFacilityVendor,
   removeFacilityVendor,
   respondToVendorRelationship,
+  listIncomingVendorRelationships,
   getOrganizationVendorPerformance,
 } from "./organization-vendor.controller.js";
 
@@ -23,6 +24,11 @@ const internal = [ROLES.ADMIN, ROLES.FACILITY_MANAGER, ROLES.FINANCE];
 
 router.get("/", authorize(...internal), listOrganizationVendors);
 router.get("/marketplace", authorize(...internal), discoverMarketplaceVendors);
+router.get(
+  "/relationships/incoming",
+  authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER),
+  listIncomingVendorRelationships,
+);
 router.patch(
   "/relationships/:organizationId",
   authorize(ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER),

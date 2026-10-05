@@ -200,6 +200,15 @@ export class OrganizationVendorService {
       data: toVendorRelationshipResponse(result!),
     };
   }
+
+  async incomingRelationships(actor: Actor) {
+    if (!actor.vendorId || ![ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER].includes(actor.role))
+      throw new AuthorizationException(
+        "Only vendor lead or vendor manager can view relationship requests",
+      );
+    const relationships = await this.relationships.findByVendor(actor.vendorId);
+    return relationships.map((relationship) => toVendorRelationshipResponse(relationship));
+  }
   async facilityVendors(facilityId: string, actor: Actor) {
     const organizationId = this.org(actor);
     const facility = await Facility.findOne({
