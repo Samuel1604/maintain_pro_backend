@@ -349,8 +349,16 @@ export class WorkOrderService {
       vendorId: user.vendorId,
       status: "active",
     }).limit(100);
-    if (!relationships.length)
-      throw new AuthorizationException("Vendor has no active marketplace relationship");
+    // A vendor without an active marketplace relationship has no eligible
+    // opportunities yet. Return an empty, successful result so the portal can
+    // render its normal empty state instead of showing a misleading error.
+    if (!relationships.length) {
+      return {
+        success: true,
+        message: "No marketplace opportunities are available yet",
+        data: [],
+      };
+    }
     const organizationIds = relationships.map((relationship) => relationship.organizationId);
     const query: Record<string, unknown> = {
       status: WORK_ORDER_STATUS.OPEN,
