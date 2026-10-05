@@ -14,7 +14,6 @@ import { Facility } from "@/modules/facilities/facility.model.js";
 import { Location } from "@/modules/locations/location.model.js";
 import { Asset } from "@/modules/assets/asset.model.js";
 import { OrganizationVendorRelationship } from "@/modules/organizations/vendor-relationships/organization-vendor.model.js";
-import { FacilityVendor } from "@/modules/organizations/vendor-relationships/facility-vendor.model.js";
 import { MarketplaceGeographicPolicy } from "@/modules/organizations/marketplace-geographic-policy.model.js";
 import { distanceInKilometers } from "@/shared/utils/geography.js";
 import type {
@@ -372,11 +371,6 @@ export class WorkOrderService {
       _id: { $in: workOrders.map((item) => item.facilityId) },
     }).select("_id coordinates");
     const facilityMap = new Map(facilities.map((facility) => [facility._id.toString(), facility]));
-    const authorizedFacilities = await FacilityVendor.find({
-      vendorId: user.vendorId,
-      organizationId: { $in: organizationIds },
-    }).distinct("facilityId");
-    const authorized = new Set(authorizedFacilities.map((id) => id.toString()));
     const policies = await MarketplaceGeographicPolicy.find({
       organizationId: { $in: organizationIds },
       enabled: true,
@@ -389,7 +383,7 @@ export class WorkOrderService {
     );
     const eligible = workOrders.filter((workOrder) => {
       const facility = facilityMap.get(workOrder.facilityId.toString());
-      if (!facility || !authorized.has(workOrder.facilityId.toString())) return false;
+      if (!facility) return false;
       const maximumDistance = policyMap.get(
         `${workOrder.organizationId.toString()}:${workOrder.priority}`,
       );
@@ -426,11 +420,6 @@ export class WorkOrderService {
       organizationId: actor.organizationId,
       status: "active",
     }).select("vendorId");
-    const facilityVendors = await FacilityVendor.find({
-      organizationId: actor.organizationId,
-      facilityId: workOrder.facilityId,
-    }).select("vendorId");
-    const allowed = new Set(facilityVendors.map((item) => item.vendorId.toString()));
     const vendors = await Vendor.find({
       _id: { $in: relationships.map((item) => item.vendorId) },
       status: "active",
@@ -448,8 +437,7 @@ export class WorkOrderService {
       };
     const data = vendors
       .filter((vendor) => {
-        if (!allowed.has(vendor._id.toString()) || !vendor.baseCoordinates?.coordinates?.length)
-          return false;
+        if (!vendor.baseCoordinates?.coordinates?.length) return false;
         return distanceInKilometers(
           vendor.baseCoordinates.coordinates,
           facility.coordinates.coordinates,
