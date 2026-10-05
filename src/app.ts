@@ -86,6 +86,13 @@ app.get("/api/v1/health/ready", async (_req: Request, res: Response) => {
   return res.status(result.ready ? 200 : 503).json(result);
 });
 
+// Browser clients hosted on another origin cannot read the API's CSRF cookie.
+// Return the same token through a safe credentialed endpoint so they can
+// mirror it into the required X-CSRF-Token header.
+app.get("/api/v1/csrf", (req: Request, res: Response) => {
+  return res.ok({ token: req.cookies?.csrfToken ?? null });
+});
+
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/billing", billingRoutes);
 app.use("/api/v1/users", userRoutes);
