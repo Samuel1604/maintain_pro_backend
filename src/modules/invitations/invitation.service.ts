@@ -154,9 +154,11 @@ export class InvitationService {
      * Silently handles errors so developer/testing on-screen flow never blocks.
      */
     try {
-      await this.emailService.sendInvitationEmail({
+      await this.emailService.sendTemporaryInvitationEmail({
         email: dto.email,
-        invitationToken: token,
+        name: [dto.firstName, dto.lastName].filter(Boolean).join(" "),
+        temporaryPassword,
+        expiresInMinutes: 15,
         role: dto.role as UserRole,
       });
       emailSent = true;
@@ -188,13 +190,11 @@ export class InvitationService {
         ...(invitation.toObject ? invitation.toObject() : invitation),
         invitationToken: token,
         invitationUrl,
-        temporaryPassword,
         expiresInMinutes: 15,
         emailSent,
       } as unknown as IInvitation & {
         invitationToken: string;
         invitationUrl: string;
-        temporaryPassword: string;
         expiresInMinutes: number;
         emailSent: boolean;
       },
@@ -203,8 +203,8 @@ export class InvitationService {
 
   /**
    * Creates a temp-invitation: generates a random password, creates a User
-   * with status 'pending_invitation' and a 15-minute TTL, and returns the
-   * temporary credentials to the actor for one-time display.
+   * with status 'pending_invitation' and a 15-minute TTL. Credentials are
+   * delivered only to the invitee's email address.
    *
    * This flow lives alongside the classic invitation (OTP/link-based) and
    * will be the default until a real mail provider is wired in.
@@ -215,8 +215,8 @@ export class InvitationService {
   ): Promise<
     ApplicationResult<{
       email: string;
-      temporaryPassword: string;
       expiresInMinutes: number;
+      emailSent: boolean;
     }>
   > {
     // 1. Guard: only admin (org) or vendor_lead (vendor) can send temp invites
@@ -295,7 +295,21 @@ export class InvitationService {
     }
     await this.userService.createTempInvitedUser(invitation, temporaryPassword);
 
-    // 6. Publish event for audit trail (no email — credentials shown in-portal)
+    let emailSent = false;
+    try {
+      await this.emailService.sendTemporaryInvitationEmail({
+        email: invitation.email,
+        name: [invitation.firstName, invitation.lastName].filter(Boolean).join(" "),
+        temporaryPassword,
+        expiresInMinutes: 15,
+        role: invitation.role,
+      });
+      emailSent = true;
+    } catch {
+      // Never expose the generated password to the inviter if delivery fails.
+    }
+
+    // 6. Publish event for audit trail.
     await this.eventBus.publish(
       new InvitationCreatedEvent({
         invitationId: invitation._id.toString(),
@@ -310,9 +324,10 @@ export class InvitationService {
 
     return {
       success: true,
-      message:
-        "Temporary invitation created. Share the credentials securely — they expire in 15 minutes.",
-      data: { email: dto.email, temporaryPassword, expiresInMinutes: 15 },
+      message: emailSent
+        ? "Temporary login details sent to the invitee's email address."
+        : "Temporary invitation created, but the login email could not be delivered.",
+      data: { email: dto.email, expiresInMinutes: 15, emailSent },
     };
   }
 

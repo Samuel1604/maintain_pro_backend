@@ -5,6 +5,7 @@ import type {
   VerificationEmailPayload,
   PasswordResetEmailPayload,
   InvitationEmailPayload,
+  TemporaryInvitationEmailPayload,
 } from "../types/email.types.js";
 import { LoggerService } from "@/infrastructure/logging/logger.service.js";
 import { renderBrandedEmail } from "../utils/branded-email.js";
@@ -176,6 +177,24 @@ export class EmailService {
         action: { label: "Accept invitation", url: inviteLink },
       }),
       text: `Hello ${payload.name || "there"},\n\nYou have been invited to join ${payload.organizationName || "MaintainPro"}. Accept using link: ${inviteLink}`,
+    });
+  }
+
+  async sendTemporaryInvitationEmail(
+    payload: TemporaryInvitationEmailPayload,
+  ): Promise<SendEmailResult> {
+    return this.send({
+      to: { email: payload.email, name: payload.name },
+      subject: "Your MaintainPro temporary login details",
+      tags: ["identity.temporary-invitation", "auth"],
+      correlationId: payload.correlationId,
+      html: renderBrandedEmail({
+        title: "Your temporary MaintainPro access",
+        preheader: "Your temporary login details are ready",
+        variant: "action_required",
+        body: `<p style="margin:0 0 20px">Hello ${payload.name || "there"},</p><p style="margin:0 0 20px">You have been invited to access MaintainPro. Use the credentials below to sign in.</p><div style="margin:24px 0;padding:18px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px"><p style="margin:0 0 10px;color:#6b7280;font-size:12px;line-height:16px">EMAIL</p><p style="margin:0 0 16px;color:#111827;font-size:15px;line-height:24px;font-weight:600">${payload.email}</p><p style="margin:0 0 10px;color:#6b7280;font-size:12px;line-height:16px">TEMPORARY PASSWORD</p><p style="margin:0;color:#111827;font-size:22px;line-height:30px;font-weight:700;letter-spacing:1px;font-family:monospace">${payload.temporaryPassword}</p></div><p style="margin:0 0 16px;color:#6b7280;font-size:13px;line-height:20px">These credentials expire in <strong style="color:#111827">${payload.expiresInMinutes} minutes</strong>.</p><div style="margin-top:20px;padding:14px 16px;background:#f9fafb;border-left:3px solid #2563eb;color:#6b7280;font-size:13px;line-height:20px">For your security, do not forward this email or share these credentials.</div>`,
+      }),
+      text: `Hello ${payload.name || "there"},\n\nYour temporary MaintainPro login details are ready.\n\nEmail: ${payload.email}\nTemporary password: ${payload.temporaryPassword}\n\nThese credentials expire in ${payload.expiresInMinutes} minutes. Do not forward this email or share these credentials.`,
     });
   }
 

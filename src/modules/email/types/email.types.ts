@@ -51,3 +51,12 @@ export interface InvitationEmailPayload {
   role?: string;
   correlationId?: string;
 }
+
+export interface TemporaryInvitationEmailPayload {
+  email: string;
+  name?: string;
+  temporaryPassword: string;
+  expiresInMinutes: number;
+  role?: string;
+  correlationId?: string;
+}
