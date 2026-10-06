@@ -202,7 +202,12 @@ export class OrganizationVendorService {
   }
 
   async incomingRelationships(actor: Actor) {
-    if (!actor.vendorId || ![ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER].includes(actor.role))
+    if (
+      !actor.vendorId ||
+      ![ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER].includes(
+        actor.role as "vendor_lead" | "vendor_manager",
+      )
+    )
       throw new AuthorizationException(
         "Only vendor lead or vendor manager can view relationship requests",
       );
