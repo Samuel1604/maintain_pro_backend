@@ -120,21 +120,18 @@ export class EmailService {
    * Business API: Send verification email with OTP / Token link.
    */
   async sendVerificationEmail(payload: VerificationEmailPayload): Promise<SendEmailResult> {
-    const verifyLink = `${this.frontendUrl}/verify-email?token=${encodeURIComponent(payload.tokenOrOtp)}`;
-
     return this.send({
       to: { email: payload.email, name: payload.name },
       subject: EMAIL_TEMPLATES.verification.subject,
       tags: [EMAIL_TEMPLATES.verification.id, "auth"],
       correlationId: payload.correlationId,
       html: renderBrandedEmail({
-        title: "Verify your email",
-        preheader: "Complete your MaintainPro registration",
+        title: "Verify your MaintainPro account",
+        preheader: "Your MaintainPro verification code",
         variant: "security",
-        body: `<p>Hello ${payload.name || "there"},</p><p>Your verification code is <strong>${payload.tokenOrOtp}</strong>.</p>`,
-        action: { label: "Verify email", url: verifyLink },
+        body: `<p style="margin:0 0 20px">Hello ${payload.name || "there"},</p><p style="margin:0 0 20px">Use the verification code below to confirm your email address and complete your account setup.</p><div style="margin:24px 0;padding:18px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;text-align:center"><div style="margin:0 0 6px;color:#1d4ed8;font-size:11px;line-height:16px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase">Verification code</div><div style="color:#111827;font-size:32px;line-height:40px;font-weight:700;letter-spacing:8px">${payload.tokenOrOtp}</div></div><p style="margin:0 0 16px;color:#6b7280;font-size:13px;line-height:20px">This code expires in <strong style="color:#111827">10 minutes</strong>.</p><div style="margin-top:20px;padding:14px 16px;background:#f9fafb;border-left:3px solid #2563eb;color:#6b7280;font-size:13px;line-height:20px">If you did not create a MaintainPro account, you can safely ignore this email.</div>`,
       }),
-      text: `Hello ${payload.name || "there"},\n\nYour verification code is: ${payload.tokenOrOtp}\nOr verify using link: ${verifyLink}`,
+      text: `Hello ${payload.name || "there"},\n\nYour MaintainPro verification code is: ${payload.tokenOrOtp}\n\nThis code expires in 10 minutes.\n\nIf you did not create a MaintainPro account, you can safely ignore this email.`,
     });
   }
 
