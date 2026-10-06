@@ -4,6 +4,7 @@ import type { EventHandler } from "@/infrastructure/events/bus/event-handler.int
 import { AuditLogService } from "@/modules/audit/audit.service.js";
 import { NotificationPolicyService } from "@/modules/notifications/notification-policy.service.js";
 import { User } from "@/modules/users/user.model.js";
+import type { NotificationType } from "@/modules/notifications/notification.model.js";
 
 export class CrossCuttingEventListener implements EventHandler<DomainEvent> {
   constructor(
@@ -73,6 +74,43 @@ export class CrossCuttingEventListener implements EventHandler<DomainEvent> {
       return;
     }
 
+    if (event.name !== "NotificationCreated") {
+      const notification = notificationForEvent(event.name, payload);
+      if (notification) {
+        const recipients = await User.find({
+          ...(payload.vendorId || event.vendorId
+            ? {
+                vendorId: String(payload.vendorId ?? event.vendorId),
+                role: { $in: ["vendor_lead", "vendor_manager"] },
+              }
+            : {
+                organizationId,
+                role: { $in: ["admin", "facility_manager", "finance", "technician", "staff"] },
+              }),
+          status: "active",
+        }).select("_id");
+        await Promise.all(
+          recipients
+            .filter((recipient) => recipient._id.toString() !== actorId)
+            .map((recipient) =>
+              this.notifications.notifyUser({
+                recipientId: recipient._id.toString(),
+                actorId,
+                organizationId,
+                vendorId: event.vendorId,
+                type: notification.type,
+                title: notification.title,
+                message: notification.message,
+                resourceType: event.aggregateType,
+                resourceId: event.aggregateId,
+                idempotencyKey: `event:${event.eventId}:${recipient._id.toString()}`,
+                sendPush: false,
+              }),
+            ),
+        );
+      }
+    }
+
     const entityId = payload.entityId;
     if (
       !entityId ||
@@ -93,4 +131,65 @@ export class CrossCuttingEventListener implements EventHandler<DomainEvent> {
       source: event.aggregateType ?? "domain-event",
     });
   }
+}
+
+function notificationForEvent(
+  name: string,
+  payload: Record<string, unknown>,
+): { type: NotificationType; title: string; message: string } | undefined {
+  if (name.startsWith("WorkOrder"))
+    return {
+      type: "work_order",
+      title: "Work order update",
+      message: `Work order ${String(payload.workOrderId ?? payload.entityId ?? "")} was updated.`,
+    };
+  if (name.startsWith("ServiceRequest"))
+    return {
+      type: "service_request",
+      title: "Service request update",
+      message: `Service request ${String(payload.serviceRequestId ?? payload.entityId ?? "")} was updated.`,
+    };
+  if (name.startsWith("PreventiveMaintenance"))
+    return {
+      type: "system",
+      title: "Maintenance schedule update",
+      message: "A preventive maintenance schedule was updated.",
+    };
+  if (name.startsWith("VendorApplication") || name.startsWith("VendorOpportunity"))
+    return {
+      type: "procurement",
+      title: "Vendor marketplace update",
+      message: "A vendor marketplace record needs your attention.",
+    };
+  if (name === "VendorRelationshipRequested")
+    return {
+      type: "procurement",
+      title: "New organization connection request",
+      message: "An organization wants to connect with your vendor account.",
+    };
+  if (name.startsWith("Quotation") || name.startsWith("ContractAward") || name.startsWith("SLA"))
+    return {
+      type: "billing",
+      title: "Commercial update",
+      message: "A quotation, contract, or SLA record was updated.",
+    };
+  if (name.startsWith("Invoice"))
+    return {
+      type: "billing",
+      title: "Invoice update",
+      message: "An invoice requires your attention.",
+    };
+  if (name.startsWith("Inventory") || name.startsWith("Stock"))
+    return {
+      type: "inventory",
+      title: "Inventory update",
+      message: "An inventory record was updated.",
+    };
+  if (name.includes("Invitation"))
+    return {
+      type: "invitation",
+      title: "Invitation update",
+      message: "An organization invitation requires your attention.",
+    };
+  return undefined;
 }

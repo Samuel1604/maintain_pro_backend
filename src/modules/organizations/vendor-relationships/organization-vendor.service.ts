@@ -17,6 +17,8 @@ import {
 import { vendorMapper } from "@/modules/vendors/dto/vendor.mapper.js";
 import { WorkOrder } from "@/modules/work-orders/work-order.model.js";
 import { VendorSettings } from "@/modules/settings/settings.model.js";
+import { eventPublisher } from "@/container/index.js";
+import { BusinessFactEvent } from "@/infrastructure/events/business-fact.event.js";
 type Actor = {
   userId: string;
   role: UserRole;
@@ -126,6 +128,24 @@ export class OrganizationVendorService {
           status: "pending",
           createdBy: new Types.ObjectId(actor.userId),
         });
+    await eventPublisher.publish(
+      new BusinessFactEvent(
+        "VendorRelationshipRequested",
+        {
+          organizationId,
+          vendorId,
+          actorId: actor.userId,
+          entityId: relation!._id.toString(),
+        },
+        {
+          organizationId,
+          vendorId,
+          actorId: actor.userId,
+          aggregateType: "vendor-relationship",
+          aggregateId: relation!._id.toString(),
+        },
+      ),
+    );
     return {
       success: true,
       message: "Vendor relationship request submitted",
