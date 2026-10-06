@@ -81,3 +81,21 @@ jobs:
       - name: Tear down disposable services
         if: always()
         run: docker compose -f docker-compose.infrastructure.yml down
+
+  deploy:
+    name: Deploy to Render
+    needs: verify
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Trigger Render deployment
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL is not configured in the production environment."
+            exit 1
+          fi
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 \
+            --request POST "$RENDER_DEPLOY_HOOK_URL"
