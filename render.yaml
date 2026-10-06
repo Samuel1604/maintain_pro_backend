@@ -4,31 +4,8 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    dockerCommand: node dist/server.js
+    dockerCommand: node dist/start-all.js
     healthCheckPath: /api/v1/health/live
-    envVars:
-      - fromGroup: maintainpro-production
-      - key: MONGODB_URI
-        sync: false
-      - key: REDIS_URL
-        sync: false
-      - key: RESEND_API_KEY
-        sync: false
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-
-  - type: worker
-    name: maintainpro-worker
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    dockerCommand: node dist/worker.js
     envVars:
       - fromGroup: maintainpro-production
       - key: MONGODB_URI

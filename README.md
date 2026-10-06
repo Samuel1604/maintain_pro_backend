@@ -71,7 +71,7 @@ Never commit `.env`, production secrets, payment credentials, or private keys. P
 
 ## Continuous deployment
 
-`Backend CD` runs after `Backend CI` succeeds on `main` and triggers the API and worker deployment defined in [`render.yaml`](./render.yaml).
+`Backend CD` runs after `Backend CI` succeeds on `main` and triggers the single Render web service defined in [`render.yaml`](./render.yaml). Render starts `node dist/start-all.js`, which supervises both the API server and BullMQ worker in the same service.
 
 Configure the Render deploy hook URL as the GitHub Actions production-environment secret `RENDER_DEPLOY_HOOK_URL`. The deployment workflow fails clearly when that secret is missing.
 
