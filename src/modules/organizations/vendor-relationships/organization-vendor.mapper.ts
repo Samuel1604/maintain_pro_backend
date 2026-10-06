@@ -34,10 +34,11 @@ export function toVendorRelationshipResponse(
     _id?: { toString(): string };
     name?: string;
   };
+  const status = (item.status as string) === "requested" ? "pending" : item.status;
   return {
     vendorId: item.vendorId.toString(),
     organizationId: (organization?._id ?? item.organizationId).toString(),
-    status: item.status,
+    status,
     createdBy: item.createdBy.toString(),
     activatedBy: item.activatedBy?.toString(),
     activatedAt: item.activatedAt?.toISOString(),
