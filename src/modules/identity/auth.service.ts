@@ -372,6 +372,13 @@ export class AuthService {
           "Invitation credentials have expired. Please ask your admin to send a new invitation.",
         );
       }
+      await this.invitationService.acceptPendingForUser({
+        email: user.email,
+        userId: user._id.toString(),
+        organizationId: user.organizationId?.toString(),
+        facilityId: user.facilityId?.toString(),
+        vendorId: user.vendorId?.toString(),
+      });
       // Within TTL — activate the account on first login
       await this.userService.activate(user._id.toString());
     }

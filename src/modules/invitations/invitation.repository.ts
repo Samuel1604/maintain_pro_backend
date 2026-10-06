@@ -213,6 +213,33 @@ export class InvitationRepository {
     );
   }
 
+  async markPendingAcceptedForUser(input: {
+    email: string;
+    userId: string;
+    organizationId?: string;
+    facilityId?: string;
+    vendorId?: string;
+  }) {
+    const filter: Record<string, unknown> = {
+      email: input.email.toLowerCase(),
+      status: InvitationStatus.PENDING,
+    };
+
+    if (input.organizationId) filter.organizationId = toObjectId(input.organizationId);
+    if (input.facilityId) filter.facilityId = toObjectId(input.facilityId);
+    if (input.vendorId) filter.vendorId = toObjectId(input.vendorId);
+
+    return Invitation.findOneAndUpdate(
+      filter,
+      {
+        status: InvitationStatus.ACCEPTED,
+        acceptedAt: new Date(),
+        acceptedBy: toObjectId(input.userId),
+      },
+      { returnDocument: "after" },
+    );
+  }
+
   async revoke(
     invitationId: string,
 

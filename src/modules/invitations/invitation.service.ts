@@ -536,4 +536,27 @@ export class InvitationService {
 
     return accepted;
   }
+
+  async acceptPendingForUser(input: {
+    email: string;
+    userId: string;
+    organizationId?: string;
+    facilityId?: string;
+    vendorId?: string;
+  }) {
+    const accepted = await this.repository.markPendingAcceptedForUser(input);
+
+    if (accepted) {
+      await this.eventBus.publish(
+        new InvitationAcceptedEvent({
+          invitationId: accepted._id.toString(),
+          userId: input.userId,
+          email: accepted.email,
+          role: accepted.role,
+        }),
+      );
+    }
+
+    return accepted;
+  }
 }
