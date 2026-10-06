@@ -40,7 +40,8 @@ const organizationInviteRoles: UserRole[] = [
   ROLES.STAFF,
 ];
 
-const vendorInviteRoles: UserRole[] = [ROLES.VENDOR_MANAGER, ROLES.VENDOR_TECHNICIAN];
+const vendorLeadInviteRoles: UserRole[] = [ROLES.VENDOR_MANAGER, ROLES.VENDOR_TECHNICIAN];
+const vendorManagerInviteRoles: UserRole[] = [ROLES.VENDOR_TECHNICIAN];
 
 export class InvitationService {
   constructor(
@@ -119,8 +120,9 @@ export class InvitationService {
         status: InvitationStatus.PENDING,
       });
     } else if (
-      (actor.role === ROLES.VENDOR_LEAD || actor.role === ROLES.VENDOR_MANAGER) &&
-      vendorInviteRoles.includes(dto.role as UserRole)
+      (actor.role === ROLES.VENDOR_LEAD && vendorLeadInviteRoles.includes(dto.role as UserRole)) ||
+      (actor.role === ROLES.VENDOR_MANAGER &&
+        vendorManagerInviteRoles.includes(dto.role as UserRole))
     ) {
       if (!inviter.vendorId) {
         throw new AuthorizationException("Vendor lead is not attached to a vendor");
@@ -241,7 +243,8 @@ export class InvitationService {
       ROLES.FINANCE,
       ROLES.STAFF,
     ];
-    const vendorInviteRoles: string[] = [ROLES.VENDOR_MANAGER, ROLES.VENDOR_TECHNICIAN];
+    const vendorLeadInviteRoles: string[] = [ROLES.VENDOR_MANAGER, ROLES.VENDOR_TECHNICIAN];
+    const vendorManagerInviteRoles: string[] = [ROLES.VENDOR_TECHNICIAN];
 
     let invitation: IInvitation;
     const token = crypto.randomBytes(32).toString("hex");
@@ -265,8 +268,9 @@ export class InvitationService {
         status: InvitationStatus.PENDING,
       });
     } else if (
-      (actor.role === ROLES.VENDOR_LEAD || actor.role === ROLES.VENDOR_MANAGER) &&
-      vendorInviteRoles.includes(dto.role as UserRole)
+      (actor.role === ROLES.VENDOR_LEAD && vendorLeadInviteRoles.includes(dto.role as UserRole)) ||
+      (actor.role === ROLES.VENDOR_MANAGER &&
+        vendorManagerInviteRoles.includes(dto.role as UserRole))
     ) {
       if (!inviter.vendorId)
         throw new AuthorizationException("Vendor lead is not attached to a vendor");
