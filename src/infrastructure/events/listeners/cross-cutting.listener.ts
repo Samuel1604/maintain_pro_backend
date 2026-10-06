@@ -82,24 +82,23 @@ export class CrossCuttingEventListener implements EventHandler<DomainEvent> {
     if (event.name === "identity.invitation.created") {
       const invitationFacilityId = String(payload.facilityId ?? "");
       const invitationVendorId = String(payload.vendorId ?? event.vendorId ?? "");
-      const recipients = await User.find(
-        invitationVendorId
-          ? {
-              vendorId: invitationVendorId,
-              role: { $in: ["vendor_lead", "vendor_manager"] },
-              status: "active",
-            }
-          : {
-              organizationId,
-              status: "active",
-              $or: [
-                { role: "admin" },
-                ...(invitationFacilityId
-                  ? [{ role: "facility_manager", facilityId: invitationFacilityId }]
-                  : []),
-              ],
-            },
-      ).select("_id");
+      const recipientFilter: Record<string, unknown> = invitationVendorId
+        ? {
+            vendorId: invitationVendorId,
+            role: { $in: ["vendor_lead", "vendor_manager"] },
+            status: "active",
+          }
+        : {
+            organizationId,
+            status: "active",
+            $or: [
+              { role: "admin" },
+              ...(invitationFacilityId
+                ? [{ role: "facility_manager", facilityId: invitationFacilityId }]
+                : []),
+            ],
+          };
+      const recipients = await User.find(recipientFilter).select("_id");
       await Promise.all(
         recipients
           .filter((recipient) => recipient._id.toString() !== actorId)

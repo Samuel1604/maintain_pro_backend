@@ -60,8 +60,6 @@ export interface UserRegisteredPayload {
 
   organizationId?: string;
 
-  facilityId?: string;
-
   vendorId?: string;
 }
 
@@ -304,6 +302,8 @@ export interface InvitationCreatedPayload {
   invitationId: string;
 
   organizationId?: string;
+
+  facilityId?: string;
 
   vendorId?: string;
 
