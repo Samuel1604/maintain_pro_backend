@@ -69,6 +69,12 @@ Never commit `.env`, production secrets, payment credentials, or private keys. P
 | `npm run verify`         | Run formatting, lint, type-check, tests, and build       |
 | `npm run release:verify` | Run release-readiness checks                             |
 
+## Continuous deployment
+
+`Backend CD` runs after `Backend CI` succeeds on `main` and triggers the API and worker deployment defined in [`render.yaml`](./render.yaml).
+
+Configure the Render deploy hook URL as the GitHub Actions production-environment secret `RENDER_DEPLOY_HOOK_URL`. The deployment workflow fails clearly when that secret is missing.
+
 ## Integration tests
 
 Start disposable infrastructure:
