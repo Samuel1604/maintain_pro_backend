@@ -16,7 +16,12 @@ export class CrossCuttingEventListener implements EventHandler<DomainEvent> {
     const payload = event.payload as Record<string, unknown>;
     const organizationId = event.organizationId ?? String(payload.organizationId ?? "");
     const actorId = event.actorId ?? String(payload.actorId ?? payload.performedBy ?? "");
-    if (!organizationId || !Types.ObjectId.isValid(organizationId)) return;
+    const vendorContext = event.vendorId ?? String(payload.vendorId ?? "");
+    if (
+      ((!organizationId || !Types.ObjectId.isValid(organizationId)) && !vendorContext) ||
+      (vendorContext && !Types.ObjectId.isValid(vendorContext))
+    )
+      return;
 
     if (event.name === "LowStockDetected") {
       const recipients = await User.find({
@@ -67,6 +72,49 @@ export class CrossCuttingEventListener implements EventHandler<DomainEvent> {
               resourceType: "procurement",
               resourceId: String(payload.resourceId),
               idempotencyKey: `procurement:${event.eventId}:${recipient._id.toString()}`,
+              sendPush: false,
+            }),
+          ),
+      );
+      return;
+    }
+
+    if (event.name === "identity.invitation.created") {
+      const invitationFacilityId = String(payload.facilityId ?? "");
+      const invitationVendorId = String(payload.vendorId ?? event.vendorId ?? "");
+      const recipients = await User.find(
+        invitationVendorId
+          ? {
+              vendorId: invitationVendorId,
+              role: { $in: ["vendor_lead", "vendor_manager"] },
+              status: "active",
+            }
+          : {
+              organizationId,
+              status: "active",
+              $or: [
+                { role: "admin" },
+                ...(invitationFacilityId
+                  ? [{ role: "facility_manager", facilityId: invitationFacilityId }]
+                  : []),
+              ],
+            },
+      ).select("_id");
+      await Promise.all(
+        recipients
+          .filter((recipient) => recipient._id.toString() !== actorId)
+          .map((recipient) =>
+            this.notifications.notifyUser({
+              recipientId: recipient._id.toString(),
+              actorId,
+              organizationId,
+              ...(invitationVendorId ? { vendorId: invitationVendorId } : {}),
+              type: "invitation",
+              title: "New team invitation",
+              message: `A ${String(payload.role ?? "team member")} invitation was created for ${String(payload.email)}.`,
+              resourceType: "invitation",
+              resourceId: String(payload.invitationId ?? event.aggregateId ?? ""),
+              idempotencyKey: `invitation:${String(payload.invitationId)}:${recipient._id.toString()}`,
               sendPush: false,
             }),
           ),

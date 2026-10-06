@@ -60,6 +60,8 @@ export interface UserRegisteredPayload {
 
   organizationId?: string;
 
+  facilityId?: string;
+
   vendorId?: string;
 }
 

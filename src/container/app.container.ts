@@ -425,6 +425,7 @@ export class AppContainer {
       "LowStockDetected",
       "ProcurementNotificationRequested",
       "VendorRelationshipRequested",
+      "identity.invitation.created",
       // These lifecycle events are intentionally observed by the shared
       // audit listener even when no module-specific side effect is needed.
       "facility.created",

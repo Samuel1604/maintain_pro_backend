@@ -168,6 +168,7 @@ export class InvitationService {
       new InvitationCreatedEvent({
         invitationId: invitation._id.toString(),
         organizationId: invitation.organizationId?.toString(),
+        facilityId: invitation.facilityId?.toString(),
         vendorId: invitation.vendorId?.toString(),
         email: invitation.email,
         invitedBy: invitation.invitedBy.toString(),
@@ -299,6 +300,7 @@ export class InvitationService {
       new InvitationCreatedEvent({
         invitationId: invitation._id.toString(),
         organizationId: invitation.organizationId?.toString(),
+        facilityId: invitation.facilityId?.toString(),
         vendorId: invitation.vendorId?.toString(),
         email: invitation.email,
         invitedBy: invitation.invitedBy.toString(),
