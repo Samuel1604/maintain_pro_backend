@@ -388,7 +388,13 @@ export class WorkOrderService {
     };
     const workOrders = await this.repository.findOpenMarketplace(query);
     const facilities = await Facility.find({
-      _id: { $in: workOrders.map((item) => item.facilityId) },
+      _id: {
+        $in: workOrders.map((item) =>
+          typeof item.facilityId === "object" && "_id" in item.facilityId
+            ? item.facilityId._id
+            : item.facilityId,
+        ),
+      },
     }).select("_id coordinates");
     const facilityMap = new Map(facilities.map((facility) => [facility._id.toString(), facility]));
     const policies = await MarketplaceGeographicPolicy.find({
@@ -402,11 +408,17 @@ export class WorkOrderService {
       ]),
     );
     const eligible = workOrders.flatMap((workOrder) => {
-      const facility = facilityMap.get(workOrder.facilityId.toString());
+      const facilityId =
+        typeof workOrder.facilityId === "object" && "_id" in workOrder.facilityId
+          ? workOrder.facilityId._id.toString()
+          : workOrder.facilityId.toString();
+      const organizationId =
+        typeof workOrder.organizationId === "object" && "_id" in workOrder.organizationId
+          ? workOrder.organizationId._id.toString()
+          : workOrder.organizationId.toString();
+      const facility = facilityMap.get(facilityId);
       if (!facility) return [];
-      const maximumDistance = policyMap.get(
-        `${workOrder.organizationId.toString()}:${workOrder.priority}`,
-      );
+      const maximumDistance = policyMap.get(`${organizationId}:${workOrder.priority}`);
       if (maximumDistance === undefined) return [];
       const distanceKm = distanceInKilometers(
         vendor.baseCoordinates?.coordinates,
