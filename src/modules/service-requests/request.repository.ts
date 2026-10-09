@@ -12,7 +12,11 @@ export class ServiceRequestRepository {
   }
 
   findById(id: string) {
-    return ServiceRequest.findById(id);
+    return ServiceRequest.findById(id)
+      .populate("facilityId", "name")
+      .populate("locationId", "name")
+      .populate("assetId", "name")
+      .populate("requestedBy", "firstName lastName");
   }
 
   async findByOrganization(organizationId: string) {
@@ -20,7 +24,15 @@ export class ServiceRequestRepository {
   }
 
   findPage(filter: Record<string, unknown>, skip: number, limit: number) {
-    return ServiceRequest.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+    return ServiceRequest.find(filter)
+      .populate("facilityId", "name")
+      .populate("locationId", "name")
+      .populate("assetId", "name")
+      .populate("requestedBy", "firstName lastName")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
   }
 
   count(filter: Record<string, unknown>) {
