@@ -5,6 +5,10 @@ import type { VendorProfile } from "./dto/vendor.dto.js";
 import { toVendorProfile } from "./dto/vendor.mapper.js";
 import { AuthorizationException, NotFoundException } from "@/shared/errors/index.js";
 import { WorkOrder } from "@/modules/work-orders/work-order.model.js";
+import { User } from "@/modules/users/user.model.js";
+import { VendorApplication } from "@/modules/vendor-applications/vendor-application.model.js";
+import { ContractAward } from "@/modules/contract-awards/contract-award.model.js";
+import { SlaAgreement } from "@/modules/sla-agreements/sla-agreement.model.js";
 import { RedisCache } from "@/infrastructure/cache/redis.cache.js";
 import { cacheKeys, cacheTtlSeconds } from "@/infrastructure/cache/cache-keys.js";
 
@@ -101,6 +105,60 @@ export class VendorService {
       inProgress,
       assigned,
       completionRate: total ? Math.round((completed / total) * 100) : 0,
+    };
+  }
+
+  async dashboard(actor: Actor) {
+    if (!actor.vendorId) throw new AuthorizationException("Vendor context required");
+    const vendorId = actor.vendorId;
+    const activeWorkOrderFilter = {
+      assignedVendorId: vendorId,
+      status: { $nin: ["completed", "cancelled"] },
+    };
+    const [activeWorkOrders, applications, contracts, activeSlas, breachedSlas, teamMembers, rows] =
+      await Promise.all([
+        WorkOrder.countDocuments(activeWorkOrderFilter),
+        VendorApplication.countDocuments({
+          vendorId,
+          status: { $in: ["submitted", "under_review"] },
+        }),
+        ContractAward.countDocuments({ vendorId, status: { $in: ["awarded", "active"] } }),
+        SlaAgreement.countDocuments({ vendorId, status: "active" }),
+        SlaAgreement.countDocuments({
+          vendorId,
+          status: "active",
+          workOrderId: { $exists: true },
+        }).then(async (count) => {
+          if (!count) return 0;
+          return WorkOrder.countDocuments({ assignedVendorId: vendorId, slaBreached: true });
+        }),
+        User.countDocuments({ vendorId }),
+        WorkOrder.find(activeWorkOrderFilter)
+          .select("_id title status priority dueDate assignedVendorTechnicianId")
+          .sort({ updatedAt: -1 })
+          .limit(10)
+          .lean(),
+      ]);
+    const complianceRate = activeSlas
+      ? Math.round(((activeSlas - breachedSlas) / activeSlas) * 100)
+      : 0;
+    return {
+      kpis: {
+        activeWorkOrders,
+        openApplications: applications,
+        awardedContracts: contracts,
+        activeSlas,
+        complianceRate,
+        teamMembers,
+      },
+      activeDispatch: rows.map((row) => ({
+        id: row._id.toString(),
+        title: row.title,
+        status: row.status,
+        priority: row.priority,
+        dueDate: row.dueDate?.toISOString(),
+        technicianId: row.assignedVendorTechnicianId?.toString(),
+      })),
     };
   }
 

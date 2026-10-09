@@ -19,3 +19,7 @@ export const updateVendor = requestHandler<AuthRequest>(async (req, res) => {
 export const getVendorPerformance = requestHandler<AuthRequest>(async (req, res) =>
   res.ok(await vendorService.performance(req.user), "Vendor performance retrieved"),
 );
+
+export const getVendorDashboard = requestHandler<AuthRequest>(async (req, res) =>
+  res.ok(await vendorService.dashboard(req.user), "Vendor dashboard retrieved"),
+);
