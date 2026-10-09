@@ -4,6 +4,10 @@ import { User } from "@/modules/users/user.model.js";
 import { VendorApplication } from "@/modules/vendor-applications/vendor-application.model.js";
 import { WorkOrder } from "@/modules/work-orders/work-order.model.js";
 import { ContractAwardWorkOrder } from "./contract-award-work-order.model.js";
+import { Organization } from "@/modules/organizations/organization.model.js";
+import { WorkOrder } from "@/modules/work-orders/work-order.model.js";
+import { Quotation } from "@/modules/quotations/quotation.model.js";
+import { SlaAgreement } from "@/modules/sla-agreements/sla-agreement.model.js";
 import {
   AuthorizationException,
   NotFoundException,
@@ -155,10 +159,39 @@ export class ContractAwardService {
     const vendorRoles = [ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER, ROLES.VENDOR_TECHNICIAN];
     if (!vendorRoles.includes(actor.role as typeof ROLES.VENDOR_LEAD) || !actor.vendorId)
       throw new AuthorizationException("Vendor contract access required");
+    const awards = await this.repository.findByVendor(actor.vendorId);
+    const [organizations, workOrders, quotations, slas] = await Promise.all([
+      Organization.find({ _id: { $in: awards.map((award) => award.organizationId) } }).select(
+        "_id name",
+      ),
+      WorkOrder.find({ _id: { $in: awards.map((award) => award.workOrderId) } }).select(
+        "_id title status priority",
+      ),
+      Quotation.find({
+        _id: { $in: awards.map((award) => award.quotationId).filter(Boolean) },
+      }).select(
+        "_id quotationNumber currency totalMinor laborCost materialCost estimatedDurationHours",
+      ),
+      SlaAgreement.find({
+        _id: { $in: awards.map((award) => award.slaAgreementId).filter(Boolean) },
+      }).select(
+        "_id responseTimeHours resolutionTimeHours warrantyPeriodDays status effectiveAt expiresAt",
+      ),
+    ]);
+    const organizationMap = new Map(organizations.map((item) => [item._id.toString(), item.name]));
+    const workOrderMap = new Map(workOrders.map((item) => [item._id.toString(), item]));
+    const quotationMap = new Map(quotations.map((item) => [item._id.toString(), item]));
+    const slaMap = new Map(slas.map((item) => [item._id.toString(), item]));
     return {
       success: true,
       message: "Vendor contract awards retrieved successfully",
-      data: await this.repository.findByVendor(actor.vendorId),
+      data: awards.map((award) => ({
+        ...award.toObject(),
+        organizationName: organizationMap.get(award.organizationId.toString()),
+        workOrder: workOrderMap.get(award.workOrderId.toString()),
+        quotation: award.quotationId ? quotationMap.get(award.quotationId.toString()) : undefined,
+        sla: award.slaAgreementId ? slaMap.get(award.slaAgreementId.toString()) : undefined,
+      })) as IContractAward[],
     };
   }
   async renew(
@@ -269,7 +302,27 @@ export class ContractAwardService {
     );
     if (!award || (!organizationAccess && !vendorAccess))
       throw new NotFoundException("Contract award not found");
-    return this.repository.listWorkOrders(awardId);
+    const linked = await this.repository.listWorkOrders(awardId);
+    return linked.map((item) => {
+      const value = item.toObject() as typeof item & {
+        workOrderId?: {
+          _id?: unknown;
+          title?: string;
+          status?: string;
+          priority?: string;
+          dueDate?: Date;
+        };
+      };
+      const workOrder = value.workOrderId;
+      return {
+        ...value,
+        workOrderId: workOrder?._id?.toString() ?? value.workOrderId,
+        title: workOrder?.title,
+        status: workOrder?.status,
+        priority: workOrder?.priority,
+        dueDate: workOrder?.dueDate?.toISOString(),
+      };
+    });
   }
 
   async removeWorkOrder(awardId: string, workOrderId: string, actor: Actor) {

@@ -28,6 +28,7 @@ export class ContractAwardRepository {
   }
   listWorkOrders(awardId: string) {
     return ContractAwardWorkOrder.find({ contractAwardId: awardId, removedAt: { $exists: false } })
+      .populate("workOrderId", "title status priority dueDate")
       .sort({ associatedAt: 1 })
       .limit(100);
   }
