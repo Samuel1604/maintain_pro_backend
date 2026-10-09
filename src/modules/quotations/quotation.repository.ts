@@ -2,18 +2,27 @@ import { Quotation } from "./quotation.model.js";
 import { QuotationRevision } from "./quotation-revision.model.js";
 
 export class QuotationRepository {
+  private withContext(query: ReturnType<typeof Quotation.find>) {
+    return query
+      .populate("vendorId", "name")
+      .populate("workOrderId", "title")
+      .populate("organizationId", "name");
+  }
+
   create(data: Record<string, unknown>) {
     return Quotation.create(data);
   }
 
   findByApplication(vendorApplicationId: string) {
-    return Quotation.find({ vendorApplicationId }).sort({ createdAt: -1 }).limit(100);
+    return this.withContext(Quotation.find({ vendorApplicationId }))
+      .sort({ createdAt: -1 })
+      .limit(100);
   }
   findByVendor(vendorId: string) {
-    return Quotation.find({ vendorId }).sort({ createdAt: -1 }).limit(100);
+    return this.withContext(Quotation.find({ vendorId })).sort({ createdAt: -1 }).limit(100);
   }
   findByOrganization(organizationId: string) {
-    return Quotation.find({ organizationId }).sort({ createdAt: -1 }).limit(100);
+    return this.withContext(Quotation.find({ organizationId })).sort({ createdAt: -1 }).limit(100);
   }
 
   findById(id: string) {
