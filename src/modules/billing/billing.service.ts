@@ -239,6 +239,7 @@ export class BillingService {
         plan: subscription.plan,
         amountMinor,
         currency: "USD",
+        successUrl: `${(env.FRONTEND_URL || env.CLIENT_URL).replace(/\/$/, "")}/checkout`,
       });
     } catch (error) {
       // Do not leave an unusable pending payment that future requests would
