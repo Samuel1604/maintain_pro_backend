@@ -294,7 +294,7 @@ export class ContractAwardService {
     });
   }
 
-  async listWorkOrders(awardId: string, actor: Actor) {
+  async listWorkOrders(awardId: string, actor: Actor): Promise<Record<string, unknown>[]> {
     const vendorRoles = [ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER, ROLES.VENDOR_TECHNICIAN];
     if (!actor.organizationId && !actor.vendorId)
       throw new AuthorizationException("Contract award access required");
@@ -310,7 +310,7 @@ export class ContractAwardService {
     if (!award || (!organizationAccess && !vendorAccess))
       throw new NotFoundException("Contract award not found");
     const linked = await this.repository.listWorkOrders(awardId);
-    return linked.map((item) => {
+    return linked.map((item): Record<string, unknown> => {
       const value = item.toObject() as typeof item & {
         workOrderId?: {
           _id?: unknown;

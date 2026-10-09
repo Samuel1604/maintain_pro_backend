@@ -121,7 +121,13 @@ export class WorkOrderService {
     return result;
   }
 
-  async listForVendor(actor: Actor, options: { page: number; limit: number }) {
+  async listForVendor(
+    actor: Actor,
+    options: { page: number; limit: number },
+  ): Promise<{
+    data: Record<string, unknown>[];
+    pagination: { page: number; limit: number; total: number; pages: number };
+  }> {
     if (![...vendorApplicantRoles, ROLES.VENDOR_TECHNICIAN].includes(actor.role))
       throw new AuthorizationException("Vendor context required");
     const vendorId =
@@ -135,7 +141,7 @@ export class WorkOrderService {
       this.repository.count(filter),
     ]);
     return {
-      data: data.map((item) => {
+      data: data.map((item): Record<string, unknown> => {
         const value = item.toObject() as typeof item & {
           facilityId?: { name?: string };
           locationId?: { name?: string };
