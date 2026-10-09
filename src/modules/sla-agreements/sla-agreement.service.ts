@@ -129,10 +129,25 @@ export class SlaAgreementService {
       ![ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER].includes(actor.role as typeof ROLES.VENDOR_LEAD)
     )
       throw new AuthorizationException("Vendor SLA access required");
+    const agreements = await this.repository.findByVendor(actor.vendorId);
+    const workOrders = await WorkOrder.find({
+      _id: { $in: agreements.map((agreement) => agreement.workOrderId) },
+      assignedVendorId: actor.vendorId,
+    }).select("_id title status priority dueDate slaBreached");
+    const workOrderMap = new Map(
+      workOrders.map((workOrder) => [workOrder._id.toString(), workOrder]),
+    );
     return {
       success: true,
       message: "Vendor SLA agreements retrieved successfully",
-      data: await this.repository.findByVendor(actor.vendorId),
+      data: agreements.map((agreement) => ({
+        ...agreement.toObject(),
+        workOrder: workOrderMap.get(agreement.workOrderId.toString()),
+        performance: {
+          breached: Boolean(workOrderMap.get(agreement.workOrderId.toString())?.slaBreached),
+          workOrderStatus: workOrderMap.get(agreement.workOrderId.toString())?.status,
+        },
+      })) as ISlaAgreement[],
     };
   }
 
