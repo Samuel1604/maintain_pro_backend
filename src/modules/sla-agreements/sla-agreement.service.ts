@@ -133,7 +133,7 @@ export class SlaAgreementService {
     const workOrders = await WorkOrder.find({
       _id: { $in: agreements.map((agreement) => agreement.workOrderId) },
       assignedVendorId: actor.vendorId,
-    }).select("_id title status priority dueDate slaBreached");
+    }).select("_id title status priority dueDate");
     const workOrderMap = new Map(
       workOrders.map((workOrder) => [workOrder._id.toString(), workOrder]),
     );
@@ -144,10 +144,16 @@ export class SlaAgreementService {
         ...agreement.toObject(),
         workOrder: workOrderMap.get(agreement.workOrderId.toString()),
         performance: {
-          breached: Boolean(workOrderMap.get(agreement.workOrderId.toString())?.slaBreached),
+          breached: Boolean(
+            workOrderMap.get(agreement.workOrderId.toString())?.dueDate &&
+            workOrderMap.get(agreement.workOrderId.toString())?.dueDate! < new Date() &&
+            !["completed", "cancelled"].includes(
+              workOrderMap.get(agreement.workOrderId.toString())?.status ?? "",
+            ),
+          ),
           workOrderStatus: workOrderMap.get(agreement.workOrderId.toString())?.status,
         },
-      })) as ISlaAgreement[],
+      })) as unknown as ISlaAgreement[],
     };
   }
 

@@ -424,7 +424,7 @@ export class WorkOrderService {
     return {
       success: true,
       message: "Open marketplace work orders retrieved successfully",
-      data: eligible,
+      data: eligible as unknown as IWorkOrder[],
     };
   }
 

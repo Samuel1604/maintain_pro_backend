@@ -5,7 +5,6 @@ import { VendorApplication } from "@/modules/vendor-applications/vendor-applicat
 import { WorkOrder } from "@/modules/work-orders/work-order.model.js";
 import { ContractAwardWorkOrder } from "./contract-award-work-order.model.js";
 import { Organization } from "@/modules/organizations/organization.model.js";
-import { WorkOrder } from "@/modules/work-orders/work-order.model.js";
 import { Quotation } from "@/modules/quotations/quotation.model.js";
 import { SlaAgreement } from "@/modules/sla-agreements/sla-agreement.model.js";
 import {
@@ -168,12 +167,20 @@ export class ContractAwardService {
         "_id title status priority",
       ),
       Quotation.find({
-        _id: { $in: awards.map((award) => award.quotationId).filter(Boolean) },
+        _id: {
+          $in: awards
+            .map((award) => award.quotationId)
+            .filter((id): id is NonNullable<typeof id> => Boolean(id)),
+        },
       }).select(
         "_id quotationNumber currency totalMinor laborCost materialCost estimatedDurationHours",
       ),
       SlaAgreement.find({
-        _id: { $in: awards.map((award) => award.slaAgreementId).filter(Boolean) },
+        _id: {
+          $in: awards
+            .map((award) => award.slaAgreementId)
+            .filter((id): id is NonNullable<typeof id> => Boolean(id)),
+        },
       }).select(
         "_id responseTimeHours resolutionTimeHours warrantyPeriodDays status effectiveAt expiresAt",
       ),
@@ -191,7 +198,7 @@ export class ContractAwardService {
         workOrder: workOrderMap.get(award.workOrderId.toString()),
         quotation: award.quotationId ? quotationMap.get(award.quotationId.toString()) : undefined,
         sla: award.slaAgreementId ? slaMap.get(award.slaAgreementId.toString()) : undefined,
-      })) as IContractAward[],
+      })) as unknown as IContractAward[],
     };
   }
   async renew(

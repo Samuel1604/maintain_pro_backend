@@ -113,7 +113,7 @@ export class VendorService {
     const vendorId = actor.vendorId;
     const activeWorkOrderFilter = {
       assignedVendorId: vendorId,
-      status: { $nin: ["completed", "cancelled"] },
+      status: { $nin: ["completed", "cancelled"] as const },
     };
     const [
       activeWorkOrders,
