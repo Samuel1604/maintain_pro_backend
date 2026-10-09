@@ -44,6 +44,13 @@ type Actor = {
   vendorId?: string;
 };
 
+const referenceId = (value: unknown): string => {
+  if (value && typeof value === "object" && "_id" in value) {
+    return String((value as { _id: unknown })._id);
+  }
+  return String(value);
+};
+
 const managerRoles: string[] = [ROLES.ADMIN, ROLES.FACILITY_MANAGER];
 const vendorApplicantRoles: string[] = [ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER];
 
@@ -408,14 +415,8 @@ export class WorkOrderService {
       ]),
     );
     const eligible = workOrders.flatMap((workOrder) => {
-      const facilityId =
-        typeof workOrder.facilityId === "object" && "_id" in workOrder.facilityId
-          ? workOrder.facilityId._id.toString()
-          : workOrder.facilityId.toString();
-      const organizationId =
-        typeof workOrder.organizationId === "object" && "_id" in workOrder.organizationId
-          ? workOrder.organizationId._id.toString()
-          : workOrder.organizationId.toString();
+      const facilityId = referenceId(workOrder.facilityId);
+      const organizationId = referenceId(workOrder.organizationId);
       const facility = facilityMap.get(facilityId);
       if (!facility) return [];
       const maximumDistance = policyMap.get(`${organizationId}:${workOrder.priority}`);
