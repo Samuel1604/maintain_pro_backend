@@ -395,18 +395,30 @@ export class WorkOrderService {
         policy.maxDistanceKm,
       ]),
     );
-    const eligible = workOrders.filter((workOrder) => {
+    const eligible = workOrders.flatMap((workOrder) => {
       const facility = facilityMap.get(workOrder.facilityId.toString());
-      if (!facility) return false;
+      if (!facility) return [];
       const maximumDistance = policyMap.get(
         `${workOrder.organizationId.toString()}:${workOrder.priority}`,
       );
-      if (maximumDistance === undefined) return false;
-      return distanceInKilometers(
+      if (maximumDistance === undefined) return [];
+      const distanceKm = distanceInKilometers(
         vendor.baseCoordinates?.coordinates,
         facility.coordinates.coordinates,
         Math.min(vendor.coverageRadiusKm ?? 0, maximumDistance),
       );
+      return {
+        ...workOrder.toObject(),
+        organizationName:
+          typeof workOrder.organizationId === "object" && "name" in workOrder.organizationId
+            ? String((workOrder.organizationId as unknown as { name?: string }).name ?? "")
+            : undefined,
+        facilityName:
+          typeof workOrder.facilityId === "object" && "name" in workOrder.facilityId
+            ? String((workOrder.facilityId as unknown as { name?: string }).name ?? "")
+            : undefined,
+        distanceKm,
+      };
     });
 
     return {

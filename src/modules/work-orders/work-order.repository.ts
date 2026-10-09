@@ -59,6 +59,10 @@ export class WorkOrderRepository {
   }
 
   findOpenMarketplace(query: Record<string, unknown>) {
-    return WorkOrder.find(query).sort({ createdAt: -1 }).limit(100);
+    return WorkOrder.find(query)
+      .populate("organizationId", "name")
+      .populate("facilityId", "name coordinates")
+      .sort({ createdAt: -1 })
+      .limit(100);
   }
 }
