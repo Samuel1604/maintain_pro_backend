@@ -6,6 +6,7 @@ export interface VendorProfile {
   email: string;
   phone: string;
   website?: string;
+  description?: string;
   logo?: string;
 
   address?: {

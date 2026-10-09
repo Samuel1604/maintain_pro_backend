@@ -12,6 +12,7 @@ export const vendorMapper = {
       email: vendor.email,
       phone: vendor.phone,
       website: vendor.website,
+      description: vendor.description,
       logo: vendor.logo,
 
       address: vendor.address,

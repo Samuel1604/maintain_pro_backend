@@ -60,6 +60,8 @@ export const updateVendorProfileSchema = z.object({
 
   website: vendorWebsiteSchema.optional(),
 
+  description: vendorDescriptionSchema.optional(),
+
   logo: vendorLogoSchema.optional(),
 
   serviceCategories: z.array(serviceCategorySchema).optional(),

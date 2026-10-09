@@ -21,6 +21,7 @@ const vendorSchema = new Schema<IVendor>(
     },
 
     website: String,
+    description: String,
     logo: String,
 
     address: {

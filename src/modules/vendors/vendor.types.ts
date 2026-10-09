@@ -8,6 +8,7 @@ export interface IVendor extends Document {
   phone: string;
 
   website?: string;
+  description?: string;
   logo?: string;
 
   address?: {
