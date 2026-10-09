@@ -57,6 +57,8 @@ router.get(
     const cached = await invoiceCache.get<unknown[]>(key);
     if (cached) return res.ok(cached, "Invoices retrieved");
     const data = await Invoice.find({ organizationId: scope })
+      .populate("vendorId", "name")
+      .populate("workOrderId", "title")
       .sort({ submittedAt: -1 })
       .limit(100)
       .lean();
