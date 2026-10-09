@@ -15,7 +15,13 @@ export class ContractAwardRepository {
     return ContractAward.findById(id);
   }
   findByOrganization(organizationId: string) {
-    return ContractAward.find({ organizationId }).sort({ createdAt: -1 }).limit(100);
+    return ContractAward.find({ organizationId })
+      .populate("vendorId", "name")
+      .populate("workOrderId", "title status priority dueDate")
+      .populate("quotationId", "quotationNumber currency totalMinor estimatedDurationHours")
+      .populate("slaAgreementId", "responseTimeHours resolutionTimeHours warrantyPeriodDays")
+      .sort({ createdAt: -1 })
+      .limit(100);
   }
   findByVendor(vendorId: string) {
     return ContractAward.find({ vendorId }).sort({ createdAt: -1 }).limit(100);
