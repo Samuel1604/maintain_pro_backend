@@ -11,6 +11,8 @@ import { FULFILLMENT_TYPE, WORK_ORDER_STATUS } from "@/shared/constants/work-ord
 import { User } from "@/modules/users/user.model.js";
 import { Vendor } from "@/modules/vendors/vendor.model.js";
 import { WorkOrder } from "@/modules/work-orders/work-order.model.js";
+import { Organization } from "@/modules/organizations/organization.model.js";
+import { Quotation } from "@/modules/quotations/quotation.model.js";
 import { WorkOrderService } from "@/modules/work-orders/work-order.service.js";
 import { eventPublisher } from "@/container/index.js";
 import { BusinessFactEvent } from "@/infrastructure/events/business-fact.event.js";
@@ -141,10 +143,42 @@ export class VendorApplicationService {
     if (!applicantRoles.includes(actor.role as (typeof applicantRoles)[number]) || !actor.vendorId)
       throw new AuthorizationException("Vendor application access required");
     const applications = await this.repository.findByVendor(actor.vendorId);
+    const [workOrders, organizations, quotations] = await Promise.all([
+      WorkOrder.find({ _id: { $in: applications.map((item) => item.workOrderId) } }).select(
+        "_id title",
+      ),
+      Organization.find({ _id: { $in: applications.map((item) => item.organizationId) } }).select(
+        "_id name",
+      ),
+      Quotation.find({ vendorApplicationId: { $in: applications.map((item) => item._id) } }).select(
+        "vendorApplicationId quotationNumber currency totalMinor estimatedDurationHours status",
+      ),
+    ]);
+    const workOrderMap = new Map(workOrders.map((item) => [item._id.toString(), item.title]));
+    const organizationMap = new Map(organizations.map((item) => [item._id.toString(), item.name]));
+    const quotationMap = new Map(
+      quotations.map((item) => [item.vendorApplicationId.toString(), item]),
+    );
     return {
       success: true,
       message: "Vendor applications retrieved successfully",
-      data: applications.map((application) => toVendorApplicationResponse(application)),
+      data: applications.map((application) => {
+        const quotation = quotationMap.get(application._id.toString());
+        return {
+          ...toVendorApplicationResponse(application),
+          organizationName: organizationMap.get(application.organizationId.toString()),
+          workOrderTitle: workOrderMap.get(application.workOrderId.toString()),
+          quotation: quotation
+            ? {
+                number: quotation.quotationNumber,
+                currency: quotation.currency,
+                totalMinor: quotation.totalMinor,
+                estimatedDurationHours: quotation.estimatedDurationHours,
+                status: quotation.status,
+              }
+            : undefined,
+        };
+      }),
     };
   }
   async updateStatus(
