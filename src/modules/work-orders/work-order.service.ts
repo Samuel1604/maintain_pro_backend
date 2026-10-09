@@ -135,7 +135,21 @@ export class WorkOrderService {
       this.repository.count(filter),
     ]);
     return {
-      data,
+      data: data.map((item) => {
+        const value = item.toObject() as typeof item & {
+          facilityId?: { name?: string };
+          locationId?: { name?: string };
+          assignedVendorTechnicianId?: { firstName?: string; lastName?: string };
+        };
+        return {
+          ...value,
+          facilityName: value.facilityId?.name,
+          locationName: value.locationId?.name,
+          assigneeName: value.assignedVendorTechnicianId
+            ? `${value.assignedVendorTechnicianId.firstName ?? ""} ${value.assignedVendorTechnicianId.lastName ?? ""}`.trim()
+            : undefined,
+        };
+      }),
       pagination: {
         page: options.page,
         limit: options.limit,

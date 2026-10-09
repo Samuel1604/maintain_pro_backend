@@ -21,7 +21,13 @@ export class WorkOrderRepository {
   }
 
   findPage(filter: Record<string, unknown>, skip: number, limit: number) {
-    return WorkOrder.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit);
+    return WorkOrder.find(filter)
+      .populate("facilityId", "name")
+      .populate("locationId", "name")
+      .populate("assignedVendorTechnicianId", "firstName lastName")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
   }
 
   findCursorPage(
