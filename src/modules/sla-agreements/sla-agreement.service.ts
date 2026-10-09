@@ -140,20 +140,22 @@ export class SlaAgreementService {
     return {
       success: true,
       message: "Vendor SLA agreements retrieved successfully",
-      data: agreements.map((agreement) => ({
-        ...agreement.toObject(),
-        workOrder: workOrderMap.get(agreement.workOrderId.toString()),
-        performance: {
-          breached: Boolean(
-            workOrderMap.get(agreement.workOrderId.toString())?.dueDate &&
-            workOrderMap.get(agreement.workOrderId.toString())?.dueDate! < new Date() &&
-            !["completed", "cancelled"].includes(
-              workOrderMap.get(agreement.workOrderId.toString())?.status ?? "",
+      data: agreements.map((agreement) => {
+        const workOrder = workOrderMap.get(agreement.workOrderId.toString());
+        const dueDate = workOrder?.dueDate;
+        return {
+          ...agreement.toObject(),
+          workOrder,
+          performance: {
+            breached: Boolean(
+              dueDate &&
+              dueDate < new Date() &&
+              !["completed", "cancelled"].includes(workOrder?.status ?? ""),
             ),
-          ),
-          workOrderStatus: workOrderMap.get(agreement.workOrderId.toString())?.status,
-        },
-      })) as unknown as ISlaAgreement[],
+            workOrderStatus: workOrder?.status,
+          },
+        };
+      }) as unknown as ISlaAgreement[],
     };
   }
 
