@@ -115,30 +115,58 @@ export class VendorService {
       assignedVendorId: vendorId,
       status: { $nin: ["completed", "cancelled"] },
     };
-    const [activeWorkOrders, applications, contracts, activeSlas, breachedSlas, teamMembers, rows] =
-      await Promise.all([
-        WorkOrder.countDocuments(activeWorkOrderFilter),
-        VendorApplication.countDocuments({
-          vendorId,
-          status: { $in: ["submitted", "under_review"] },
-        }),
-        ContractAward.countDocuments({ vendorId, status: { $in: ["awarded", "active"] } }),
-        SlaAgreement.countDocuments({ vendorId, status: "active" }),
-        SlaAgreement.countDocuments({
-          vendorId,
-          status: "active",
-          workOrderId: { $exists: true },
-        }).then(async (count) => {
-          if (!count) return 0;
-          return WorkOrder.countDocuments({ assignedVendorId: vendorId, slaBreached: true });
-        }),
-        User.countDocuments({ vendorId }),
-        WorkOrder.find(activeWorkOrderFilter)
-          .select("_id title status priority dueDate assignedVendorTechnicianId")
-          .sort({ updatedAt: -1 })
-          .limit(10)
-          .lean(),
-      ]);
+    const [
+      activeWorkOrders,
+      applications,
+      contracts,
+      activeSlas,
+      breachedSlas,
+      teamMembers,
+      rows,
+      contractRows,
+      teamRows,
+    ] = await Promise.all([
+      WorkOrder.countDocuments(activeWorkOrderFilter),
+      VendorApplication.countDocuments({
+        vendorId,
+        status: { $in: ["submitted", "under_review"] },
+      }),
+      ContractAward.countDocuments({ vendorId, status: { $in: ["awarded", "active"] } }),
+      SlaAgreement.countDocuments({ vendorId, status: "active" }),
+      SlaAgreement.countDocuments({
+        vendorId,
+        status: "active",
+        workOrderId: { $exists: true },
+      }).then(async (count) => {
+        if (!count) return 0;
+        return WorkOrder.countDocuments({ assignedVendorId: vendorId, slaBreached: true });
+      }),
+      User.countDocuments({ vendorId }),
+      WorkOrder.find(activeWorkOrderFilter)
+        .select("_id title status priority dueDate assignedVendorTechnicianId")
+        .sort({ updatedAt: -1 })
+        .limit(10)
+        .lean(),
+      ContractAward.find({ vendorId, status: { $in: ["awarded", "active"] } })
+        .select("_id workOrderId status effectiveAt expiresAt")
+        .sort({ updatedAt: -1 })
+        .limit(10)
+        .lean(),
+      User.find({ vendorId })
+        .select("_id firstName lastName role")
+        .sort({ firstName: 1, lastName: 1 })
+        .lean(),
+    ]);
+    const contractWorkOrders = await WorkOrder.find({
+      _id: { $in: contractRows.map((contract) => contract.workOrderId) },
+      assignedVendorId: vendorId,
+    })
+      .select("_id status")
+      .lean();
+    const technicianWorkCounts = await WorkOrder.aggregate<{ _id: unknown; count: number }>([
+      { $match: { assignedVendorId: vendorId, assignedVendorTechnicianId: { $exists: true } } },
+      { $group: { _id: "$assignedVendorTechnicianId", count: { $sum: 1 } } },
+    ]);
     const complianceRate = activeSlas
       ? Math.round(((activeSlas - breachedSlas) / activeSlas) * 100)
       : 0;
@@ -158,6 +186,27 @@ export class VendorService {
         priority: row.priority,
         dueDate: row.dueDate?.toISOString(),
         technicianId: row.assignedVendorTechnicianId?.toString(),
+      })),
+      contractPerformance: contractRows.map((contract) => {
+        const workOrder = contractWorkOrders.find(
+          (row) => row._id.toString() === contract.workOrderId.toString(),
+        );
+        return {
+          id: contract._id.toString(),
+          title: `Contract ${contract._id.toString().slice(0, 8).toUpperCase()}`,
+          status: contract.status,
+          meta: workOrder
+            ? `Linked work order: ${workOrder.status.replaceAll("_", " ")}`
+            : "Linked work order not found",
+        };
+      }),
+      technicianWorkload: teamRows.map((member) => ({
+        id: member._id.toString(),
+        name: `${member.firstName} ${member.lastName}`,
+        role: member.role,
+        workOrders:
+          technicianWorkCounts.find((row) => row._id?.toString() === member._id.toString())
+            ?.count ?? 0,
       })),
     };
   }
