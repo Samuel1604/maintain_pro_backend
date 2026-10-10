@@ -75,7 +75,12 @@ export class VendorApplicationService {
       throw new BusinessException("Only open marketplace work orders accept applications");
     }
 
-    if (!vendor.serviceCategories.includes(workOrder.serviceCategory)) {
+    const requestedCategory = workOrder.serviceCategory.trim().toLowerCase();
+    const vendorCategories = vendor.serviceCategories.map((category) =>
+      category.trim().toLowerCase(),
+    );
+
+    if (!vendorCategories.includes(requestedCategory)) {
       throw new AuthorizationException("Vendor does not service this category");
     }
 
