@@ -137,6 +137,24 @@ export class QuotationService {
       )
     )
       throw new AuthorizationException("Organization quotation access required");
+    const quotations = await this.repository.findByOrganization(actor.organizationId);
+
+    // Repair quotations accepted before acceptance started awarding their application.
+    // This keeps the read path idempotent and makes existing production records usable.
+    for (const quotation of quotations) {
+      if (quotation.status !== "accepted") continue;
+      const application = await VendorApplication.findById(quotation.vendorApplicationId).select(
+        "status",
+      );
+      if (application?.status === "submitted" || application?.status === "under_review") {
+        await this.vendorApplications.updateStatus(
+          quotation.vendorApplicationId.toString(),
+          "awarded",
+          actor,
+        );
+      }
+    }
+
     return {
       success: true,
       message: "Organization quotations retrieved successfully",
