@@ -6,6 +6,7 @@ import {
   ConflictException,
 } from "@/shared/errors/index.js";
 import { ROLES } from "@/shared/constants/roles.js";
+import type { UserRole } from "@/shared/constants/roles.js";
 import { User } from "@/modules/users/user.model.js";
 import { VendorApplication } from "@/modules/vendor-applications/vendor-application.model.js";
 import { WorkOrder } from "@/modules/work-orders/work-order.model.js";
@@ -21,7 +22,7 @@ import { Organization } from "@/modules/organizations/organization.model.js";
 
 type Actor = {
   userId: string;
-  role: string;
+  role: UserRole;
   organizationId?: string;
   vendorId?: string;
 };
@@ -48,7 +49,7 @@ export class QuotationService {
     const workOrder = await WorkOrder.findById(application.workOrderId).select("organizationId");
     if (!workOrder) throw new NotFoundException("Work order not found");
     const organization = await Organization.findById(workOrder.organizationId).select("country");
-    const currency = currencyFromCountry(organization?.country);
+    const currency = currencyFromCountry(organization?.address?.country);
     const laborCostMinor = toMinorUnits(data.laborCost, currency);
     const materialCostMinor = toMinorUnits(data.materialCost, currency);
     const subtotalMinor = laborCostMinor + materialCostMinor;
