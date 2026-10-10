@@ -15,7 +15,7 @@ import { Location } from "@/modules/locations/location.model.js";
 import { Asset } from "@/modules/assets/asset.model.js";
 import { OrganizationVendorRelationship } from "@/modules/organizations/vendor-relationships/organization-vendor.model.js";
 import { MarketplaceGeographicPolicy } from "@/modules/organizations/marketplace-geographic-policy.model.js";
-import { distanceInKilometers } from "@/shared/utils/geography.js";
+import { calculateDistanceInKilometers, distanceInKilometers } from "@/shared/utils/geography.js";
 import type {
   CreateWorkOrderInput,
   RejectCompletionInput,
@@ -427,10 +427,9 @@ export class WorkOrderService {
       if (!facility) return [];
       const maximumDistance = policyMap.get(`${organizationId}:${workOrder.priority}`);
       if (maximumDistance === undefined) return [];
-      const distanceKm = distanceInKilometers(
+      const distanceKm = calculateDistanceInKilometers(
         vendor.baseCoordinates?.coordinates,
         facility.coordinates.coordinates,
-        Math.min(vendor.coverageRadiusKm ?? 0, maximumDistance),
       );
       return {
         ...workOrder.toObject(),
