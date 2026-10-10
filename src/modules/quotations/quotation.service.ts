@@ -15,6 +15,8 @@ import type { ApplicationResult } from "@/shared/application-result/index.js";
 import type { IQuotation } from "./quotation.model.js";
 import { ProcurementEventsService } from "@/modules/procurement/procurement-events.service.js";
 import { toMinorUnits } from "@/shared/money/money.js";
+import { currencyFromCountry } from "@/shared/money/currency-from-country.js";
+import { Organization } from "@/modules/organizations/organization.model.js";
 
 type Actor = {
   userId: string;
@@ -43,8 +45,10 @@ export class QuotationService {
 
     const workOrder = await WorkOrder.findById(application.workOrderId).select("organizationId");
     if (!workOrder) throw new NotFoundException("Work order not found");
-    const laborCostMinor = toMinorUnits(data.laborCost, "USD");
-    const materialCostMinor = toMinorUnits(data.materialCost, "USD");
+    const organization = await Organization.findById(workOrder.organizationId).select("country");
+    const currency = currencyFromCountry(organization?.country);
+    const laborCostMinor = toMinorUnits(data.laborCost, currency);
+    const materialCostMinor = toMinorUnits(data.materialCost, currency);
     const subtotalMinor = laborCostMinor + materialCostMinor;
 
     const quotation: Record<string, unknown> = {
@@ -60,7 +64,7 @@ export class QuotationService {
       estimatedDurationHours: data.estimatedDurationHours,
       status: "submitted",
       quotationNumber: `Q-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-      currency: "USD",
+      currency,
       subtotalMinor,
       taxAndFeesMinor: 0,
       totalMinor: subtotalMinor,
