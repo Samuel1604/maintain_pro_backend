@@ -14,6 +14,7 @@ import { QuotationRepository } from "./quotation.repository.js";
 import type { ApplicationResult } from "@/shared/application-result/index.js";
 import type { IQuotation } from "./quotation.model.js";
 import { ProcurementEventsService } from "@/modules/procurement/procurement-events.service.js";
+import { VendorApplicationService } from "@/modules/vendor-applications/vendor-application.service.js";
 import { toMinorUnits } from "@/shared/money/money.js";
 import { currencyFromCountry } from "@/shared/money/currency-from-country.js";
 import { Organization } from "@/modules/organizations/organization.model.js";
@@ -30,6 +31,7 @@ const vendorRoles: string[] = [ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER];
 export class QuotationService {
   private repository = new QuotationRepository();
   private events = new ProcurementEventsService();
+  private vendorApplications = new VendorApplicationService();
 
   async create(data: CreateQuotationInput, actor: Actor): Promise<ApplicationResult<IQuotation>> {
     if (!vendorRoles.includes(actor.role)) {
@@ -166,6 +168,13 @@ export class QuotationService {
     };
     if (!allowed[quotation.status]?.includes(status))
       throw new BusinessException("Invalid quotation status transition");
+    if (status === "accepted") {
+      await this.vendorApplications.updateStatus(
+        quotation.vendorApplicationId.toString(),
+        "awarded",
+        actor,
+      );
+    }
     const updated = await this.repository.update(id, { status });
     return { success: true, message: "Quotation status updated", data: updated! };
   }
