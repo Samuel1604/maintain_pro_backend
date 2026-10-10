@@ -51,6 +51,8 @@ const referenceId = (value: unknown): string => {
   return String(value);
 };
 
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const managerRoles: string[] = [ROLES.ADMIN, ROLES.FACILITY_MANAGER];
 const vendorApplicantRoles: string[] = [ROLES.VENDOR_LEAD, ROLES.VENDOR_MANAGER];
 
@@ -389,8 +391,12 @@ export class WorkOrderService {
     const query: Record<string, unknown> = {
       status: WORK_ORDER_STATUS.OPEN,
       fulfillmentType: FULFILLMENT_TYPE.MARKETPLACE,
-      assignedVendorId: { $exists: false },
-      serviceCategory: { $in: vendor.serviceCategories },
+      assignedVendorId: { $in: [null] },
+      serviceCategory: {
+        $in: vendor.serviceCategories.map(
+          (category) => new RegExp(`^${escapeRegex(category.trim())}$`, "i"),
+        ),
+      },
       organizationId: { $in: organizationIds },
     };
     const workOrders = await this.repository.findOpenMarketplace(query);
