@@ -187,7 +187,10 @@ export class WorkOrderService {
       actor.vendorId = vendorId;
       const filter: Record<string, unknown> = { _id: id, assignedVendorId: vendorId };
       if (actor.role === ROLES.VENDOR_TECHNICIAN) filter.assignedVendorTechnicianId = actor.userId;
-      const workOrder = await WorkOrder.findOne(filter);
+      const workOrder = await WorkOrder.findOne(filter)
+        .populate("facilityId", "name")
+        .populate("locationId", "name")
+        .populate("assetId", "name");
       if (!workOrder) throw new NotFoundException("Work order not found");
       return workOrder;
     }
